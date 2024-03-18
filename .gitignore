@@ -1,0 +1,9 @@
+# data science project artifacts
+**/artifacts
+
+# specific data sets
+**/recs2015_public_v4.csv
+
+# Jupyter
+**/.ipynb_checkpoints
+
