@@ -1,4 +1,4 @@
-# The use of postBuild below does not work as expected.  There's an error about python3 being missing.
+# nixpkgs is pinned to a revision of nixos-23.11
 {
   pkgs ? import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/617579a787259b9a6419492eaac670a5f7663917.tar.gz") {}
 }: 
