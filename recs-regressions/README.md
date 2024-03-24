@@ -5,7 +5,10 @@ This purpose of this notebook provided here is to reproduce the energy consumpti
 by Goldstein, Gounaridis, and Newell 
 [(PNAS)](https://www.pnas.org/doi/abs/10.1073/pnas.1922205117) 
 and more specifically the 
-[Appendix](https://www.pnas.org/doi/suppl/10.1073/pnas.1922205117/suppl_file/pnas.1922205117.sapp.pdf).
+[Appendix](https://www.pnas.org/doi/suppl/10.1073/pnas.1922205117/suppl_file/pnas.1922205117.sapp.pdf). 
+We have copied the coefficients from the Appendix to the file 
+`CarbonFootprintCoefficients.csv` so that we can perform comparisons 
+of our results with those from the paper. 
 
 # How To Use
 All work is contained in the Jupyter notebook.  Start a Jupyter notebook server from this directory or 
