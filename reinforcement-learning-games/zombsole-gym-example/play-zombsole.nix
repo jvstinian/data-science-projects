@@ -63,7 +63,7 @@ pkgs.mkShell {
       my-python
   ];
   shellHook = ''
-      zombsole extermination  me,terminator:5,sniper:5,hamster -m bridge  -z 50 -n 0 -b; exit 
+      zombsole extermination  me,terminator:2,sniper:2,hamster -m bridge  -z 50 -n 0 -b; exit 
   '';
 }
 
