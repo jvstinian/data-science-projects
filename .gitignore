@@ -7,3 +7,9 @@
 # Jupyter
 **/.ipynb_checkpoints
 
+# Haskell
+dist-newstyle
+*.o
+*.hi
+*.chi
+*.chs.h

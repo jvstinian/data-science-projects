@@ -1,0 +1,1 @@
+nix-shell -p myNeovim haskell-language-server ghc -p "haskellPackages.ghcWithPackages (pkgs: with pkgs; [ fast-tags ])"
