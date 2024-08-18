@@ -7,3 +7,6 @@
 # Jupyter
 **/.ipynb_checkpoints
 
+# Nix
+**/result
+
