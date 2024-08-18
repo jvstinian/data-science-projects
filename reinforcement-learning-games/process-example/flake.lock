@@ -24,11 +24,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1723640485,
-        "narHash": "sha256-rFiD3zB65i6HiJvjruky1o7xtCZuZWgYbdolHIV/oKM=",
+        "lastModified": 1723772196,
+        "narHash": "sha256-C/GSLqdFzTS4rL+/zViu95pObDXGyOOXhStrN9l6Og8=",
         "owner": "jvstinian",
         "repo": "libzombsole",
-        "rev": "50eb4adf727ebe4274d1548b705a232456e9cbb9",
+        "rev": "4176a7e6e765c711cf8aa986e3b2f7d0dd5514cc",
         "type": "github"
       },
       "original": {
