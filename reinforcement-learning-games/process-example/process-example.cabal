@@ -70,6 +70,7 @@ executable process-example
     -- Other library packages from which modules are imported.
     build-depends:    
         base ^>=4.17.2.0
+      , process-example
       , bytestring
       , stm
       , typed-process
@@ -80,6 +81,35 @@ executable process-example
   
     -- ghc-options: -optl-L/nix/store/ly8axis9p1k0kf1ydsd6gj1z4gnxj03b-python3-3.8.17/lib -optl-lpython3.8
     -- ghc-options: -optl-lpython3.8
+
+    -- Base language which the package is written in.
+    default-language: Haskell2010
+
+library
+    -- Import common warning flags.
+    import:           warnings
+
+    -- Modules exported by the library.
+    exposed-modules:  
+        Zombsole
+
+    -- Modules included in this library but not exported.
+    -- other-modules:
+
+    -- LANGUAGE extensions used by modules in this package.
+    -- other-extensions:
+
+    -- Other library packages from which modules are imported.
+    build-depends:
+        base ^>= 4.17.2.0
+      , aeson
+
+    -- Directories containing source files.
+    hs-source-dirs:   src
+
+    -- extra-libraries: h3
+
+    -- build-tool-depends: c2hs:c2hs
 
     -- Base language which the package is written in.
     default-language: Haskell2010

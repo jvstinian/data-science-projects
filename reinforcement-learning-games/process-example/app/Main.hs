@@ -6,12 +6,14 @@ import qualified Data.ByteString.Lazy.Char8 as L8
 import Control.Concurrent.STM (atomically)
 import Control.Exception (throwIO)
 import Data.Aeson (encode)
+import Zombsole (ZombsoleRequest(GameStatus, StartGame, Exit, GameConfigUpdate), GameConfig(GameConfig))
 
 main :: IO ()
 main = do
     -- Run a process, print its exit code
     runProcess "true" >>= print
     runProcess "false" >>= print
+    runProcess "zombsole -h" >>= print
 
     -- Check that the exit code is a success
     runProcess_ "true"
@@ -49,7 +51,13 @@ main = do
         hClose (getStdout p)
         -}
         echoProcessor 3 (getStdin p) (getStdout p)
-
+    
+    let zombsoleConfig = setStdin createPipe
+                       $ setStdout createPipe
+                       $ proc "zombsole-stdio-json" []
+    withProcessWait_ zombsoleConfig $ \p -> do
+        zombsoleProcessor (getStdin p) (getStdout p)
+     
         where echoProcessor count hin hout 
                   | count <= 0 = do
                       hClose hin
@@ -60,3 +68,25 @@ main = do
                       hGetLine hout >>= print
                       echoProcessor (count - 1) hin hout
      
+              zombsoleProcessor hin hout = do
+                  -- zombsole interactive publishes an initial game status when run
+                  hGetLine hout >>= print
+
+                  hPutStrLn hin $ L8.unpack $ encode GameStatus
+                  hFlush hin
+                  hGetLine hout >>= print
+                  
+                  hPutStrLn hin $ L8.unpack $ encode (GameConfigUpdate $ GameConfig "extermination" "bridge" ["terminator"] ["a0"] 10 0)
+                  hFlush hin
+                  hGetLine hout >>= print
+
+                  hPutStrLn hin $ L8.unpack $ encode StartGame
+                  hFlush hin
+                  hGetLine hout >>= print
+
+                  hPutStrLn hin $ L8.unpack $ encode Exit
+                  hFlush hin
+                  hGetLine hout >>= print
+                  hClose hin
+                  hClose hout
+
