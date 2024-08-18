@@ -23,5 +23,5 @@ To build the `process-example`, use
 nix build
 ```
 In order to successfully run the resulting executable, 
-the executable `zombsole` must be available available on the path.
+the executable `zombsole-stdio-json` must be available available on the path.
 
