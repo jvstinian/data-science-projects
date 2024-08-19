@@ -10,6 +10,7 @@ module Zombsole
   , RelativeCoords(RelativeCoords)
   , Action(MoveAction, AttackClosestAction, HealAction)
   , ZombsoleRequest(..)
+  , ZombsoleResponse(..)
   ) where
 
 import GHC.Generics
@@ -81,19 +82,35 @@ data ZombsoleRequest = GameConfigUpdate GameConfig
 instance ToJSON ZombsoleRequest where
     toEncoding = genericToEncoding (defaultOptions { sumEncoding = zombsoleTaggedObject })
 
-type BasicObservation = [[Int]]
+type BasicObservation = [[[Int]]]
 
-data GameStateParameters= GameStateParameters 
+data GymObservation = GymObservation 
+    { observation :: BasicObservation
+    , reward :: Double
+    , done :: Bool
+    , truncated :: Bool } -- omitting info as we won't use it for now
+    deriving (Eq, Show, Generic)
+
+instance FromJSON GymObservation where
+    parseJSON = genericParseJSON defaultOptions
+
+data GameStateParameters = GameStateParameters 
     { status :: String
     , active :: Bool
     , config_required :: Bool
-    , last_observation :: BasicObservation }
+    , last_observation :: Maybe GymObservation {- TODO: Do we want BasicObservation here? -} }
     deriving (Eq, Show, Generic)
 
+instance FromJSON GameStateParameters where
+    parseJSON = genericParseJSON defaultOptions
+
 data ZombsoleResponse = GameState GameStateParameters
-                      | GameObservation BasicObservation
+                      | GameObservation GymObservation
                       | Error String
     deriving (Eq, Show, Generic)
+
+instance FromJSON ZombsoleResponse where
+    parseJSON = genericParseJSON (defaultOptions { sumEncoding = zombsoleTaggedObject })
 
 {-
 class GameStateResponse(GameResponse):

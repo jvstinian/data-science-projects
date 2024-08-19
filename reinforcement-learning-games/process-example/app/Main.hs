@@ -5,8 +5,10 @@ import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as L8
 import Control.Concurrent.STM (atomically)
 import Control.Exception (throwIO)
-import Data.Aeson (encode)
-import Zombsole (ZombsoleRequest(GameStatus, StartGame, Exit, GameConfigUpdate), GameConfig(GameConfig))
+import Data.Aeson (encode, decode)
+import Zombsole 
+  ( ZombsoleRequest(GameStatus, StartGame, Exit, GameConfigUpdate), GameConfig(GameConfig)
+  , ZombsoleResponse )
 
 main :: IO ()
 main = do
@@ -70,23 +72,35 @@ main = do
      
               zombsoleProcessor hin hout = do
                   -- zombsole interactive publishes an initial game status when run
-                  hGetLine hout >>= print
+                  -- hGetLine hout >>= print
+                  zombsoleResponseProcessor hout
 
                   hPutStrLn hin $ L8.unpack $ encode GameStatus
                   hFlush hin
-                  hGetLine hout >>= print
+                  -- hGetLine hout >>= print
+                  zombsoleResponseProcessor hout
                   
                   hPutStrLn hin $ L8.unpack $ encode (GameConfigUpdate $ GameConfig "extermination" "bridge" ["terminator"] ["a0"] 10 0)
                   hFlush hin
-                  hGetLine hout >>= print
-
+                  -- hGetLine hout >>= print
+                  zombsoleResponseProcessor hout
+                  
                   hPutStrLn hin $ L8.unpack $ encode StartGame
                   hFlush hin
-                  hGetLine hout >>= print
+                  -- hGetLine hout >>= print
+                  zombsoleResponseProcessor hout
 
                   hPutStrLn hin $ L8.unpack $ encode Exit
                   hFlush hin
-                  hGetLine hout >>= print
+                  zombsoleResponseProcessor hout
+                  -- hGetLine hout >>= print
                   hClose hin
                   hClose hout
+              
+              zombsoleResponseProcessor hout = do
+                  message <- hGetLine hout
+                  let respM = (decode . L8.pack) message :: Maybe ZombsoleResponse
+                  case respM of 
+                    Just resp -> print resp
+                    Nothing   -> print $ "Unable to decode JSON response: " ++ message
 
