@@ -153,3 +153,73 @@ class ErrorResponse(GameResponse):
 
 -}
 
+data Position = Position Int Int
+    deriving (Eq, Show)
+
+data Weapon = ZombieClaws
+            | Knife
+            | Axe
+            | Gun
+            | Rifle
+            | Shotgun
+            | NoWeapon
+    deriving (Eq, Show)
+
+data Thing = Wall
+           | Box
+           | ObjectiveLocation
+           | DeadBody
+           | Zombie Int
+           | Player Int Weapon
+           | Agent Int Weapon
+           | UnknownThing
+    deriving (Eq, Show)
+
+data ThingWithPosition = ThingWithPosition Position Thing
+    deriving (Eq, Show)
+
+type World = [ThingWithPosition]
+
+parseWeaponCode :: Int -> Weapon
+parseWeaponCode wc = case wc of 
+    1  -> ZombieClaws
+    10 -> Knife
+    11 -> Axe
+    12 -> Gun
+    13 -> Rifle
+    14 -> Shotgun
+    _  -> NoWeapon
+
+parseSimplePosition :: Int -> Thing
+parseSimplePosition x = case thing_code of
+    1 -> Box
+    2 -> DeadBody
+    3 -> ObjectiveLocation
+    4 -> Wall
+    5 -> Zombie life
+    6 -> Player life (parseWeaponCode weapon_code)
+    7 -> Agent life (parseWeaponCode weapon_code)
+    _ -> UnknownThing
+  where (x1, scaledLife) = quotRem x 16
+        life = (100 * scaledLife) `div` 16
+        (thing_code, weapon_code) = quotRem x1 16
+
+parseSimpleObservation :: [[[Int]]] -> World
+parseSimpleObservation sobs = case sobs of 
+    obs : _ -> parsePositions obs
+    _       -> []
+  where parsePositions = concat . zipWith parseRow [0..]
+        parseRow rownum = zipWith (parseCell rownum) [0..]
+        parseCell rownum colnum p = ThingWithPosition (Position colnum rownum) (parseSimplePosition p)
+
+{-
+        if thing is not None:
+            scaled_life = 16*getattr(thing, 'life', 0)//100
+            thing_code = self.thing_labels.get(thing.icon_basic, 0)
+            weapon = getattr(thing, 'weapon', None)
+            weapon_name = weapon.name if weapon is not None else 'none'
+            weapon_code = self.weapon_labels.get(weapon_name, 0)
+            return 16*16*thing_code + 16*weapon_code + scaled_life
+        else:
+            return 0 
+-}
