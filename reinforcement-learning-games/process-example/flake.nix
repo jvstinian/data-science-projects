@@ -17,9 +17,32 @@
       overlay = (final: prev: {
         process-example = final.haskellPackages.callCabal2nix "process-example" ./. {};
         echopy = prev.callPackage ./echopy/build.nix {};
+	my-process-bundle = final.symlinkJoin { # TODO: Perhaps change the name
+              name = "my-process-bundle";
+              # meta.mainProgram = "process-example";
+	      buildInputs = [ final.makeWrapper ];
+	      postBuild = ''
+	          echo "Links added in symlinkJoin"
+		  makeWrapper ${final.process-example}/bin/process-example $out/bin/my-wrapper --prefix PATH : $out/bin
+	      '';
+              paths = with final; [
+                final.process-example
+                final.echopy
+                libzombsole.packages.${final.system}.default # TODO: This seems to work, but is it the way to go?
+              ];
+        };
       });
+      apps = forAllSystems (system: {
+        bundle-process = { # TODO: Perhaps change the name
+            type = "app";
+            program = "${nixpkgsFor.${system}.my-process-bundle}/bin/my-wrapper";
+	};
+      });
+      # Look into the following for wrapping the necessary executables with process-example
+      # https://discourse.nixos.org/t/adding-runtime-dependency-to-flake/27785
       packages = forAllSystems (system: {
          process-example = nixpkgsFor.${system}.process-example;
+	 my-process-bundle = nixpkgsFor.${system}.my-process-bundle;
       });
       defaultPackage = forAllSystems (system: self.packages.${system}.process-example);
       checks = self.packages;
