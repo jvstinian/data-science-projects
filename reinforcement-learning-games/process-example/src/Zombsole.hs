@@ -9,6 +9,9 @@ module Zombsole
   , GameConfig(GameConfig)
   , RelativeCoords(RelativeCoords)
   , Action(MoveAction, AttackClosestAction, HealAction)
+  , GymObservation(GymObservation)
+  , BasicObservation
+  , GameStateParameters(GameStateParameters)
   , ZombsoleRequest(..)
   , ZombsoleResponse(..)
   ) where
@@ -223,3 +226,31 @@ parseSimpleObservation sobs = case sobs of
         else:
             return 0 
 -}
+
+getAgentPositions :: World -> [Position]
+getAgentPositions tps = 
+  let isAgent thing = case thing of 
+        Agent _ _ -> True
+        _         -> False
+      agents = filter (\(ThingWithPosition position thing) -> isAgent thing) tps 
+  in map (\(ThingWithPosition position _) -> position) agents 
+
+weaponRange :: Weapon -> Double
+weaponRange ZombieClaws = 1.5
+weaponRange Knife       = 1.5
+weaponRange Axe         = 1.5
+weaponRange Gun         = 6.0
+weaponRange Rifle       = 10.0
+weaponRange Shotgun     = 3.0
+weaponRange NoWeapon    = 0.0
+
+positionDistance :: Position -> Position -> Double
+positionDistance (Position x1 y1) (Position x2 y2) = sqrt $ fromIntegral $ (x1 - x2) ^ (2 :: Int) + (y1 - y2) ^ (2 :: Int)
+
+zombiesWithinRange :: Position -> Double -> World -> [Position]
+zombiesWithinRange pos dist world = map unwrapPosition $ filter isZombieWithinRange world
+  where isZombieWithinRange (ThingWithPosition tpos thing) = case thing of 
+          Zombie _ -> positionDistance pos tpos <= dist
+          _        -> False
+        unwrapPosition (ThingWithPosition tpos _) = tpos
+

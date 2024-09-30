@@ -5,10 +5,86 @@ import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as L8
 import Control.Concurrent.STM (atomically)
 import Control.Exception (throwIO)
+import Data.Maybe (Maybe, fromMaybe)
 import Data.Aeson (encode, decode)
 import Zombsole 
-  ( ZombsoleRequest(GameStatus, StartGame, Exit, GameConfigUpdate), GameConfig(GameConfig)
-  , ZombsoleResponse )
+  ( ZombsoleRequest(GameStatus, StartGame, Exit, GameConfigUpdate, GameAction)
+  , GameConfig(GameConfig)
+  , ZombsoleResponse(GameState, GameObservation, Error)
+  , Action(MoveAction, AttackClosestAction, HealAction)
+  , BasicObservation
+  , GameStateParameters(GameStateParameters)
+  , GymObservation(GymObservation) )
+
+{-
+ - Need a game client manager to track 
+ - the count of games played and the 
+ - state of the current game.  
+ - While a game is active, we need to take the 
+ - last observation and decide on an action.
+-}
+data ZombsolePlayer = ZombsolePlayer 
+  { playerId :: Int 
+  , strategy :: [BasicObservation] -> Action
+  }
+
+instance Show ZombsolePlayer where
+    show (ZombsolePlayer id _) = show ("ZombsolePlayer " ++ show id)
+{-
+or maybe 
+zombsoleStrategy :: [Observation] -> Action
+-}
+
+type GameHistory = [(BasicObservation, Double)]
+
+{-
+A GameManager could have the following fields
+- total number of games to play
+- current number of games played
+- outcomes of completed games (start with observations and rewards)
+- current game in progress
+
+GameManager needs to be able to process the following responses: 
+- GameState GameStateParameters -- if active and game count not exhausted, start game?
+- GameObservation GymObservation -- store observation to current game history, if done then move to next game, else determine move
+- Error String -- exit
+-}
+
+data GameManager = GameManager Int Int [GameHistory] GameHistory ZombsolePlayer 
+  deriving (Show)
+
+incrementGameCounter :: GameManager -> GameManager
+incrementGameCounter (GameManager n c history current player) = GameManager n (c+1) history current player
+
+data ProcessAction = MakeRequest ZombsoleRequest
+                   | Stop String
+  deriving (Eq, Show)
+
+gameManagement :: ZombsoleResponse -> GameManager -> (ProcessAction, GameManager)
+-- TODO: 1. Eventually consider GameConfigUpdate GameConfig - DONE
+--       2. Consider GameManager parameters - DONE
+--       3. Need to consider active and config_required fields - DONE
+gameManagement (GameState (GameStateParameters status active config_required _)) gm 
+  | active && config_required = (MakeRequest $ GameConfigUpdate $ GameConfig "extermination" "bridge" ["terminator"] ["a0"] 10 0, gm)
+  | active                    = (MakeRequest StartGame, incrementGameCounter gm)
+  | otherwise                 = (Stop "Process no longer active", gm)
+gameManagement (Error _) gm = (MakeRequest Exit, gm) -- TODO: Consider printing or returning the error string
+gameManagement (GameObservation (GymObservation obs reward done truncated)) (GameManager n c history current player) = (req, updated_gm)
+  where 
+        finished = done || truncated
+        current_game_history = (obs, reward) : current
+        updated_current = if finished
+                          then [] 
+                          else current_game_history
+        updated_history = if finished
+                          then current_game_history : history
+                          else history 
+        updated_c       = if finished then c + 1 else c
+        updated_gm      = GameManager n updated_c updated_history updated_current player
+        req             | not finished                 = MakeRequest $ GameAction (strategy player (map fst current_game_history))
+                        | finished && (updated_c <= n) = MakeRequest StartGame 
+                        | otherwise                    = Stop "Have played the number of games specified"
+ 
 
 main :: IO ()
 main = do
@@ -59,6 +135,13 @@ main = do
                        $ proc "zombsole-stdio-json" []
     withProcessWait_ zombsoleConfig $ \p -> do
         zombsoleProcessor (getStdin p) (getStdout p)
+
+    putStrLn "Starting zombsoleProcessor2"
+    let zombsoleConfig2 = setStdin createPipe
+                        $ setStdout createPipe
+                        $ proc "zombsole-stdio-json" []
+    withProcessWait_ zombsoleConfig2 $ \p -> do
+        zombsoleProcessor2 (getStdin p) (getStdout p) (GameManager 1 0 [] [] (ZombsolePlayer 0 (const AttackClosestAction)))
      
         where echoProcessor count hin hout 
                   | count <= 0 = do
@@ -104,3 +187,24 @@ main = do
                     Just resp -> print resp
                     Nothing   -> print $ "Unable to decode JSON response: " ++ message
 
+              zombsoleResponseProcessor2 hout = do
+                  message <- hGetLine hout
+                  let respM = (decode . L8.pack) message :: Maybe ZombsoleResponse
+                  return $ fromMaybe (Error $ "Unable to decode JSON response: " ++ message) respM
+
+              zombsoleProcessor2 hin hout initgm = do
+                  -- zombsole interactive publishes an initial game status when run
+                  resp <- zombsoleResponseProcessor2 hout
+                  let (action, gm) = gameManagement resp initgm
+                  case action of 
+                    MakeRequest req -> do
+                      print req
+                      hPutStrLn hin $ L8.unpack $ encode req
+                      hFlush hin
+                      zombsoleProcessor2 hin hout gm
+                    Stop message    -> do
+                      print message
+                      hPutStrLn hin $ L8.unpack $ encode Exit
+                      hClose hin
+                      hClose hout
+              
