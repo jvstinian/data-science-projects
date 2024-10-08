@@ -14,7 +14,9 @@ import Zombsole
   , Action(MoveAction, AttackClosestAction, HealAction)
   , BasicObservation
   , GameStateParameters(GameStateParameters)
-  , GymObservation(GymObservation) )
+  , GymObservation(GymObservation) 
+  , tlbotStrategy )
+
 
 {-
  - Need a game client manager to track 
@@ -65,7 +67,7 @@ gameManagement :: ZombsoleResponse -> GameManager -> (ProcessAction, GameManager
 --       2. Consider GameManager parameters - DONE
 --       3. Need to consider active and config_required fields - DONE
 gameManagement (GameState (GameStateParameters status active config_required _)) gm 
-  | active && config_required = (MakeRequest $ GameConfigUpdate $ GameConfig "extermination" "bridge" ["terminator"] ["a0"] 10 0, gm)
+  | active && config_required = (MakeRequest $ GameConfigUpdate $ GameConfig "extermination" "bridge" ["terminator"] ["0"] 10 0 "world" "simple", gm)
   | active                    = (MakeRequest StartGame, incrementGameCounter gm)
   | otherwise                 = (Stop "Process no longer active", gm)
 gameManagement (Error _) gm = (MakeRequest Exit, gm) -- TODO: Consider printing or returning the error string
@@ -141,7 +143,8 @@ main = do
                         $ setStdout createPipe
                         $ proc "zombsole-stdio-json" []
     withProcessWait_ zombsoleConfig2 $ \p -> do
-        zombsoleProcessor2 (getStdin p) (getStdout p) (GameManager 1 0 [] [] (ZombsolePlayer 0 (const AttackClosestAction)))
+        -- zombsoleProcessor2 (getStdin p) (getStdout p) (GameManager 1 0 [] [] (ZombsolePlayer 0 (const AttackClosestAction)))
+        zombsoleProcessor2 (getStdin p) (getStdout p) (GameManager 1 0 [] [] (ZombsolePlayer 0 tlbotStrategy))
      
         where echoProcessor count hin hout 
                   | count <= 0 = do
@@ -163,7 +166,7 @@ main = do
                   -- hGetLine hout >>= print
                   zombsoleResponseProcessor hout
                   
-                  hPutStrLn hin $ L8.unpack $ encode (GameConfigUpdate $ GameConfig "extermination" "bridge" ["terminator"] ["a0"] 10 0)
+                  hPutStrLn hin $ L8.unpack $ encode (GameConfigUpdate $ GameConfig "extermination" "bridge" ["terminator"] ["0"] 10 0 "surroundings:5" "channels")
                   hFlush hin
                   -- hGetLine hout >>= print
                   zombsoleResponseProcessor hout
