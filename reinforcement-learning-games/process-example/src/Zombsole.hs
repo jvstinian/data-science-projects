@@ -209,7 +209,7 @@ parseSimplePosition x = case thing_code of
     7 -> Just $ Agent life (parseWeaponCode weapon_code)
     _ -> Nothing
   where (x1, scaledLife) = quotRem x 16
-        life = (100 * scaledLife) `div` 16
+        life = (100 * scaledLife) `div` 15
         (thing_code, weapon_code) = quotRem x1 16
 
 parseSimpleObservation :: [[[Int]]] -> World
