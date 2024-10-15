@@ -18,7 +18,7 @@ module Zombsole
   ) where
 
 import GHC.Generics
-import Data.List (sortOn)
+import Data.List (sortOn, zipWith4)
 import Data.Maybe (listToMaybe, catMaybes)
 import Data.Aeson 
   ( SumEncoding(TaggedObject, tagFieldName, contentsFieldName)
@@ -220,6 +220,37 @@ parseSimpleObservation sobs = case sobs of
         parseRow rownum = catMaybes . zipWith (parseCell rownum) [0..]
         -- The resulting type of the following is Maybe Thing
         parseCell rownum colnum p = fmap (ThingWithPosition (Position colnum rownum)) (parseSimplePosition p)
+
+parseChannelsPosition :: Int -> Int -> Int -> Maybe Thing
+parseChannelsPosition channelthingcode life weaponcode = case thingcode of
+    1 -> Just Box
+    2 -> Just DeadBody
+    3 -> Just ObjectiveLocation
+    4 -> Just Wall
+    5 -> Just $ Zombie life
+    6 -> Just $ Player life (parseWeaponCode weaponcode)
+    7 -> Just $ Agent life (parseWeaponCode weaponcode)
+    _ -> Nothing
+  where thingcode = if channelthingcode >= 8 then 7 else channelthingcode
+        -- TODO: Need to add an agent ID to the Agent
+        -- agentid = if channelthingcode >= 8 then channelthingcode - 8 else -1
+
+parseChannelsObservation :: [[[Int]]] -> World
+parseChannelsObservation sobs = case sobs of 
+    ch1 : ch2 : ch3 : _ -> parsePositions ch1 ch2 ch3
+    _       -> []
+  where parsePositions arr1 arr2 = concat . zipWith4 parseRow [0..] arr1 arr2
+        parseRow rownum vec1 vec2 = catMaybes . zipWith4 (parseCell rownum) [0..] vec1 vec2
+        -- The resulting type of the following is Maybe Thing
+        parseCell rownum colnum val1 val2 val3 = fmap (ThingWithPosition (Position colnum rownum)) (parseChannelsPosition val1 val2 val3)
+
+data PositionEncodingStyle = PESSimple
+                           | PEFChannels
+  deriving (Eq, Show)
+
+parseObservation :: PositionEncodingStyle -> [[[Int]]] -> World
+parseObservation PESSimple = parseSimpleObservation
+parseObservation PEFChannels = parseChannelsObservation
 
 {-
         if thing is not None:
