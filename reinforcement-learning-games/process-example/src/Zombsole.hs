@@ -15,6 +15,9 @@ module Zombsole
   , ZombsoleRequest(..)
   , ZombsoleResponse(..)
   , tlbotStrategy 
+  , PositionEncodingStyle(PESSimple, PESChannels)
+  , ObservationScope(OSWorld, OSSurroundings)
+  , GameEncodingStyle(GameEncodingStyle)
   ) where
 
 import GHC.Generics
@@ -245,12 +248,27 @@ parseChannelsObservation sobs = case sobs of
         parseCell rownum colnum val1 val2 val3 = fmap (ThingWithPosition (Position colnum rownum)) (parseChannelsPosition val1 val2 val3)
 
 data PositionEncodingStyle = PESSimple
-                           | PEFChannels
+                           | PESChannels
+  deriving (Eq)
+
+instance Show PositionEncodingStyle where
+  show PESSimple = "simple"
+  show PESChannels = "channels"
+
+data ObservationScope = OSWorld
+                      | OSSurroundings Int
+  deriving (Eq)
+
+instance Show ObservationScope where
+  show OSWorld = "world"
+  show (OSSurroundings width) = "surroundings:" ++ show width
+
+data GameEncodingStyle = GameEncodingStyle ObservationScope PositionEncodingStyle
   deriving (Eq, Show)
 
 parseObservation :: PositionEncodingStyle -> [[[Int]]] -> World
 parseObservation PESSimple = parseSimpleObservation
-parseObservation PEFChannels = parseChannelsObservation
+parseObservation PESChannels = parseChannelsObservation
 
 {-
         if thing is not None:
@@ -333,9 +351,9 @@ playerStep pos weapon world = maybe HealAction attackIfZombieClose zombieposM
         -- As we don't support healing or attacking arbitrary locations 
         -- with the current actions, we can't engage in this activity.  We instead heal.
 
-tlbotStrategy :: [BasicObservation] -> Action
-tlbotStrategy (bobs : _) = action
-  where world = parseSimpleObservation bobs
+tlbotStrategy :: GameEncodingStyle -> [BasicObservation] -> Action
+tlbotStrategy (GameEncodingStyle _ pes) (bobs : _) = action
+  where world = parseObservation pes bobs -- parseSimpleObservation bobs
         agents = getAgents world
         action = case listToMaybe agents of 
                       Just (ThingWithPosition pos (Agent _ weapon)) -> playerStep pos weapon world
@@ -343,7 +361,7 @@ tlbotStrategy (bobs : _) = action
                       -- which is why we pass an invalid action.
                       _                                             -> MoveAction $ RelativeCoords 0 2
 -- tlbotStrategy _ = AttackClosestAction -- This shouldn't happen
-tlbotStrategy _ = MoveAction $ RelativeCoords 0 (-2)
+tlbotStrategy _ _ = MoveAction $ RelativeCoords 0 (-2)
 
 
 {-

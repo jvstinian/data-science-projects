@@ -15,7 +15,10 @@ import Zombsole
   , BasicObservation
   , GameStateParameters(GameStateParameters)
   , GymObservation(GymObservation) 
-  , tlbotStrategy )
+  , tlbotStrategy
+  , PositionEncodingStyle(PESSimple, PESChannels)
+  , ObservationScope(OSWorld, OSSurroundings)
+  , GameEncodingStyle(GameEncodingStyle) )
 
 
 {-
@@ -27,7 +30,7 @@ import Zombsole
 -}
 data ZombsolePlayer = ZombsolePlayer 
   { playerId :: Int 
-  , strategy :: [BasicObservation] -> Action
+  , strategy :: GameEncodingStyle -> [BasicObservation] -> Action
   }
 
 instance Show ZombsolePlayer where
@@ -52,11 +55,11 @@ GameManager needs to be able to process the following responses:
 - Error String -- exit
 -}
 
-data GameManager = GameManager Int Int [GameHistory] GameHistory ZombsolePlayer 
+data GameManager = GameManager Int Int [GameHistory] GameHistory GameEncodingStyle ZombsolePlayer 
   deriving (Show)
 
 incrementGameCounter :: GameManager -> GameManager
-incrementGameCounter (GameManager n c history current player) = GameManager n (c+1) history current player
+incrementGameCounter (GameManager n c history current ge player) = GameManager n (c+1) history current ge player
 
 data ProcessAction = MakeRequest ZombsoleRequest
                    | Stop String
@@ -66,13 +69,14 @@ gameManagement :: ZombsoleResponse -> GameManager -> (ProcessAction, GameManager
 -- TODO: 1. Eventually consider GameConfigUpdate GameConfig - DONE
 --       2. Consider GameManager parameters - DONE
 --       3. Need to consider active and config_required fields - DONE
-gameManagement (GameState (GameStateParameters status active config_required _)) gm 
-  | active && config_required = (MakeRequest $ GameConfigUpdate $ GameConfig "extermination" "bridge" ["terminator"] ["0"] 10 0 "world" "simple", gm)
+gameManagement (GameState (GameStateParameters status active config_required _)) gm@(GameManager _ _ _ _ (GameEncodingStyle scope posenc) _) 
+  | active && config_required = (MakeRequest $ GameConfigUpdate $ GameConfig "extermination" "bridge" ["terminator"] ["0"] 10 0 (show scope) (show posenc), gm)
   | active                    = (MakeRequest StartGame, incrementGameCounter gm)
   | otherwise                 = (Stop "Process no longer active", gm)
 gameManagement (Error _) gm = (MakeRequest Exit, gm) -- TODO: Consider printing or returning the error string
-gameManagement (GameObservation (GymObservation obs reward done truncated)) (GameManager n c history current player) = (req, updated_gm)
+gameManagement (GameObservation (GymObservation obs reward done truncated)) (GameManager n c history current ge player) = (req, updated_gm)
   where 
+        -- GameEncodingStyle _ pes = ge
         finished = done || truncated
         current_game_history = (obs, reward) : current
         updated_current = if finished
@@ -82,8 +86,8 @@ gameManagement (GameObservation (GymObservation obs reward done truncated)) (Gam
                           then current_game_history : history
                           else history 
         updated_c       = if finished then c + 1 else c
-        updated_gm      = GameManager n updated_c updated_history updated_current player
-        req             | not finished                 = MakeRequest $ GameAction (strategy player (map fst current_game_history))
+        updated_gm      = GameManager n updated_c updated_history updated_current ge player
+        req             | not finished                 = MakeRequest $ GameAction (strategy player ge (map fst current_game_history))
                         | finished && (updated_c <= n) = MakeRequest StartGame 
                         | otherwise                    = Stop "Have played the number of games specified"
  
@@ -144,7 +148,8 @@ main = do
                         $ proc "zombsole-stdio-json" []
     withProcessWait_ zombsoleConfig2 $ \p -> do
         -- zombsoleProcessor2 (getStdin p) (getStdout p) (GameManager 1 0 [] [] (ZombsolePlayer 0 (const AttackClosestAction)))
-        zombsoleProcessor2 (getStdin p) (getStdout p) (GameManager 1 0 [] [] (ZombsolePlayer 0 tlbotStrategy))
+        -- zombsoleProcessor2 (getStdin p) (getStdout p) (GameManager 1 0 [] [] (GameEncodingStyle OSWorld PESSimple) (ZombsolePlayer 0 tlbotStrategy))
+        zombsoleProcessor2 (getStdin p) (getStdout p) (GameManager 1 0 [] [] (GameEncodingStyle OSWorld PESChannels) (ZombsolePlayer 0 tlbotStrategy))
      
         where echoProcessor count hin hout 
                   | count <= 0 = do
@@ -208,6 +213,11 @@ main = do
                     Stop message    -> do
                       print message
                       hPutStrLn hin $ L8.unpack $ encode Exit
+                      -- Am seeing python complain about broken pipes in some cases, so adding some logic
+                      hFlush hin 
+                      _ <- hGetLine hout -- process the last line to avoid the broken pipe in the python application
+                      -- let lastRespM = (decode . L8.pack) message :: Maybe ZombsoleResponse
+                      -- print lastRespM
                       hClose hin
                       hClose hout
-              
+ 
