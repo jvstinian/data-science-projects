@@ -1,3 +1,11 @@
+# References:
+# * https://wiki.nixos.org/wiki/Overlays for using overlays with nix-shell
+# Also, initially I was using "import <nixpkgs> ..." but I found that the python installation could not import zombsole.
+# Eventually I realized this might be because the zombsole flake is pinned to a different version of nixpkgs.  
+# I went into the flake lock file for libzombsole and pulled out the revision, and am pinning to that version of 
+# nixpkgs in this nix expression.  
+# TODO: Add the moment we're using the overlay that has been added to the zombsole flake in a branch.  We will need 
+#       to point this to the master branch at some point.
 let pkgs = import (builtins.fetchTarball "https://github.com/NixOS/nixpkgs/archive/205fd4226592cc83fd4c0885a3e4c9c400efabb5.tar.gz") { overlays = [ (builtins.getFlake github:jvstinian/libzombsole/flake-add-overlay).overlays.default ]; };
   #         [
   #             (final: prev: {
