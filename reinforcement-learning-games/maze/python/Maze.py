@@ -1,6 +1,8 @@
 #!/usr/bin/python
 from itertools import product
 import numpy as np
+from zombsole.game import Map
+from zombsole.things import ObjectiveLocation, Wall
 
 
 class Maze(object):
@@ -91,13 +93,16 @@ def iterate_policy(maze,policy,gamma,coords,action_ids,action_map,verbose=True):
     for index, (coord, action_id) in enumerate( zip(coords,policy) ): 
         ms = MazeState(maze, coord)
         reward, new_location = ms.apply_action( action_map[ action_id ]  )
-        try: 
-            new_index = coords.index( new_location )
-            id_minus_T[index,new_index] += -1.0 * gamma 
-        except Exception as e: 
-            print(f"Caught exception when updating applying {action_id} to go from {coord} to {new_location}")
-            # Don't update id_minus_T
-            pass
+        if new_location in coords:
+            # No need to throw if new_location is outside the permissible coordinates, which 
+            # we take to indicate that new_location is an exit or terminal state
+            try: 
+                new_index = coords.index( new_location )
+                id_minus_T[index,new_index] += -1.0 * gamma 
+            except Exception as e:
+                print(f"Caught exception when updating applying {action_id} to go from {coord} to {new_location}")
+                # Don't update id_minus_T
+                pass
         R[index,0] = reward
     
     if verbose: 
@@ -126,11 +131,8 @@ def iterate_policy(maze,policy,gamma,coords,action_ids,action_map,verbose=True):
     return updated_policy, V
 
 
-def navigate_zombsole_map(map_name: str): 
-    from zombsole.game import Map
-    from zombsole.things import ObjectiveLocation, Wall
+def navigate_zombsole_map(map_name: str, verbose=False): 
     zmap = Map.from_map_name(map_name)
-    # zmap = Map.from_file("/home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/maze/python/modbridge01")
 
     width = zmap.size[0] + 1
     height = zmap.size[1] # + 1 # Need to check why the map sizes are off in zombsole
@@ -143,14 +145,16 @@ def navigate_zombsole_map(map_name: str):
         elif isinstance(thing, (Wall,)):
             barrier_coords.append(thing.position)
 
-    print("zombsole map ", map_name, " size: ", (width, height))
-    print("zombsole map end coordinates")
-    print(end_coords)
-    print("zombsole map barrier coordinates")
-    print(barrier_coords)
+    if verbose:
+        print("zombsole map ", map_name, " size: ", (width, height))
+        print("zombsole map end coordinates")
+        print(end_coords)
+        print("zombsole map barrier coordinates")
+        print(barrier_coords)
     # end_coords = end_coords[0:2]
     maze = Maze(width, height, barrier_coords, end_coords)
-    maze.display()
+    if verbose:
+        maze.display()
     gamma = 0.99
     coords, policy = find_policy_to_navigate_maze(maze, gamma, max_iters=50)
     maze.display_policy({coord: policy_action_id[0] for coord, policy_action_id in zip(coords, policy)})
@@ -190,42 +194,23 @@ def find_policy_to_navigate_maze(maze: Maze, gamma: float, initial_policy = None
 
     return coords, policy
 
-if __name__ == "__main__": 
-    verbose=False
+def navigate_simple_maze(verbose=False):
     width = 3
     height = 3
     barrier_coords = [ (0,1), (1,1) ]
     end_ccords = [ (0,2) ]
     maze = Maze(width, height, barrier_coords, end_ccords)
-    maze.display()
+    if verbose:
+        maze.display()
     gamma = 0.9
-    _, policy = find_policy_to_navigate_maze(maze, gamma, verbose=True)
-    # coords = [ coord for coord in product( range(width), range(height) ) if coord not in ( maze.barrier_coords + maze.end_coords ) ]
-    # print('Printing all combination of state and actions')
-    # for coord in coords: 
-    #     for action, action_name in [ (MazeState.move_left, 'left'), (MazeState.move_up, 'up'), (MazeState.move_right, 'right'), (MazeState.move_down, 'down') ]: 
-    #         ms = MazeState(maze, coord)
-    #         ms.apply_action( action )
-    #         print('%s, action %s -> %s' % (coord, action_name, ms.location))
-    
-    # gamma = 0.9
-    # policy = [ 'up' for coord in coords ]
-    # action_ids = [ 'left', 'up', 'right', 'down' ]
-    # action_map = dict( [ ('left', MazeState.move_left), ('up', MazeState.move_up), ('right', MazeState.move_right), ('down', MazeState.move_down) ] )
-    
-    # while True: 
-    #     updated_policy, policy_value = iterate_policy(maze,policy,gamma,coords,action_ids,action_map,verbose=verbose)
-    #     if all( [ a == b for a, b in zip( updated_policy, policy ) ] ): 
-    #         print('Optimal policy:')
-    #         for coord, action in zip( coords, updated_policy ): 
-    #             print('%s; %s' % (coord, action))
-    #         print('policy_value: %s' % (policy_value))
-    #         break
-    #     else:
-    #         policy = updated_policy
-    # 
-    # print('Exiting...')
+    coords, policy = find_policy_to_navigate_maze(maze, gamma, verbose=verbose)
+    maze.display_policy({coord: policy_action_id[0] for coord, policy_action_id in zip(coords, policy)})
 
-    navigate_zombsole_map("bridge")
-
+if __name__ == "__main__":
+    verbose = False
+    print("Simple maze: ")
+    navigate_simple_maze(verbose=verbose)
     
+    print("Zombsole map: ")
+    navigate_zombsole_map("bridge", verbose=verbose)
+
