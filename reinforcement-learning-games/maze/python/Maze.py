@@ -2,11 +2,11 @@
 from itertools import product
 
 class Maze(object):
-    def __init__(self, width, height, barrier_coords, end_ccords): 
+    def __init__(self, width, height, barrier_coords, end_coords): 
         self.width = width
         self.height = height
         self.barrier_coords = barrier_coords
-        self.end_ccords = end_ccords
+        self.end_coords = end_coords
 
         if self.width <= 0: 
             raise ValueError('Width must be positive')
@@ -20,7 +20,7 @@ class Maze(object):
             for i in range(self.width):  
                 if (i,j) in self.barrier_coords: 
                     s += 'x'
-                elif (i,j) == self.end_ccords: 
+                elif (i,j) in self.end_coords: 
                     s += 'E'
                 else: 
                     s += ' '
@@ -59,7 +59,7 @@ class MazeState(object):
                 y = 0
             self.location = (x,y)
         
-        if self.location == self.maze.end_ccords: 
+        if self.location in self.maze.end_coords: 
             return (1.0, self.location)
         else: 
             return (0.0, self.location)
@@ -93,7 +93,7 @@ def iterate_policy(policy,gamma,coords,action_ids,action_map,verbose=True):
             reward, new_location = ms.apply_action( action_map[ action_id ]  )
             try: 
                 new_location_index = coords.index( new_location )
-                V2[ coord_index, action_index ] = reward + gamma * V[ new_location_index ]
+                V2[ coord_index, action_index ] = reward + gamma * V[ new_location_index, 0 ]
             except Exception as e: 
                 V2[ coord_index, action_index ] = reward
 
@@ -106,15 +106,52 @@ def iterate_policy(policy,gamma,coords,action_ids,action_map,verbose=True):
     return updated_policy, V
 
 
+def navigate_zombsole_map(map_name: str): 
+    from zombsole.game import Map
+    from zombsole.things import ObjectiveLocation, Wall
+    zmap = Map.from_map_name(map_name)
+    width = zmap.size[0] + 1
+    height = zmap.size[1] # + 1 # Need to check why the map sizes are off in zombsole
+    
+    end_coords = []
+    barrier_coords = []
+    for thing in zmap.things:
+        if isinstance(thing, (ObjectiveLocation,)):
+            end_coords.append(thing.position)
+        elif isinstance(thing, (Wall,)):
+            barrier_coords.append(thing.position)
+
+    print("zombsole map ", map_name, " size: ", (width, height))
+    print("zombsole map end coordinates")
+    print(end_coords)
+    print("zombsole map barrier coordinates")
+    print(barrier_coords)
+    maze = Maze(width, height, barrier_coords, end_coords)
+    maze.display()
+    
+    # coords = [ coord for coord in product( range(width), range(height) ) if coord not in ( maze.barrier_coords + maze.end_ccords ) ]
+    # while True: 
+    #     updated_policy, policy_value = iterate_policy(policy,gamma,coords,action_ids,action_map,verbose=verbose)
+    #     if all( [ a == b for a, b in zip( updated_policy, policy ) ] ): 
+    #         print('Optimal policy:')
+    #         for coord, action in zip( coords, updated_policy ): 
+    #             print('%s; %s' % (coord, action))
+    #         print('policy_value: %s' % (policy_value))
+    #         break
+    #     else:
+    #         policy = updated_policy
+
+
+
 if __name__ == "__main__": 
     verbose=False
     width = 3
     height = 3
     barrier_coords = [ (0,1), (1,1) ]
-    end_ccords = (0,2)
+    end_ccords = [ (0,2) ]
     maze = Maze(width, height, barrier_coords, end_ccords)
     maze.display()
-    coords = [ coord for coord in product( range(width), range(height) ) if coord not in ( maze.barrier_coords + [ maze.end_ccords ] ) ]
+    coords = [ coord for coord in product( range(width), range(height) ) if coord not in ( maze.barrier_coords + maze.end_coords ) ]
     print('Printing all combination of state and actions')
     for coord in coords: 
         for action, action_name in [ (MazeState.move_left, 'left'), (MazeState.move_up, 'up'), (MazeState.move_right, 'right'), (MazeState.move_down, 'down') ]: 
@@ -169,4 +206,6 @@ if __name__ == "__main__":
             policy = updated_policy
 
     print('Exiting...')
+
+    navigate_zombsole_map("bridge")
 

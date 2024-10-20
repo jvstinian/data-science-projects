@@ -6,7 +6,7 @@
 # nixpkgs in this nix expression.  
 # TODO: Add the moment we're using the overlay that has been added to the zombsole flake in a branch.  We will need 
 #       to point this to the master branch at some point.
-let pkgs = import (builtins.fetchTarball "https://github.com/NixOS/nixpkgs/archive/205fd4226592cc83fd4c0885a3e4c9c400efabb5.tar.gz") { overlays = [ (builtins.getFlake github:jvstinian/libzombsole/flake-add-overlay).overlays.default ]; };
+let pkgs = import (builtins.fetchTarball "https://github.com/NixOS/nixpkgs/archive/205fd4226592cc83fd4c0885a3e4c9c400efabb5.tar.gz") { overlays = [ (builtins.getFlake github:jvstinian/libzombsole/read-maps-by-name).overlays.default ]; };
   # originally had this following for overlays
   #         [
   #             (final: prev: {
