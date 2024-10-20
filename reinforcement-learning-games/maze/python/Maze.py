@@ -28,6 +28,22 @@ class Maze(object):
             print(s)
         print( '-' * (self.width + 2) )
    
+    def display_policy(self, policy_map): 
+        print( '-' * (self.width + 2) )
+        for j in reversed( range(self.height) ):  
+            s = '|'
+            for i in range(self.width):  
+                if (i,j) in self.barrier_coords: 
+                    s += 'x'
+                elif (i,j) in self.end_coords: 
+                    s += 'E'
+                elif (i,j) in policy_map:
+                    s += policy_map.get((i,j), ' ')
+                else: 
+                    s += ' '
+            s += '|'
+            print(s)
+        print( '-' * (self.width + 2) )
 
 class MazeState(object):
     move_right = (1,0)
@@ -66,7 +82,7 @@ class MazeState(object):
 
 # This implements the policy iteration algorithm from section 3.2.2 of 
 # "Reinforcement Learning: A Survey" by Kaelbling, Littman, and Moore (1996).
-def iterate_policy(policy,gamma,coords,action_ids,action_map,verbose=True):
+def iterate_policy(maze,policy,gamma,coords,action_ids,action_map,verbose=True):
     id_minus_T = np.eye( len( coords ) )
     R = np.zeros( (len(coords),1) )
     for index, (coord, action_id) in enumerate( zip(coords,policy) ): 
@@ -76,6 +92,7 @@ def iterate_policy(policy,gamma,coords,action_ids,action_map,verbose=True):
             new_index = coords.index( new_location )
             id_minus_T[index,new_index] += -1.0 * gamma 
         except Exception as e: 
+            print(f"Caught exception when updating applying {action_id} to go from {coord} to {new_location}")
             # Don't update id_minus_T
             pass
         R[index,0] = reward
@@ -110,6 +127,8 @@ def navigate_zombsole_map(map_name: str):
     from zombsole.game import Map
     from zombsole.things import ObjectiveLocation, Wall
     zmap = Map.from_map_name(map_name)
+    # zmap = Map.from_file("/home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/maze/python/modbridge01")
+
     width = zmap.size[0] + 1
     height = zmap.size[1] # + 1 # Need to check why the map sizes are off in zombsole
     
@@ -126,21 +145,30 @@ def navigate_zombsole_map(map_name: str):
     print(end_coords)
     print("zombsole map barrier coordinates")
     print(barrier_coords)
+    # end_coords = end_coords[0:2]
     maze = Maze(width, height, barrier_coords, end_coords)
     maze.display()
     
-    # coords = [ coord for coord in product( range(width), range(height) ) if coord not in ( maze.barrier_coords + maze.end_ccords ) ]
-    # while True: 
-    #     updated_policy, policy_value = iterate_policy(policy,gamma,coords,action_ids,action_map,verbose=verbose)
-    #     if all( [ a == b for a, b in zip( updated_policy, policy ) ] ): 
-    #         print('Optimal policy:')
-    #         for coord, action in zip( coords, updated_policy ): 
-    #             print('%s; %s' % (coord, action))
-    #         print('policy_value: %s' % (policy_value))
-    #         break
-    #     else:
-    #         policy = updated_policy
+    gamma = 0.99
+    coords = [ coord for coord in product( range(width), range(height) ) if coord not in ( maze.barrier_coords + maze.end_coords ) ]
+    policy = [ 'up' for coord in coords ]
+    action_ids = [ 'left', 'up', 'right', 'down' ]
+    action_map = dict( [ ('left', MazeState.move_left), ('up', MazeState.move_up), ('right', MazeState.move_right), ('down', MazeState.move_down) ] )
+    iters = 0
+    while True: 
+        iters += 1
+        updated_policy, policy_value = iterate_policy(maze,policy,gamma,coords,action_ids,action_map,verbose=verbose)
+        if all( [ a == b for a, b in zip( updated_policy, policy ) ] ): 
+            print('Optimal policy for zombsole map:')
+            for coord, action in zip( coords, updated_policy ): 
+                print('%s; %s' % (coord, action))
+            print('zombsole map policy_value: %s' % (policy_value))
+            print("zombsole policy finalized on iteration ", iters)
+            break
+        else:
+            policy = updated_policy
 
+    maze.display_policy({coord: policy_action_id[0] for coord, policy_action_id in zip(coords, policy)})
 
 
 if __name__ == "__main__": 
@@ -195,7 +223,7 @@ if __name__ == "__main__":
     # print('updated policy: %s' % (updated_policy))
     
     while True: 
-        updated_policy, policy_value = iterate_policy(policy,gamma,coords,action_ids,action_map,verbose=verbose)
+        updated_policy, policy_value = iterate_policy(maze,policy,gamma,coords,action_ids,action_map,verbose=verbose)
         if all( [ a == b for a, b in zip( updated_policy, policy ) ] ): 
             print('Optimal policy:')
             for coord, action in zip( coords, updated_policy ): 
