@@ -124,7 +124,6 @@ def iterate_policy(maze,policy,gamma,coords,action_ids,action_map,verbose=True):
 
     if verbose: 
         print('argmax: %s' % (np.argmax(V2,axis=1)))
-    # value_argmax = np.argmax(V2,axis=1)
     updated_policy = [ action_ids[ idx ] for idx in np.argmax(V2,axis=1) ]
     if verbose: 
         print('updated policy: %s' % (updated_policy))
@@ -151,7 +150,7 @@ def navigate_zombsole_map(map_name: str, verbose=False):
         print(end_coords)
         print("zombsole map barrier coordinates")
         print(barrier_coords)
-    # end_coords = end_coords[0:2]
+
     maze = Maze(width, height, barrier_coords, end_coords)
     if verbose:
         maze.display()
