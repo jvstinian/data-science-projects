@@ -1,21 +1,24 @@
+# NOTE: Had a name collision between the flake input zombpyg and the zombpyg python package added by overlay, so renaming the input to libzombpyg
 {
   inputs = {
     nixpkgs = {
-      # url = "github:nixos/nixpkgs/nixos-23.11";
-      follows = "libzombsole/nixpkgs";
+      url = "github:nixos/nixpkgs/nixos-23.11";
     };
     libzombsole = {
-      url = "github:jvstinian/libzombsole/flake-python3";
+      url = "github:jvstinian/libzombsole";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
     };
-    zombpyg = {
-      url = "github:jvstinian/zombpyg";
-      inputs.nixpkgs.follows = "libzombsole/nixpkgs";
+    libzombpyg = {
+      url = "github:jvstinian/zombpyg/flake-refactor-overlay"; # TODO: Change after merge
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
     };
     flake-utils = {
       url = "github:numtide/flake-utils";
     };
   };
-  outputs = { nixpkgs, flake-utils, libzombsole, zombpyg, ... }: 
+  outputs = { nixpkgs, flake-utils, libzombsole, libzombpyg, ... }: 
     let
         placeholder-value = "hell";
     in 
@@ -23,7 +26,7 @@
         let 
           pkgs = import nixpkgs {
             inherit system;
-            overlays = [ libzombsole.overlays.default ];
+            overlays = [ libzombsole.overlays.default libzombpyg.overlays.default ];
           };
     
           dev-python-packages = ps: with ps; [
@@ -32,7 +35,7 @@
               tensorflowWithCuda
               gym
               jvstinian-zombsole
-	      zombpyg.packages.${system}.zombpyg
+              zombpyg 
           ];
           dev-python = pkgs.python3.withPackages dev-python-packages;
       in rec {
@@ -43,7 +46,8 @@
         };
         # packages = {
         #   zombsole = pkgs.python3Packages.jvstinian-zombsole;
-        #   default = pkgs.python3Packages.jvstinian-zombsole;
+        #   zombpyg  = pkgs.python3Packages.zombpyg;
+        #   # default  = pkgs.python3Packages.jvstinian-zombsole;
         # };
         # apps.default = {
         #   type = "app";

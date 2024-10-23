@@ -18,58 +18,49 @@
         "type": "github"
       }
     },
-    "flake-utils_2": {
+    "libzombpyg": {
       "inputs": {
-        "systems": "systems_2"
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
       },
       "locked": {
-        "lastModified": 1726560853,
-        "narHash": "sha256-X6rJYSESBVr3hBoH0WbKE5KvhPU5bloyZ2L4K60/fPQ=",
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "rev": "c1dfcf08411b08f6b8615f7d8971a2bfa81d5e8a",
+        "lastModified": 1729725900,
+        "narHash": "sha256-nbxM9s+c4L61v7B4qOgncAfOOIm2tmGJnB0cHBcELzQ=",
+        "owner": "jvstinian",
+        "repo": "zombpyg",
+        "rev": "1461aa11eb5741ec80cdb66511f336e65d9753a2",
         "type": "github"
       },
       "original": {
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "type": "github"
-      }
-    },
-    "flake-utils_3": {
-      "inputs": {
-        "systems": "systems_3"
-      },
-      "locked": {
-        "lastModified": 1726560853,
-        "narHash": "sha256-X6rJYSESBVr3hBoH0WbKE5KvhPU5bloyZ2L4K60/fPQ=",
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "rev": "c1dfcf08411b08f6b8615f7d8971a2bfa81d5e8a",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "flake-utils",
+        "owner": "jvstinian",
+        "ref": "flake-refactor-overlay",
+        "repo": "zombpyg",
         "type": "github"
       }
     },
     "libzombsole": {
       "inputs": {
-        "flake-utils": "flake-utils_2",
-        "nixpkgs": "nixpkgs"
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
       },
       "locked": {
-        "lastModified": 1729597658,
+        "lastModified": 1729681588,
         "narHash": "sha256-mx9NY0/dF2yoUkb5QveJuhy0VXLVajY7NS25YCN9dqc=",
         "owner": "jvstinian",
         "repo": "libzombsole",
-        "rev": "9f0e783329cc4ad9813493e9824f111980defb31",
+        "rev": "4c2293eeda67035f9cdf107ce4282c40a8e385c5",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
-        "ref": "flake-python3",
         "repo": "libzombsole",
         "type": "github"
       }
@@ -93,12 +84,9 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "libzombpyg": "libzombpyg",
         "libzombsole": "libzombsole",
-        "nixpkgs": [
-          "libzombsole",
-          "nixpkgs"
-        ],
-        "zombpyg": "zombpyg"
+        "nixpkgs": "nixpkgs"
       }
     },
     "systems": {
@@ -113,58 +101,6 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
-        "type": "github"
-      }
-    },
-    "systems_2": {
-      "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-systems",
-        "repo": "default",
-        "type": "github"
-      }
-    },
-    "systems_3": {
-      "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-systems",
-        "repo": "default",
-        "type": "github"
-      }
-    },
-    "zombpyg": {
-      "inputs": {
-        "flake-utils": "flake-utils_3",
-        "nixpkgs": [
-          "libzombsole",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1728043913,
-        "narHash": "sha256-hrudHeHdIKvu4TrFfNkdrJoIGsFZ0udGwyObWoHFiTg=",
-        "owner": "jvstinian",
-        "repo": "zombpyg",
-        "rev": "2a1eaa1cb5f8bd2ec9fd6a7a3ef4300582cd0e97",
-        "type": "github"
-      },
-      "original": {
-        "owner": "jvstinian",
-        "repo": "zombpyg",
         "type": "github"
       }
     }
