@@ -28,16 +28,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1729725900,
+        "lastModified": 1729771151,
         "narHash": "sha256-nbxM9s+c4L61v7B4qOgncAfOOIm2tmGJnB0cHBcELzQ=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "1461aa11eb5741ec80cdb66511f336e65d9753a2",
+        "rev": "8e185c520848aa8e53a47063e3c0b1a06df0ee9a",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
-        "ref": "flake-refactor-overlay",
         "repo": "zombpyg",
         "type": "github"
       }
@@ -52,11 +51,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1729681588,
-        "narHash": "sha256-mx9NY0/dF2yoUkb5QveJuhy0VXLVajY7NS25YCN9dqc=",
+        "lastModified": 1729771055,
+        "narHash": "sha256-h++NGDO87oQfVqLf3JkVA2cYrUmqyXbfw1szClKAElY=",
         "owner": "jvstinian",
         "repo": "libzombsole",
-        "rev": "4c2293eeda67035f9cdf107ce4282c40a8e385c5",
+        "rev": "0b31edf116a18fb9104ca64c933eaabdf105699e",
         "type": "github"
       },
       "original": {
