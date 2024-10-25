@@ -83,8 +83,8 @@ class DQN:
     
     def play(self, action_idx):
         action = action_idx # self.env.action_space[action_idx]
-        new_state, r, termination, _ = self.env.step(action)
-        return r, new_state, termination
+        new_state, r, termination, truncated, _ = self.env.step(action)
+        return r, new_state, (termination or truncated)
         
     def update_target_network(self, sess):
         sess.run(self.clone_op)
