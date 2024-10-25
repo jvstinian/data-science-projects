@@ -16,6 +16,7 @@ class DQN:
     def __init__(self, config, env, directory, callback=None, summary_writer=None, verbose=False):
         
         self.env = env
+        print(self.env.action_space)
         self.actions = range(0, env.action_space.n) # TODO: Improve this
         self.feedback_size = env.get_frame_size()
         print("feedback_size: %s" % (self.feedback_size,))

@@ -13,22 +13,23 @@ from dqn.q_learning import DQN
 from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP
 # from dqn.environment import new_atari_game, new_demo
 import gym
-from zombsole.gym_env import ZombsoleGymEnv
+from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
 from gym.envs.registration import registry, register
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
 register(
     id='Zombsole-v0', 
-    entry_point='zombsole.gym_env:ZombsoleGymEnv', 
+    # entry_point='zombsole.gym_env:ZombsoleGymEnv', 
+    entry_point='zombsole.gym_env:ZombsoleGymEnvDiscreteAction', 
     max_episode_steps=1000,
     kwargs={
         'rules_name': 'extermination',
         # 'player_names': ['sniper', 'sniper', 'sniper', 'terminator'],
         'player_names': [],
         'map_name': 'bridge',
-        'agent_id': 'agent00',
-        'initial_zombies': 10,
+        'agent_id': 0, # 'agent00',
+        'initial_zombies': 5,
         'minimum_zombies': 0,
         'debug': False
     }
