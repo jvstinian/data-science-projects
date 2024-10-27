@@ -4,15 +4,14 @@ Created on Mar 25, 2018
 @author: ywz
 '''
 import numpy
-# import tensorflow as tf
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
-
+import tensorflow as tf
+# import tensorflow.compat.v1 as tf
+# tf.disable_v2_behavior()
 
 
 def get_variable(shape, initializer, name, dtype=tf.float32, trainable=True):
-    var = tf.get_variable(shape=shape, initializer=initializer, 
-                          dtype=dtype, name=name, trainable=trainable)
+    var = tf.compat.v1.get_variable(shape=shape, initializer=initializer, 
+                                    dtype=dtype, name=name, trainable=trainable)
     return var
 
 
@@ -73,3 +72,34 @@ def dense(x, output_dim, activation=tf.nn.relu, init_W=None, init_b=None, name='
             output = activation(output)
     
     return output
+
+
+class DenseLayer(tf.Module):
+    def __init__(self, output_dim, activation=tf.nn.relu, init_W=None, init_b=None, name='dense'):
+        super().__init__(name=name)
+        self.output_dim = output_dim
+        self.activation = activation
+        self.init_W = init_W
+        self.init_b = init_b
+
+    @tf.compat.v1.keras.utils.track_tf1_style_variables
+    def __call__(self, x):
+    
+        if len(x.get_shape().as_list()) > 2:
+            shape = x.get_shape().as_list()
+            x = tf.reshape(x, shape=(-1, numpy.prod(shape[1:])))
+
+        shape = (x.get_shape().as_list()[-1], self.output_dim)
+        _W, _b = HeUniform(shape)
+        if self.init_W is None: self.init_W = _W
+        if self.init_b is None: self.init_b = _b
+
+        with tf.compat.v1.variable_scope(name):
+            W = get_variable(shape=shape, initializer=self.init_W, dtype=tf.float32, name='weight')
+            b = get_variable(shape=(self.output_dim,), initializer=self.init_b, dtype=tf.float32, name='bias')
+        
+            output = tf.matmul(x, W) + b
+            if self.activation:
+                output = self.activation(output)
+    
+        return output

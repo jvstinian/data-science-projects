@@ -5,7 +5,6 @@ Author: Justin Smith (jvstinian@gmail.com)
 '''
 import os
 import argparse
-# import tensorflow as tf
 # from config import DEMO
 # from task import Task
 # from dpg import DPG
@@ -15,8 +14,9 @@ from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP
 import gym
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
 from gym.envs.registration import registry, register
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+# import tensorflow.compat.v1 as tf
+# tf.disable_v2_behavior()
+import tensorflow as tf
 
 register(
     id='Zombsole-v0', 
@@ -36,9 +36,9 @@ register(
 )
 
 def delete_dir(path):
-    if tf.gfile.Exists(path):
-        tf.gfile.DeleteRecursively(path)
-    tf.gfile.MakeDirs(path)
+    if tf.io.gfile.exists(path):
+        tf.io.gfile.rmtree(path)
+    tf.io.gfile.makedirs(path)
     return path
 
 
@@ -59,8 +59,8 @@ def main():
 
     # task = Task(args.task)
     log_dir = os.path.join(conf['log_dir'], '{}/train'.format(args.config))
-    if not tf.gfile.Exists(log_dir):
-        tf.gfile.MakeDirs(log_dir)
+    if not tf.io.gfile.exists(log_dir):
+        tf.io.gfile.makedirs(log_dir)
     model_dir = os.path.join(conf['log_dir'], args.config)
     
     device = '/{}:0'.format(args.device)
