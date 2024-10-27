@@ -5,7 +5,7 @@
       url = "github:nixos/nixpkgs/nixos-23.11";
     };
     libzombsole = {
-      url = "github:jvstinian/libzombsole/action-space-fix";
+      url = "github:jvstinian/libzombsole";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
@@ -24,18 +24,34 @@
     in 
       flake-utils.lib.eachDefaultSystem (system:
         let 
-          pkgs = import nixpkgs {
-            inherit system;
-            overlays = [ libzombsole.overlays.default libzombpyg.overlays.default ];
+          # TODO: As noted below, the keras override seems to create a problem.
+          #       On the other hand, including keras without modification seems to 
+          #       resolve the missing module we were seeing with tensorflow.
+          python-keras-overlay = final: prev: {
+              python3 = prev.python3.override {
+                  # The keras override seems to cause a problem
+                  packageOverrides = python-final: python-prev: {
+		      keras = python-prev.keras.override { tensorflow = python-prev.tensorflowWithCuda; };
+                  };
+              }; 
           };
     
+          pkgs = import nixpkgs {
+            inherit system;
+            # overlays = [ libzombsole.overlays.default libzombpyg.overlays.default python-keras-overlay ];
+            overlays = [ libzombsole.overlays.default libzombpyg.overlays.default ];
+          };
+
           dev-python-packages = ps: with ps; [
               numpy
               opencv4
               tensorflowWithCuda
+              keras
               gym
               jvstinian-zombsole
               zombpyg 
+              jupyter
+              ipython
           ];
           dev-python = pkgs.python3.withPackages dev-python-packages;
 
