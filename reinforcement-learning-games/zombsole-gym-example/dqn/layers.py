@@ -30,48 +30,85 @@ def HeUniform(shape):
     return init_W, init_b
 
 
-def conv2d(x, output_dim, kernel=(5, 5), stride=(2, 2), 
-           activation=tf.nn.relu, init_W=None, init_b=None, name='conv', padding='VALID'):
+# def conv2d(x, output_dim, kernel=(5, 5), stride=(2, 2), 
+#            activation=tf.nn.relu, init_W=None, init_b=None, name='conv', padding='VALID'):
+#     
+#     assert len(x.get_shape().as_list()) == 4
+#     shape = (kernel[0], kernel[1], x.get_shape().as_list()[-1], output_dim)
+#     _W, _b = HeUniform(shape)
+#     if init_W is None: init_W = _W
+#     if init_b is None: init_b = _b
+# 
+#     with tf.variable_scope(name):
+#         W = get_variable(shape=shape, initializer=init_W, dtype=tf.float32, name='weight')
+#         b = get_variable(shape=(output_dim,), initializer=init_b, dtype=tf.float32, name='bias')
+#         
+#         conv = tf.nn.conv2d(input=x, filter=W, strides=(1, stride[0], stride[1], 1), padding=padding)
+#         if activation:
+#             conv = activation(tf.nn.bias_add(conv, b))
+#         else:
+#             conv = tf.nn.bias_add(conv, b)
+#     
+#     return conv
+
+
+class Conv2dLayer(tf.Module):
+    def __init__(self, output_dim, kernel=(5, 5), stride=(2, 2), activation=tf.nn.relu, init_W=None, init_b=None, name='conv', padding='VALID'):
+        super().__init__(name=name)
+        self.output_dim = output_dim
+        self.kernel = kernel
+        self.stride = stride
+        self.activation = activation
+        self.init_W = init_W
+        self.init_b = init_b
+        self.padding = padding
+
+    @tf.compat.v1.keras.utils.track_tf1_style_variables
+    def __call__(self, x):
+        assert len(x.get_shape().as_list()) == 4
+        shape = (
+                self.kernel[0], 
+                self.kernel[1], 
+                x.get_shape().as_list()[-1], 
+                self.output_dim
+        )
+        _W, _b = HeUniform(shape)
+        if self.init_W is None: self.init_W = _W
+        if self.init_b is None: self.init_b = _b
+
+        with tf.compat.v1.variable_scope(self.name):
+            W = get_variable(shape=shape, initializer=self.init_W, dtype=tf.float32, name='weight')
+            b = get_variable(shape=(output_dim,), initializer=self.init_b, dtype=tf.float32, name='bias')
+            
+            conv = tf.nn.conv2d(input=x, filter=W, strides=(1, self.stride[0], self.stride[1], 1), padding=self.padding)
+            if self.activation:
+                conv = self.activation(tf.nn.bias_add(conv, b))
+            else:
+                conv = tf.nn.bias_add(conv, b)
     
-    assert len(x.get_shape().as_list()) == 4
-    shape = (kernel[0], kernel[1], x.get_shape().as_list()[-1], output_dim)
-    _W, _b = HeUniform(shape)
-    if init_W is None: init_W = _W
-    if init_b is None: init_b = _b
-
-    with tf.variable_scope(name):
-        W = get_variable(shape=shape, initializer=init_W, dtype=tf.float32, name='weight')
-        b = get_variable(shape=(output_dim,), initializer=init_b, dtype=tf.float32, name='bias')
-        
-        conv = tf.nn.conv2d(input=x, filter=W, strides=(1, stride[0], stride[1], 1), padding=padding)
-        if activation:
-            conv = activation(tf.nn.bias_add(conv, b))
-        else:
-            conv = tf.nn.bias_add(conv, b)
-    
-    return conv
+        return conv
 
 
-def dense(x, output_dim, activation=tf.nn.relu, init_W=None, init_b=None, name='dense'):
-    
-    if len(x.get_shape().as_list()) > 2:
-        shape = x.get_shape().as_list()
-        x = tf.reshape(x, shape=(-1, numpy.prod(shape[1:])))
-
-    shape = (x.get_shape().as_list()[-1], output_dim)
-    _W, _b = HeUniform(shape)
-    if init_W is None: init_W = _W
-    if init_b is None: init_b = _b
-
-    with tf.variable_scope(name):
-        W = get_variable(shape=shape, initializer=init_W, dtype=tf.float32, name='weight')
-        b = get_variable(shape=(output_dim,), initializer=init_b, dtype=tf.float32, name='bias')
-        
-        output = tf.matmul(x, W) + b
-        if activation:
-            output = activation(output)
-    
-    return output
+# def dense(x, output_dim, activation=tf.nn.relu, init_W=None, init_b=None, name='dense'):
+#     
+#     if len(x.get_shape().as_list()) > 2:
+#         shape = x.get_shape().as_list()
+#         x = tf.reshape(x, shape=(-1, numpy.prod(shape[1:])))
+# 
+#     shape = (x.get_shape().as_list()[-1], output_dim)
+#     _W, _b = HeUniform(shape)
+#     if init_W is None: init_W = _W
+#     if init_b is None: init_b = _b
+# 
+#     with tf.variable_scope(name):
+#         W = get_variable(shape=shape, initializer=init_W, dtype=tf.float32, name='weight')
+#         b = get_variable(shape=(output_dim,), initializer=init_b, dtype=tf.float32, name='bias')
+#         
+#         output = tf.matmul(x, W) + b
+#         if activation:
+#             output = activation(output)
+#     
+#     return output
 
 
 class DenseLayer(tf.Module):
@@ -94,7 +131,7 @@ class DenseLayer(tf.Module):
         if self.init_W is None: self.init_W = _W
         if self.init_b is None: self.init_b = _b
 
-        with tf.compat.v1.variable_scope(name):
+        with tf.compat.v1.variable_scope(self.name):
             W = get_variable(shape=shape, initializer=self.init_W, dtype=tf.float32, name='weight')
             b = get_variable(shape=(self.output_dim,), initializer=self.init_b, dtype=tf.float32, name='bias')
         
@@ -103,3 +140,5 @@ class DenseLayer(tf.Module):
                 output = self.activation(output)
     
         return output
+
+

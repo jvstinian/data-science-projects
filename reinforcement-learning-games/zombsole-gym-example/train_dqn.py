@@ -67,15 +67,23 @@ def main():
     with tf.device(device):
         # dqn = DQN(conf, game, model_dir, callback=game.render, verbose=True) # TODO
         dqn = DQN(conf, game, model_dir, callback=None, verbose=True)
-    
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-        saver = tf.train.Saver()
-        writer = tf.summary.FileWriter(delete_dir(log_dir), sess.graph_def)
-        dqn.set_summary_writer(summary_writer=writer)
-        
-        sess.run(tf.global_variables_initializer())
-        dqn.train(sess, saver)
-        
+
+    # TODO
+    # with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
+    #     saver = tf.train.Saver()
+    #     writer = tf.summary.FileWriter(delete_dir(log_dir), sess.graph_def)
+    #     dqn.set_summary_writer(summary_writer=writer)
+    #     
+    #     sess.run(tf.global_variables_initializer())
+    #     dqn.train(sess, saver)
+    # NOTE: The following probably wasn't the way to go
+    # def saver(model):
+    #     tf.saved_model.save(model, model_dir)
+    saver = tf.saved_model.save
+    writer = tf.summary.create_file_writer(delete_dir(log_dir))
+    dqn.set_summary_writer(summary_writer=writer)
+    dqn.train(saver)
+ 
 
 if __name__ == "__main__":
     main()
