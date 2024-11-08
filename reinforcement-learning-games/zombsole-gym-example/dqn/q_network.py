@@ -84,8 +84,8 @@ class QNetwork(tf.Module):
             # self.net['feature'] = dense(self.net['conv2'], 256, 
             #                             init_b=tf.constant_initializer(0.01), name='fc1')
         elif self.network_type == 'mlp':
-            self.net['fc1'] = DenseLayer(50, init_b=tf.constant_initializer(0.0), name='fc1')
-            self.net['feature'] = DenseLayer(50, init_b=tf.constant_initializer(0.0), name='fc2')
+            self.net['fc1'] = DenseLayer(50, init_W=tf.constant_initializer(0.0), init_b=tf.constant_initializer(0.0), name='fc1')
+            self.net['feature'] = DenseLayer(50, init_W=tf.constant_initializer(0.0), init_b=tf.constant_initializer(0.0), name='fc2')
             self.layers.extend(
                 [ self.net['fc1'], self.net['feature']  ]
             )
@@ -97,7 +97,7 @@ class QNetwork(tf.Module):
             raise NotImplementedError('Unknown network type: {}'.format(self.network_type))
             
         self.net['values'] = DenseLayer(
-                self.n_outputs, activation=None, init_b=tf.constant_initializer(0.0), name='values'
+                self.n_outputs, activation=None, init_W=tf.constant_initializer(0.0), init_b=tf.constant_initializer(0.0), name='values'
         )
         self.layers.append(self.net['values'])
         # self.net['values'] = dense(self.net['feature'], self.n_outputs, activation=None,
@@ -173,10 +173,10 @@ class QNetwork(tf.Module):
         # gradient = tf.gradients(loss, self.trainable_variables)
         gradient = tape.gradient(loss, self.trainable_variables)
 
-        print("actions: ", actions)
-        print("value: ", value)
-        print("ys: ", ys)
-        print("gradient: ", gradient)
+        # print("actions: ", actions)
+        # print("value: ", value)
+        # print("ys: ", ys)
+        # print("gradient: ", gradient)
         print("loss: ", loss)
 
         return gradient, loss

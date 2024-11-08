@@ -235,6 +235,8 @@ class Optimizer:
             self.optimizer.apply_gradients(
                 zip(gradient, self.q_network.trainable_variables)
             )
+            print("q_values", self.q_network.get_q_value(states))
+            print("q_action", self.q_network.get_q_action(states))
 
     
 if __name__ == "__main__":

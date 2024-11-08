@@ -13,6 +13,7 @@ from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP
 # from dqn.environment import new_atari_game, new_demo
 import gym
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
+from zombsole.renderer import OpencvRenderer
 from gym.envs.registration import registry, register
 # import tensorflow.compat.v1 as tf
 # tf.disable_v2_behavior()
@@ -51,10 +52,10 @@ def main():
 
     configid = args.config
     if configid == 'zombsole_mlp':
-        game = gym.make('Zombsole-v0')
+        game = gym.make('Zombsole-v0', renderer=OpencvRenderer(111, 18))
         conf = ZOMBSOLE_MLP
     else:
-        game = gym.make('Zombsole-v0')
+        game = gym.make('Zombsole-v0', renderer=OpencvRenderer(110, 11))
         conf = ZOMBSOLE_MLP
 
     # task = Task(args.task)
@@ -66,7 +67,7 @@ def main():
     device = '/{}:0'.format(args.device)
     with tf.device(device):
         # dqn = DQN(conf, game, model_dir, callback=game.render, verbose=True) # TODO
-        dqn = DQN(conf, game, model_dir, callback=None, verbose=True)
+        dqn = DQN(conf, game, model_dir, callback=game.render, verbose=True)
 
     # TODO
     # with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
