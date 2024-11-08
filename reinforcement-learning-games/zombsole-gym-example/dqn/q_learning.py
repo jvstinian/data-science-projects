@@ -122,6 +122,7 @@ class DQN:
                 self.replay_memory.add(frame, action_idx, r, termination)
                 frame = new_frame
                 
+                # Perhaps added (num_of_trials > 0)
                 if num_of_trials % self.time_between_two_copies == 0:
                     self.update_target_network(sess)
                     self.save(sess, saver)

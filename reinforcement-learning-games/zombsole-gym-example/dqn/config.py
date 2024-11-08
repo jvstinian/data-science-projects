@@ -63,15 +63,15 @@ ZOMBSOLE_MLP = {
     'epsilon_decay': 10000, # was 100000
     'epsilon_min': 0.1,
     'num_frames': 2,
-    'num_nullops': 3,
+    'num_nullops': 3, # tried 10 also
     'time_between_two_copies': 1000,
     'input_scale': 1.0,
     'update_interval': 1,
     'T': 990,
     
     'learning_rate': 0.5e-2,
-    'optimizer': 'momentum',
-    'rho': 0.9,
+    'optimizer': 'momentum', # tried rmsprop
+    'rho': 0.9, # tried 0.0
     'rmsprop_epsilon': 1e-6,
     
     'log_dir': 'log/'

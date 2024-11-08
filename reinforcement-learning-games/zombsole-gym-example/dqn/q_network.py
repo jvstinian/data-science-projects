@@ -56,13 +56,16 @@ class QNetwork:
                                         init_b=tf.constant_initializer(0.01), name='fc1')
         elif self.network_type == 'mlp':
             self.net['fc1'] = dense(self.net['input'], 50, 
+                                    init_W=tf.constant_initializer(0.0),
                                     init_b=tf.constant_initializer(0.0), name='fc1')
             self.net['feature'] = dense(self.net['fc1'], 50, 
+                                    init_W=tf.constant_initializer(0.0),
                                         init_b=tf.constant_initializer(0.0), name='fc2')
         else:
             raise NotImplementedError('Unknown network type: {}'.format(self.network_type))
             
         self.net['values'] = dense(self.net['feature'], self.n_outputs, activation=None,
+                                    init_W=tf.constant_initializer(0.0),
                                    init_b=tf.constant_initializer(0.0), name='values')
         
         self.net['q_value'] = tf.reduce_max(self.net['values'], axis=1, name='q_value')
@@ -82,6 +85,11 @@ class QNetwork:
         
         tf.summary.scalar("loss", self.loss, collections=['q_network'])
         self.summary_op = tf.summary.merge_all('q_network')
+        self.print_op = tf.print(
+                self.scope, " loss: ", self.loss,
+                "\nq_action: ", self.net['q_action'],
+                "\nq_value: ", self.net['q_value']
+        )
         
     def get_q_value(self, sess, state):
         return sess.run(self.net['q_value'], feed_dict={self.x: state})

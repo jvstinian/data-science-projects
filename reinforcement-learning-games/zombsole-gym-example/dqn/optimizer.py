@@ -201,15 +201,19 @@ class Optimizer:
         
         states, actions, targets = self.sample_transitions(sess, batch_size)
         feed_dict = self.q_network.get_feed_dict(states, actions, targets)
+        # feed_dict.update(
+        #     self.target_network.get_feed_dict(states, actions, targets)
+        # )
         
         if self.summary_writer and step % 1000 == 0:
-            summary_str, _, = sess.run([self.q_network.summary_op, 
+            summary_str, loss_str, _ = sess.run([self.q_network.summary_op, self.q_network.print_op,
                                         self.train_op], 
                                        feed_dict=feed_dict)
             self.summary_writer.add_summary(summary_str, step)
             self.summary_writer.flush()
         else:
             sess.run(self.train_op, feed_dict=feed_dict)
+            # sess.run([self.q_network.print_op, self.target_network.print_op, self.train_op], feed_dict=feed_dict)
 
     
 if __name__ == "__main__":
