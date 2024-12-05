@@ -52,10 +52,14 @@ def main():
 
     configid = args.config
     if configid == 'zombsole_mlp':
-        game = gym.make('Zombsole-v0', renderer=OpencvRenderer(111, 18))
+        game = gym.make('Zombsole-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25))
+        # map_name = "bridge" # "easy_exit"
+        # game = gym.make('Zombsole-v0', rules_name="safehouse", map_name=map_name, renderer=OpencvRenderer(21, 31))
         conf = ZOMBSOLE_MLP
     else:
-        game = gym.make('Zombsole-v0', renderer=OpencvRenderer(110, 11))
+        game = gym.make('Zombsole-v0', rules_name="safehouse", renderer=OpencvRenderer(111, 18))
+        # map_name = "bridge" # "easy_exit"
+        # game = gym.make('Zombsole-v0', rules_name="safehouse", map_name=map_name, renderer=OpencvRenderer(21, 31))
         conf = ZOMBSOLE_MLP
 
     # task = Task(args.task)
