@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const RunConfig = struct { file: []const u8 };
+const RunConfig = struct { cmd: []const u8, file: []const u8, help_flag: bool = false };
 
 const ArgParseError = error{MissingFilenameError};
 
@@ -10,24 +10,25 @@ const MAP_MAX_WIDTH = 200;
 const MAP_MAX_HEIGHT = 100;
 
 fn process_args(argsIteratorPtr: *std.process.ArgIterator) ArgParseError!RunConfig {
-    var cfg = RunConfig{ .file = "" };
+    var cfg = RunConfig{ .cmd = "", .file = "" };
     var fileprovided = false;
 
     var argsIterator = argsIteratorPtr.*;
 
-    const cmd = argsIterator.next() orelse "readfile";
+    cfg.cmd = argsIterator.next() orelse "readfile";
 
-    const stdout = std.io.getStdOut().writer();
     while (argsIterator.next()) |arg| {
         if (std.mem.eql(u8, arg, "--help")) {
-            stdout.print("{s} [--help] [--file FILE]\n", .{cmd}) catch {};
+            cfg.help_flag = true;
+            break;
         } else {
             cfg.file = arg;
             fileprovided = true;
         }
     }
 
-    if (fileprovided) {
+    const status: bool = fileprovided or cfg.help_flag;
+    if (status) {
         return cfg;
     } else {
         return ArgParseError.MissingFilenameError;
@@ -37,8 +38,11 @@ fn process_args(argsIteratorPtr: *std.process.ArgIterator) ArgParseError!RunConf
 // https://ziglang.org/documentation/master/std/#std.unicode
 // https://zig.news/dude_the_builder/unicode-basics-in-zig-dj3
 pub fn main() !void {
+    const stdout = std.io.getStdOut().writer();
+
     var argsIterator = std.process.args();
     defer argsIterator.deinit();
+
     const cfg: RunConfig = process_args(&argsIterator) catch |err| {
         const stderr = std.io.getStdErr().writer();
         switch (err) {
@@ -48,43 +52,21 @@ pub fn main() !void {
         }
         std.process.exit(1);
     };
+    if (cfg.help_flag) {
+        stdout.print("{s} [--help] [--file FILE]\n", .{cfg.cmd}) catch {};
+        std.process.exit(0);
+    }
 
     // const cmd = argsIterator.next() orelse "readfile";
 
-    // const stdout = std.io.getStdOut().writer();
-    // try stdout.print("In command {s}\n", .{cmd});
-    // while (argsIterator.next()) |arg| {
-    //     try stdout.print("In command {s}, got argument {s}\n", .{ cmd, arg });
-    //     if (std.mem.eql(u8, arg, "--help")) {
-    //         try stdout.print("{s} [--help] [--file FILE]\n", .{cmd});
-    //     }
-    // }
-
-    const stdout = std.io.getStdOut().writer();
-    try stdout.print("\nProvided file: {s}", .{cfg.file});
-    try stdout.print("\nProvided filename length: {}", .{cfg.file.len});
-    // const file2: []const u8 = cfg.file;
-    // try stdout.print("Length of filename: {}", .{file2.len});
-
-    const map_width = MAP_MAX_WIDTH;
-    const map_height = MAP_MAX_HEIGHT;
-    // const buf_size = 100;
-    // try to open the file
-    // const init = "z" ** 100;
-    // const buf: [100]u8 = .{'z'} ** 100;
-    // const buf: []u8 = "zzzzzzzzzz";
-
-    // this works
-    // var init: [buf_size]u8 = .{'-'} ** buf_size;
-    // const buf: []u8 = init[0..];
-    // var init: [buf_size]u8 = undefined;
-    // const buf: []u8 = init[0..];
+    // try stdout.print("\nProvided file: {s}", .{cfg.file});
+    // try stdout.print("\nProvided filename length: {}", .{cfg.file.len});
 
     // const map_file: []const u8 = "/home/justinian/Code/datascience-miscellaneous/zig/readfile/maps/bridge";
     // const map_file = "/home/justinian/Code/datascience-miscellaneous/zig/readmapfile/maps/bridge";
     const map_file = cfg.file; //  "/home/justinian/Code/datascience-miscellaneous/zig/readmapfile/maps/bridge"; // TODO: Improve this
 
-    var map_obstacles: [map_height][map_width]u8 = undefined;
+    var map_obstacles: [MAP_MAX_HEIGHT][MAP_MAX_WIDTH]u8 = undefined;
     for (&map_obstacles) |*row| {
         @memset(row, 0);
     }
@@ -147,16 +129,6 @@ pub fn main() !void {
     //     }
     // }
 }
-
-// fn simple_array() [3]u8 {
-//     const ret: [3]u8 = [_]u8{ 2, 3, 4 };
-//     return ret;
-// }
-//
-// fn simple_array2(inputslice: []u8) void {
-//     var ret: [3]u8 = [_]u8{ 5, 6, 7 };
-//     @memcpy(inputslice, &ret);
-// }
 
 const MapReadError = error{ FileOpenError, FileReadError, Utf8ByteSequenceLengthError, OutOfBoundsError };
 
