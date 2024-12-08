@@ -6,6 +6,7 @@ At this time, the maps are processed into an array of integers, with
 
 zig 0.13.0 was used for this project.
 
+
 # Build Using Zig
 
 Build using 
@@ -25,4 +26,4 @@ where `MAP_FILE` is the absolute path to a zombsole map file.
 * [zig memcpy](https://ziglang.org/documentation/master/#memcpy)
 * [zig std.unicode](https://ziglang.org/documentation/master/std/#std.unicode)
 * [processing command line arguments in zig](https://renatoathaydes.github.io/zig-common-tasks/#get-command-line-args)
-
+* [unicode basics in zig](https://zig.news/dude_the_builder/unicode-basics-in-zig-dj3)
