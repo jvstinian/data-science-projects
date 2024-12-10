@@ -57,14 +57,7 @@ pub fn main() !void {
         std.process.exit(0);
     }
 
-    // const cmd = argsIterator.next() orelse "readfile";
-
-    // try stdout.print("\nProvided file: {s}", .{cfg.file});
-    // try stdout.print("\nProvided filename length: {}", .{cfg.file.len});
-
-    // const map_file: []const u8 = "/home/justinian/Code/datascience-miscellaneous/zig/readfile/maps/bridge";
-    // const map_file = "/home/justinian/Code/datascience-miscellaneous/zig/readmapfile/maps/bridge";
-    const map_file = cfg.file; //  "/home/justinian/Code/datascience-miscellaneous/zig/readmapfile/maps/bridge"; // TODO: Improve this
+    const map_file = cfg.file;
 
     var map_obstacles: [MAP_MAX_HEIGHT][MAP_MAX_WIDTH]MapArtifacts = undefined;
     for (&map_obstacles) |*row| {
@@ -94,6 +87,8 @@ pub fn main() !void {
                 MapArtifacts.Wall => 'W',
                 MapArtifacts.Box => 'B',
                 MapArtifacts.ObjectiveLocation => 'o',
+                MapArtifacts.PlayerSpawn => 'p',
+                MapArtifacts.ZombieSpawn => 'z',
                 else => ' ',
             };
             stdout.print("{c}", .{machar}) catch {};
@@ -114,8 +109,6 @@ fn read_map_obstacles(map_file: []const u8, map_obstacles: *[MAP_MAX_HEIGHT][MAP
     const buf: []u8 = init[0..];
 
     var map_size = MapSize{ .nrow = 0, .ncol = 0 };
-    // var nrow: usize = 0;
-    // var ncol: usize = 0;
 
     var buffer_start_idx: usize = 0;
     var buffer_capacity: usize = 4;
@@ -131,77 +124,11 @@ fn read_map_obstacles(map_file: []const u8, map_obstacles: *[MAP_MAX_HEIGHT][MAP
             return MapReadError.FileReadError;
         };
 
-        const slen: usize = try read_buffer_into_map_obstacles(buf, map_obstacles, &map_size, &colidx, &rowidx);
-
-        // const slen: usize = std.unicode.utf8ByteSequenceLength(buf[0]) catch |err| {
-        //     stdout.print("Error calling utf8ByteSequenceLength {}", .{err}) catch {};
-        //     return MapReadError.Utf8ByteSequenceLengthError;
-        // };
-
-        // var uchar: u21 = undefined;
-
-        // if (slen == 1) {
-        //     uchar = @as(u21, buf[0]);
-        // } else if (slen == 2) {
-        //     uchar = std.unicode.utf8Decode2(buf[0..2]) catch 0;
-        // } else if (slen == 3) {
-        //     uchar = std.unicode.utf8Decode3(buf[0..3]) catch 0;
-        // } else if (slen == 4) {
-        //     uchar = std.unicode.utf8Decode4(buf[0..4]) catch 0;
-        // } else {
-        //     return MapReadError.Utf8ByteSequenceLengthError;
-        // }
-
-        // if ((slen == 1) and (uchar == @as(u21, '\n'))) {
-        //     if (colidx >= map_size.ncol) {
-        //         map_size.ncol = colidx;
-        //     }
-        //     rowidx += 1;
-        //     colidx = 0;
-        // } else {
-        //     if ((uchar == @as(u21, 'w')) or (uchar == @as(u21, 'W'))) {
-        //         // TODO: Move the following logic out of the branches here.
-        //         //       We can do this once before writing to the array.
-        //         if ((rowidx >= MAP_MAX_HEIGHT) or (colidx >= MAP_MAX_WIDTH)) {
-        //             return MapReadError.OutOfBoundsError;
-        //         }
-        //         map_obstacles[rowidx][colidx] = MapArtifacts.Wall; // 1
-        //     } else if ((uchar == @as(u21, 'b')) or (uchar == @as(u21, 'B'))) {
-        //         if ((rowidx >= MAP_MAX_HEIGHT) or (colidx >= MAP_MAX_WIDTH)) {
-        //             return MapReadError.OutOfBoundsError;
-        //         }
-        //         map_obstacles[rowidx][colidx] = MapArtifacts.Box;
-        //     } else if (uchar == 'o') { // TODO
-        //         if ((rowidx >= MAP_MAX_HEIGHT) or (colidx >= MAP_MAX_WIDTH)) {
-        //             return MapReadError.OutOfBoundsError;
-        //         }
-        //         map_obstacles[rowidx][colidx] = MapArtifacts.ObjectiveLocation; // 2
-        //     } else if (uchar == 0x2593) {
-        //         if ((rowidx >= MAP_MAX_HEIGHT) or (colidx >= MAP_MAX_WIDTH)) {
-        //             return MapReadError.OutOfBoundsError;
-        //         }
-        //         map_obstacles[rowidx][colidx] = MapArtifacts.Wall; // 1;
-        //     } else if (uchar == 0x2612) {
-        //         if ((rowidx >= MAP_MAX_HEIGHT) or (colidx >= MAP_MAX_WIDTH)) {
-        //             return MapReadError.OutOfBoundsError;
-        //         }
-        //         map_obstacles[rowidx][colidx] = MapArtifacts.Box;
-        //     }
-        //     // increment column index regardless of whether there was a character match
-        //     colidx += 1;
-        // }
-
-        if ((rowidx >= MAP_MAX_HEIGHT) or (colidx >= MAP_MAX_WIDTH)) { // TODO: Is this the way to go? Update: I don't think this is needed
-            return MapReadError.OutOfBoundsError;
-        }
-
+        // end of file
         if (chars_read < buffer_capacity) {
-            // end of file
-            stdout.print("Read {d} characters while the capacity is {d}", .{ chars_read, buffer_capacity }) catch {};
-            // TODO: Need to process the rest of the buffer
             var buffer_remaining: usize = buffer_start_idx + chars_read;
-            std.mem.copyForwards(u8, buf, buf[slen..]);
-            buffer_remaining -= slen;
+            // std.mem.copyForwards(u8, buf, buf[slen..]); // TODO: Remove
+            // buffer_remaining -= slen;
             while (buffer_remaining > 0) {
                 const bytes_processed: usize = try read_buffer_into_map_obstacles(buf, map_obstacles, &map_size, &colidx, &rowidx);
                 std.mem.copyForwards(u8, buf, buf[bytes_processed..]);
@@ -209,8 +136,9 @@ fn read_map_obstacles(map_file: []const u8, map_obstacles: *[MAP_MAX_HEIGHT][MAP
             }
             break;
         }
-        // TODO: check rowidx and colidx for validity
-        // stdout.print("\nslen: {d}", .{slen}) catch {};
+
+        const slen: usize = try read_buffer_into_map_obstacles(buf, map_obstacles, &map_size, &colidx, &rowidx);
+
         if (slen < 4) {
             std.mem.copyForwards(u8, buf, buf[slen..]);
         }
@@ -265,15 +193,19 @@ fn read_buffer_into_map_obstacles(buf: []u8, map_obstacles: *[MAP_MAX_HEIGHT][MA
             return MapReadError.OutOfBoundsError;
         }
         if ((uchar == @as(u21, 'w')) or (uchar == @as(u21, 'W'))) {
-            map_obstacles[rowidx_ptr.*][colidx_ptr.*] = MapArtifacts.Wall; // 1
+            map_obstacles[rowidx_ptr.*][colidx_ptr.*] = MapArtifacts.Wall;
         } else if ((uchar == @as(u21, 'b')) or (uchar == @as(u21, 'B'))) {
             map_obstacles[rowidx_ptr.*][colidx_ptr.*] = MapArtifacts.Box;
-        } else if (uchar == 'o') { // TODO
-            map_obstacles[rowidx_ptr.*][colidx_ptr.*] = MapArtifacts.ObjectiveLocation; // 2;
+        } else if (uchar == 'o') {
+            map_obstacles[rowidx_ptr.*][colidx_ptr.*] = MapArtifacts.ObjectiveLocation;
+        } else if ((uchar == @as(u21, 'p')) or (uchar == @as(u21, 'P'))) {
+            map_obstacles[rowidx_ptr.*][colidx_ptr.*] = MapArtifacts.PlayerSpawn;
+        } else if ((uchar == @as(u21, 'z')) or (uchar == @as(u21, 'Z'))) {
+            map_obstacles[rowidx_ptr.*][colidx_ptr.*] = MapArtifacts.ZombieSpawn;
         } else if (uchar == 0x2593) {
-            map_obstacles[rowidx_ptr.*][colidx_ptr.*] = MapArtifacts.Wall; // 1;
+            map_obstacles[rowidx_ptr.*][colidx_ptr.*] = MapArtifacts.Wall;
         } else if (uchar == 0x2612) {
-            map_obstacles[rowidx_ptr.*][colidx_ptr.*] = MapArtifacts.Box; // 3;
+            map_obstacles[rowidx_ptr.*][colidx_ptr.*] = MapArtifacts.Box;
         }
         // increment column index regardless of whether there was a character match
         colidx_ptr.* += 1;
