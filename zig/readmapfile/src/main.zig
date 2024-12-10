@@ -127,8 +127,6 @@ fn read_map_obstacles(map_file: []const u8, map_obstacles: *[MAP_MAX_HEIGHT][MAP
         // end of file
         if (chars_read < buffer_capacity) {
             var buffer_remaining: usize = buffer_start_idx + chars_read;
-            // std.mem.copyForwards(u8, buf, buf[slen..]); // TODO: Remove
-            // buffer_remaining -= slen;
             while (buffer_remaining > 0) {
                 const bytes_processed: usize = try read_buffer_into_map_obstacles(buf, map_obstacles, &map_size, &colidx, &rowidx);
                 std.mem.copyForwards(u8, buf, buf[bytes_processed..]);
