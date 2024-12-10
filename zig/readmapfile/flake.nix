@@ -28,6 +28,7 @@
             buildInputs = with pkgs; [
               zig zls
             ];
+            shellHook = "export PS1='\\[\\e[1;34m\\]zig-dev > \\[\\e[0m\\]'";
           };
           packages = {
             default = read-map-file-zig;
