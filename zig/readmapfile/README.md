@@ -1,13 +1,16 @@
 # Reading Zombsole Maps With Zig
 
 We set up a simple zig example reading the UTF-8 encoded zombsole maps.
-At this time, the maps are processed into an array of integers, with 
-1 indicating a wall, 2 indicating an objective, and 3 indicating a box. 
+At this time, the maps are processed into an array over an enum type
+representing the map elements, namely walls, boxes, objectives, and
+player and zombie spawns.
 
 zig 0.13.0 was used for this project.
 
 
-# Build Using Zig
+# Build
+
+## Build Using Zig
 
 Build using 
 ```
@@ -19,6 +22,17 @@ or build and run using
 zig build run -- MAP_FILE
 ```
 where `MAP_FILE` is the absolute path to a zombsole map file.
+
+## Build With NixOS
+
+This project includes a flake, and can be built with
+```
+nix build
+``` 
+or run with 
+```
+nix run github:jvstinian/data-science-projects?dir=zig/readmapfile#default -- MAP_FILE
+```
 
 
 # References
