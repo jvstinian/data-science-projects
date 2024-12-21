@@ -7,6 +7,9 @@
 # Jupyter
 **/.ipynb_checkpoints
 
+# Python
+**/__pycache__
+
 # Nix
 **/result
 

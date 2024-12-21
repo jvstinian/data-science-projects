@@ -1,0 +1,22 @@
+Zombsole Gym Example
+
+MIT License
+Copyright (c) 2021 Justin Smith and jvstinian.com
+
+===============================================================================
+This work relies heavily on code from the 
+Python Reinforcement Learning Projects 
+project, which is under the MIT license.  
+In particular, the python files in the 
+directory dqn and train_dqn.py are modified 
+from files found in this project.  
+
+The code repository can be found at 
+https://github.com/PacktPublishing/Python-Reinforcement-Learning-Projects
+
+The copyright information is as follows: 
+
+Python Reinforcement Learning Projects 
+Copyright (c) 2018 Packt
+===============================================================================
+ 
