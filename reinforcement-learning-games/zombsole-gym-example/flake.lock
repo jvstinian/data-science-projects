@@ -51,16 +51,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1729860770,
-        "narHash": "sha256-1WhWPWGYPgOCZ9ekCrDAofiJx4zvRwSn/f3InZpZEvk=",
+        "lastModified": 1734191906,
+        "narHash": "sha256-V37Px6+L2Rzby62Yyy5YwGK1WSzeWtfRuBebiI1a+WI=",
         "owner": "jvstinian",
         "repo": "libzombsole",
-        "rev": "1652684ae5396331fe71732b67ca2d2823536e91",
+        "rev": "b573669c30f466d3cd109b7ffc646d2eaed5be28",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
-        "ref": "action-space-fix",
         "repo": "libzombsole",
         "type": "github"
       }
