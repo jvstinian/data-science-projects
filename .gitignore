@@ -4,6 +4,9 @@
 # specific data sets
 **/recs2015_public_v4.csv
 
+# Python
+**/__pycache__
+
 # Jupyter
 **/.ipynb_checkpoints
 
