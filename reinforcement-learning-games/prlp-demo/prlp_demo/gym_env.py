@@ -39,12 +39,14 @@ class DemoGymEnv(object):
 
     def __init__(
         self,
+        enable_rendering=True,
         verbose=False
     ):
         self.w = 640
         self.h = 480
         self.window = None
-        self.__initialize_renderer__()
+        if enable_rendering:
+            self.__initialize_renderer__()
 
 
         # We pass None for the DISPLAYSURF, and configure the rendering below.
@@ -156,7 +158,9 @@ class DemoGymEnv(object):
         Environments will automatically close() themselves when
         garbage collected or when the program exits.
         """
-        pass
+        if self.window is not None:
+            pygame.display.quit()
+            pygame.quit()
 
     def seed(self, seed=None):
         """Sets the seed for this env's random number generator(s).
