@@ -13,7 +13,8 @@ def test_gym_env_frame_size():
     )
     observation = env.reset()
     feedback_size = env.get_frame_size()
-    assert observation.shape == feedback_size
+    expected_observation_shape = (1,) + feedback_size
+    assert observation.shape == expected_observation_shape
 
 def test_gym_env_step():
     env = DemoGymEnv(
