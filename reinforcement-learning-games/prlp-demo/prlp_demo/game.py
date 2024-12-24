@@ -167,7 +167,7 @@ class Game:
         return x, y
     
     def get_feedback_size(self):
-        return (1, self.feedback_size, 1)
+        return (self.feedback_size, 1)
     
     def play_action(self, action, num_frames=1):
         
