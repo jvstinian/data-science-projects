@@ -14,11 +14,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
+    libprlpdemo = {
+      url = "github:jvstinian/data-science-projects/prlp-demo-test?dir=reinforcement-learning-games/prlp-demo";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
     flake-utils = {
       url = "github:numtide/flake-utils";
     };
   };
-  outputs = { nixpkgs, flake-utils, libzombsole, libzombpyg, ... }: 
+  outputs = { nixpkgs, flake-utils, libzombsole, libzombpyg, libprlpdemo, ... }: 
     let
         placeholder-value = "hell";
     in 
@@ -26,7 +31,7 @@
         let 
           pkgs = import nixpkgs {
             inherit system;
-            overlays = [ libzombsole.overlays.default libzombpyg.overlays.default ];
+            overlays = [ libzombsole.overlays.default libzombpyg.overlays.default libprlpdemo.overlays.default ];
           };
     
           dev-python-packages = ps: with ps; [
@@ -35,7 +40,8 @@
               tensorflowWithCuda
               gym
               jvstinian-zombsole
-              zombpyg 
+              zombpyg
+	      prlp-demo
           ];
           dev-python = pkgs.python3.withPackages dev-python-packages;
 

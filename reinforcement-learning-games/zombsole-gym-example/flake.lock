@@ -18,6 +18,32 @@
         "type": "github"
       }
     },
+    "libprlpdemo": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "dir": "reinforcement-learning-games/prlp-demo",
+        "lastModified": 1734972439,
+        "narHash": "sha256-5e+gQWQO3VfIM8vIB27zTvUD8Sx4wu+0aMFewthQsC0=",
+        "owner": "jvstinian",
+        "repo": "data-science-projects",
+        "rev": "63e7b15a635d20fbad7020288bf608a9a0807d68",
+        "type": "github"
+      },
+      "original": {
+        "dir": "reinforcement-learning-games/prlp-demo",
+        "owner": "jvstinian",
+        "ref": "prlp-demo-test",
+        "repo": "data-science-projects",
+        "type": "github"
+      }
+    },
     "libzombpyg": {
       "inputs": {
         "flake-utils": [
@@ -83,6 +109,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "libprlpdemo": "libprlpdemo",
         "libzombpyg": "libzombpyg",
         "libzombsole": "libzombsole",
         "nixpkgs": "nixpkgs"

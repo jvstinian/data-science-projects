@@ -11,7 +11,7 @@ import argparse
 # from dpg import DPG
 from dqn.q_learning import DQN
 from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP
-# from dqn.environment import new_atari_game, new_demo
+# from dqn.environment import new_demo, new_atari_game
 import gym
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
 from zombsole.renderer import OpencvRenderer
@@ -56,6 +56,10 @@ def main():
         # pulling this forward from the next branch
         game = gym.make('Zombsole-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25))
         conf = ZOMBSOLE_MLP
+    elif configid == 'demo_mlp':
+        import prlp_demo.gym_env # to register the demo gym environment
+        game = gym.make('prlp/Demo-v0')
+        conf = DEMO
     else:
         game = gym.make('Zombsole-v0')
         conf = ZOMBSOLE_MLP
