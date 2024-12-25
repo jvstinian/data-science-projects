@@ -5,11 +5,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1731533236,
-        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "lastModified": 1726560853,
+        "narHash": "sha256-X6rJYSESBVr3hBoH0WbKE5KvhPU5bloyZ2L4K60/fPQ=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "rev": "c1dfcf08411b08f6b8615f7d8971a2bfa81d5e8a",
         "type": "github"
       },
       "original": {
@@ -51,16 +51,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1731772196,
-        "narHash": "sha256-yVYDpx32Tw0CmU4z9YA2EanUKX2iFDZiKGKmfHQQ1BY=",
+        "lastModified": 1734191906,
+        "narHash": "sha256-V37Px6+L2Rzby62Yyy5YwGK1WSzeWtfRuBebiI1a+WI=",
         "owner": "jvstinian",
         "repo": "libzombsole",
-        "rev": "767a2ff31b10372fc977ac1f25203d30eeb211cf",
+        "rev": "b573669c30f466d3cd109b7ffc646d2eaed5be28",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
-        "ref": "reward-framework",
         "repo": "libzombsole",
         "type": "github"
       }

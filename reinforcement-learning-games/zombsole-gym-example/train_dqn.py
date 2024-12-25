@@ -88,7 +88,7 @@ def main():
     writer = tf.summary.create_file_writer(delete_dir(log_dir))
     dqn.set_summary_writer(summary_writer=writer)
     dqn.train(saver)
- 
+
 
 if __name__ == "__main__":
     main()

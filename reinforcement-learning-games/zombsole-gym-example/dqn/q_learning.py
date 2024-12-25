@@ -183,6 +183,7 @@ class DQN:
                 self.replay_memory.add(frame, action_idx, r, termination)
                 frame = new_frame
                 
+                # Perhaps added (num_of_trials > 0)
                 if num_of_trials % self.time_between_two_copies == 0:
                     # self.update_target_network(sess) # TODO
                     self.save(saver)
@@ -209,7 +210,7 @@ class DQN:
             # self.env.get_current_feedback()
             for _ in range(self.num_nullops):
                 action_idx=5
-                r, new_frame, termination = self.play(action=action_idx)
+                r, new_frame, termination = self.play(action_idx) # 2024-12-18 NOTE: Changed this from ...(action=action_idx)
                 total_reward += r
                 self.replay_memory.add(frame, 0, r, termination)
                 frame = new_frame

@@ -5,7 +5,7 @@
       url = "github:nixos/nixpkgs/nixos-23.11";
     };
     libzombsole = {
-      url = "github:jvstinian/libzombsole/reward-framework";
+      url = "github:jvstinian/libzombsole";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
@@ -85,7 +85,7 @@
           buildInputs = with pkgs; [
             dev-python
           ];
-          shellHook = "export PS1='\\[\\e[1;34m\\]devshell > \\[\\e[0m\\]'";
+          shellHook = "export PS1='\\[\\e[1;34m\\]prlp-dqn-dev > \\[\\e[0m\\]'";
         };
         packages = {
           pytrain = python-train-app;

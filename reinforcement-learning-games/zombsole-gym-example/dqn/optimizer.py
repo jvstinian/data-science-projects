@@ -216,7 +216,7 @@ class Optimizer:
         # feed_dict = self.q_network.get_feed_dict(states, actions, targets)
         
         if self.summary_writer and step % 1000 == 0:
-            # summary_str, _, = sess.run([self.q_network.summary_op, 
+            # summary_str, _, = sess.run([self.q_network.summary_op, self.q_network.print_op,
             #                             self.train_op], 
             #                            feed_dict=feed_dict)
             # self.summary_writer.add_summary(summary_str, step)
