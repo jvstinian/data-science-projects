@@ -29,11 +29,11 @@
       },
       "locked": {
         "dir": "reinforcement-learning-games/prlp-demo",
-        "lastModified": 1735017707,
-        "narHash": "sha256-yz0/HXcOS1k6N4cyBnxC365tKsHDl4LM0tDRDvkL9lY=",
+        "lastModified": 1735018519,
+        "narHash": "sha256-Zr8a38sTDEmtJTxEv9PguGooEZ/AasdG9WznJzW8L7A=",
         "owner": "jvstinian",
         "repo": "data-science-projects",
-        "rev": "1f1bcbe8b676edf30b78b0585b2addd23786c68e",
+        "rev": "8c7263798ba182464eedef17e51f6d18b4920e82",
         "type": "github"
       },
       "original": {
