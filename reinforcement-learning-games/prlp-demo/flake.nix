@@ -21,6 +21,7 @@
                       propagatedBuildInputs = with python-final; [
                         numpy
                         pygame
+                        gym
                       ];
     
                       doCheck = true;
@@ -30,7 +31,7 @@
                       # See https://github.com/NixOS/nixpkgs/blob/master/doc/languages-frameworks/python.section.md#using-pytestcheckhook 
                       # for more details.
                       nativeCheckInputs = with python-final; [
-                        # pytestCheckHook 
+                        pytestCheckHook 
                       ];
                   };
               })
