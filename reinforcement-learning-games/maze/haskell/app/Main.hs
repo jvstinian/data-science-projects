@@ -10,7 +10,7 @@ data Maze = Maze {
     mazeWidth  :: Word32
   , mazeHeight :: Word32
   , barrierCoords :: [ (Word32,Word32) ]
-  , endCoords     :: (Word32,Word32)
+  , endCoords     :: [ (Word32,Word32) ]
 } deriving (Eq)
 
 instance Show Maze where 
@@ -18,7 +18,7 @@ instance Show Maze where
         where boundary = replicate (fromIntegral width + 2) '-'
               print_cell_state i j
                   | (i,j) `elem` barriers  = 'x'
-                  | (i,j) == endcoords     = 'E'
+                  | (i,j) `elem` endcoords = 'E'
                   | otherwise              = ' '
               row_interior j = map (`print_cell_state` j) [0..(width-1)]
               localrow j     = concat [ "|", row_interior j, "|" ]
@@ -37,7 +37,7 @@ instance Show MazeState where
         where boundary = replicate (fromIntegral width + 2) '-'
               print_cell_state i j
                   | (i,j) `elem` barriers    = 'x'
-                  | (i,j) == endcoords       = 'E'
+                  | (i,j) `elem` endcoords   = 'E'
                   | (i,j) == loc             = 'o'
                   | otherwise                = ' '
               row_interior j = map (`print_cell_state` j) [0..(width-1)]
@@ -48,7 +48,7 @@ instance Ord MazeState where
     compare = comparing getLocationInMaze
 
 isAtTerminalState :: MazeState -> Bool
-isAtTerminalState s = getLocationInMaze s == (endCoords . getMaze $ s)
+isAtTerminalState s = getLocationInMaze s `elem` (endCoords . getMaze $ s)
 
 applyAction :: Action -> MazeState -> (Double,MazeState)
 applyAction a s = (reward,normalized_new_state)
@@ -121,10 +121,10 @@ main = do
         width = 3
         height = 3
         barrier_coords = [ (0,1), (1,1) ]
-        end_coords = (0,2)
+        end_coords = [(0,2)]
         examplemaze = Maze width height barrier_coords end_coords
 
-        notMazeBarrier maze = not . (`elem` (barrierCoords maze ++ [endCoords maze]))
+        notMazeBarrier maze = not . (`elem` (barrierCoords maze ++ endCoords maze))
         findBestPolicy maze policy actions gamma = 
             let (updated_policy, policy_value_map) = iteratePolicy maze policy actions gamma 
                 original_actions = map snd policy
