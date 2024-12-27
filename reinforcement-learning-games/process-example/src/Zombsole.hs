@@ -9,11 +9,20 @@ module Zombsole
   , GameConfig(GameConfig)
   , RelativeCoords(RelativeCoords)
   , Action(MoveAction, AttackClosestAction, HealAction)
+  , GymObservation(GymObservation)
+  , BasicObservation
+  , GameStateParameters(GameStateParameters)
   , ZombsoleRequest(..)
   , ZombsoleResponse(..)
+  , tlbotStrategy 
+  , PositionEncodingStyle(PESSimple, PESChannels)
+  , ObservationScope(OSWorld, OSSurroundings)
+  , GameEncodingStyle(GameEncodingStyle)
   ) where
 
 import GHC.Generics
+import Data.List (sortOn, zipWith4)
+import Data.Maybe (listToMaybe, catMaybes)
 import Data.Aeson 
   ( SumEncoding(TaggedObject, tagFieldName, contentsFieldName)
   , ToJSON(toEncoding)
@@ -39,7 +48,9 @@ data GameConfig = GameConfig
     , gameConfig_players :: [String]
     , gameConfig_agent_ids :: [String]
     , gameConfig_initial_zombies :: Int
-    , gameConfig_minimum_zombies :: Int }
+    , gameConfig_minimum_zombies :: Int
+    , gameConfig_observation_scope :: String
+    , gameConfig_observation_position_encoding :: String }
     deriving (Eq, Show, Generic)
 
 instance FromJSON GameConfig where
@@ -190,18 +201,18 @@ parseWeaponCode wc = case wc of
     14 -> Shotgun
     _  -> NoWeapon
 
-parseSimplePosition :: Int -> Thing
+parseSimplePosition :: Int -> Maybe Thing
 parseSimplePosition x = case thing_code of
-    1 -> Box
-    2 -> DeadBody
-    3 -> ObjectiveLocation
-    4 -> Wall
-    5 -> Zombie life
-    6 -> Player life (parseWeaponCode weapon_code)
-    7 -> Agent life (parseWeaponCode weapon_code)
-    _ -> UnknownThing
+    1 -> Just Box
+    2 -> Just DeadBody
+    3 -> Just ObjectiveLocation
+    4 -> Just Wall
+    5 -> Just $ Zombie life
+    6 -> Just $ Player life (parseWeaponCode weapon_code)
+    7 -> Just $ Agent life (parseWeaponCode weapon_code)
+    _ -> Nothing
   where (x1, scaledLife) = quotRem x 16
-        life = (100 * scaledLife) `div` 16
+        life = (100 * scaledLife) `div` 15
         (thing_code, weapon_code) = quotRem x1 16
 
 parseSimpleObservation :: [[[Int]]] -> World
@@ -209,8 +220,55 @@ parseSimpleObservation sobs = case sobs of
     obs : _ -> parsePositions obs
     _       -> []
   where parsePositions = concat . zipWith parseRow [0..]
-        parseRow rownum = zipWith (parseCell rownum) [0..]
-        parseCell rownum colnum p = ThingWithPosition (Position colnum rownum) (parseSimplePosition p)
+        parseRow rownum = catMaybes . zipWith (parseCell rownum) [0..]
+        -- The resulting type of the following is Maybe Thing
+        parseCell rownum colnum p = fmap (ThingWithPosition (Position colnum rownum)) (parseSimplePosition p)
+
+parseChannelsPosition :: Int -> Int -> Int -> Maybe Thing
+parseChannelsPosition channelthingcode life weaponcode = case thingcode of
+    1 -> Just Box
+    2 -> Just DeadBody
+    3 -> Just ObjectiveLocation
+    4 -> Just Wall
+    5 -> Just $ Zombie life
+    6 -> Just $ Player life (parseWeaponCode weaponcode)
+    7 -> Just $ Agent life (parseWeaponCode weaponcode)
+    _ -> Nothing
+  where thingcode = if channelthingcode >= 8 then 7 else channelthingcode
+        -- TODO: Need to add an agent ID to the Agent
+        -- agentid = if channelthingcode >= 8 then channelthingcode - 8 else -1
+
+parseChannelsObservation :: [[[Int]]] -> World
+parseChannelsObservation sobs = case sobs of 
+    ch1 : ch2 : ch3 : _ -> parsePositions ch1 ch2 ch3
+    _       -> []
+  where parsePositions arr1 arr2 = concat . zipWith4 parseRow [0..] arr1 arr2
+        parseRow rownum vec1 vec2 = catMaybes . zipWith4 (parseCell rownum) [0..] vec1 vec2
+        -- The resulting type of the following is Maybe Thing
+        parseCell rownum colnum val1 val2 val3 = fmap (ThingWithPosition (Position colnum rownum)) (parseChannelsPosition val1 val2 val3)
+
+data PositionEncodingStyle = PESSimple
+                           | PESChannels
+  deriving (Eq)
+
+instance Show PositionEncodingStyle where
+  show PESSimple = "simple"
+  show PESChannels = "channels"
+
+data ObservationScope = OSWorld
+                      | OSSurroundings Int
+  deriving (Eq)
+
+instance Show ObservationScope where
+  show OSWorld = "world"
+  show (OSSurroundings width) = "surroundings:" ++ show width
+
+data GameEncodingStyle = GameEncodingStyle ObservationScope PositionEncodingStyle
+  deriving (Eq, Show)
+
+parseObservation :: PositionEncodingStyle -> [[[Int]]] -> World
+parseObservation PESSimple = parseSimpleObservation
+parseObservation PESChannels = parseChannelsObservation
 
 {-
         if thing is not None:
@@ -222,4 +280,119 @@ parseSimpleObservation sobs = case sobs of
             return 16*16*thing_code + 16*weapon_code + scaled_life
         else:
             return 0 
+-}
+
+getAgents :: World -> [ThingWithPosition]
+getAgents world = 
+  let isAgent thing = case thing of 
+        Agent _ _ -> True
+        _         -> False
+      agents = filter (\(ThingWithPosition _ thing) -> isAgent thing) world
+  in agents
+
+getAgentPositions :: World -> [Position]
+getAgentPositions world = map (\(ThingWithPosition position _) -> position) (getAgents world)
+
+weaponRange :: Weapon -> Double
+weaponRange ZombieClaws = 1.5
+weaponRange Knife       = 1.5
+weaponRange Axe         = 1.5
+weaponRange Gun         = 6.0
+weaponRange Rifle       = 10.0
+weaponRange Shotgun     = 3.0
+weaponRange NoWeapon    = 0.0
+
+positionDistance :: Position -> Position -> Double
+positionDistance (Position x1 y1) (Position x2 y2) = sqrt $ fromIntegral $ (x1 - x2) ^ (2 :: Int) + (y1 - y2) ^ (2 :: Int)
+
+zombiesWithinRange :: Position -> Double -> World -> [Position]
+zombiesWithinRange pos dist world = map unwrapPosition $ filter isZombieWithinRange world
+  where isZombieWithinRange (ThingWithPosition tpos thing) = case thing of 
+          Zombie _ -> positionDistance pos tpos <= dist
+          _        -> False
+        unwrapPosition (ThingWithPosition tpos _) = tpos
+
+closestZombiePosition :: Position -> World -> Maybe Position
+closestZombiePosition pos world = listToMaybe sortedZombiePositions
+  where isZombie (ThingWithPosition _ thing) = case thing of 
+          Zombie _ -> True
+          _        -> False
+        extractPosition (ThingWithPosition tpos _) = tpos
+        zombiePositions = map extractPosition (filter isZombie world)
+        sortedZombiePositions = sortOn (positionDistance pos) zombiePositions
+
+adjacentPositions :: Position -> [Position]
+adjacentPositions (Position x y) = [left, up, right, down]
+  where left  = Position (x-1) y
+        up    = Position x (y+1)
+        right = Position (x+1) y
+        down  = Position x (y-1)
+
+getThingAtPosition :: World -> Position -> Maybe Thing
+getThingAtPosition world pos = listToMaybe $ map unwrapThing (filter (positionMatch pos) world)
+  where positionMatch pos (ThingWithPosition tpos _) = tpos == pos
+        unwrapThing (ThingWithPosition _ thing) = thing
+
+playerStep :: Position -> Weapon -> World -> Action
+playerStep pos weapon world = maybe HealAction attackIfZombieClose zombieposM
+  where zombieposM = closestZombiePosition pos world
+        attackIfZombieClose zpos =  
+          if positionDistance pos zpos <= weaponRange weapon
+          then AttackClosestAction
+          else actionWithDistantZombie zpos
+        moveCloserToDistantZombie zpos = head $ sortOn (positionDistance zpos) (adjacentPositions pos)
+        getMoveAction (Position cx cy) (Position tx ty) = MoveAction $ RelativeCoords (tx - cx) (ty - cy)
+        actionWithDistantZombie zpos = let obspos = moveCloserToDistantZombie zpos
+          in case getThingAtPosition world obspos of
+                  Just targetThing -> HealAction -- We deviate from the Terminator bot here.  See comments below.
+                  Nothing          -> getMoveAction pos obspos
+        -- The Terminator bot would heal a player at the "obstacle" position
+        -- or attack the obstacle position otherwise 
+        -- As we don't support healing or attacking arbitrary locations 
+        -- with the current actions, we can't engage in this activity.  We instead heal.
+
+tlbotStrategy :: GameEncodingStyle -> [BasicObservation] -> Action
+tlbotStrategy (GameEncodingStyle _ pes) (bobs : _) = action
+  where world = parseObservation pes bobs -- parseSimpleObservation bobs
+        agents = getAgents world
+        action = case listToMaybe agents of 
+                      Just (ThingWithPosition pos (Agent _ weapon)) -> playerStep pos weapon world
+                      -- There should be an agent.  If the following is triggered, there's a serious issue, 
+                      -- which is why we pass an invalid action.
+                      _                                             -> MoveAction $ RelativeCoords 0 2
+-- tlbotStrategy _ = AttackClosestAction -- This shouldn't happen
+tlbotStrategy _ _ = MoveAction $ RelativeCoords 0 (-2)
+
+
+{-
+ - Terminator logic
+    def next_step(self, things, t):
+        zombies = [thing for thing in things.values()
+                   if isinstance(thing, Zombie)]
+
+        if zombies:
+            target = closest(self, zombies)
+            if distance(self, target) > self.weapon.max_range:
+                best_move = closest(target, adjacent_positions(self))
+                obstacle = things.get(best_move)
+                if obstacle:
+                    if isinstance(obstacle, Player):
+                        # zombie not in range. Player blocking path. Heal it.
+                        return 'heal', obstacle
+                    else:
+                        # zombie not in range. Obstacle in front. Shoot it.
+                        self.status = u'shooting obstacle to chase target'
+                        return 'attack', obstacle
+                else:
+                    # zombie not in range. Not obstacle. Move.
+                    self.status = u'chasing target'
+                    return 'move', best_move
+            else:
+                # zombie in range. Shoot it.
+                self.status = u'shooting target'
+                return 'attack', target
+        else:
+            # no zombies. Heal.
+            self.status = u'no targets, healing'
+            return 'heal', self
 -}

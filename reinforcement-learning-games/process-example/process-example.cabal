@@ -85,6 +85,19 @@ executable process-example
     -- Base language which the package is written in.
     default-language: Haskell2010
 
+-- executable other-exe
+--     import:           warnings
+--     main-is:          Experiment.hs
+--     build-depends:    
+--         base ^>=4.17.2.0
+--       , process-example
+--       , bytestring
+--       , stm
+--       , typed-process
+--       , aeson
+--     hs-source-dirs:   app
+--     default-language: Haskell2010
+
 library
     -- Import common warning flags.
     import:           warnings
