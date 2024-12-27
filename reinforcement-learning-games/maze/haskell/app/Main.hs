@@ -1,10 +1,10 @@
--- import Data.Int
 import Data.Word
 import Data.List
 import Numeric.LinearAlgebra
--- import Numeric.LinearAlgebra.Data
 import Data.Ord
 import qualified Data.Map.Lazy as Map
+import Control.Monad (forM_)
+
 
 data Maze = Maze {
     mazeWidth  :: Word32
@@ -52,8 +52,7 @@ isAtTerminalState s = getLocationInMaze s == (endCoords . getMaze $ s)
 
 applyAction :: Action -> MazeState -> (Double,MazeState)
 applyAction a s = (reward,normalized_new_state)
-    where orig_loc         = getLocationInMaze s
-          (orig_x, orig_y) = orig_loc
+    where (orig_x, orig_y) = getLocationInMaze s
           (new_x, new_y)   = case a of 
               MoveRight -> (orig_x+1,orig_y)
               MoveLeft  -> if orig_x >=1 then (orig_x-1,orig_y) else (orig_x,orig_y) 
@@ -67,7 +66,6 @@ applyAction a s = (reward,normalized_new_state)
               | otherwise        = (new_x,new_y)
           normalized_new_state =
               if normalized_new_loc `elem` (barrierCoords . getMaze $ s) then s else s { getLocationInMaze = normalized_new_loc }
-          -- reward           = -1.0 -- if isAtTerminalState normalized_new_state then 1.0 else 0.0
           reward = if isAtTerminalState normalized_new_state then 1.0 else 0.0
     
 -- This implements the policy iteration algorithm from section 3.2.2 of 
@@ -77,8 +75,6 @@ iteratePolicy maze policy actions gamma = ( new_policy, stateValueMap )
     where 
         coords = map fst policy
         identityMat = ident $ length coords :: Matrix Double
-        -- applyActionWithIndex (idx,(loc,action)) = let (reward,newMazeState) = applyAction action (MazeState maze loc) in (idx,loc,getLocationInMaze newMazeState,reward) -- Note this flattens into a single tuple
-        -- actionResults = map applyActionWithIndex (zip [0..] policy)
         mazeStateActionPairs = map (\(loc,action) -> (MazeState maze loc,action)) policy
         mazeStates    = map fst mazeStateActionPairs 
         actionResults = map (uncurry $ flip applyAction) mazeStateActionPairs 
@@ -87,7 +83,7 @@ iteratePolicy maze policy actions gamma = ( new_policy, stateValueMap )
         idxPairs0     = zip [0..] newLocIdxs  -- type is [(Int,Maybe Int)]
         index_processor (x,maybe_y) ls = case maybe_y of 
             Just y    -> (x,y) : ls
-            Nothing   -> ls
+            Nothing   -> ls -- Shouldn't happen
         idxPairs      = foldr index_processor [] idxPairs0
         negGammaList  = replicate (length idxPairs) (-gamma)
         rewardsVec    = asColumn $ fromList $ map fst actionResults
@@ -98,7 +94,6 @@ iteratePolicy maze policy actions gamma = ( new_policy, stateValueMap )
         stateValueMap   = Map.fromList stateValuePairs -- :: Map.Map MazeState Double
         -- We now have a map from the maze state to the value.  
         -- We now update the action
-        -- actionResultForState state = map ( uncurry $ flip applyAction $ state ) actions
         rewardNewMazeStatePairsForState state = map (`applyAction` state) actions -- Get a list of rewards and new maze states
         valuesForState state = map (\(reward,newState) -> reward + gamma * Map.findWithDefault 0.0 newState stateValueMap) $ rewardNewMazeStatePairsForState state
         actionValuePairsForState state  = zip actions (valuesForState state)
@@ -109,17 +104,19 @@ iteratePolicy maze policy actions gamma = ( new_policy, stateValueMap )
 main :: IO ()
 main = do 
         print examplemaze
-        let examplemazestate = MazeState examplemaze (0,0)
-        -- let not_barrier = not . (`elem` (barrierCoords examplemaze ++ [ endCoords examplemaze ]))
         let coords = filter (notMazeBarrier examplemaze) [ (x,y) | x <- [0..(width-1)], y <- [0..(height-1)] ] 
         let initpolicy = map (\c -> (c,MoveUp)) coords
         let actions = [ MoveLeft, MoveUp, MoveRight, MoveDown ]
-        let gamma = 0.99 -- 0.9
+        let gamma = 0.99
         let (optimal_policy,state_value_map) = findBestPolicy examplemaze initpolicy actions gamma 
-        print $ applyAction MoveRight examplemazestate 
-        print coords
-        print optimal_policy
-        print state_value_map
+        putStrLn "Printing optimal policy and values for each coordinate: "
+        forM_ optimal_policy
+              (\(coord, action) -> putStrLn $ unwords [ "Optiomal action at" 
+                                                      , show coord 
+                                                      , "is" 
+                                                      , show action
+                                                      , "with value"
+                                                      , show $ Map.findWithDefault 0.0 (MazeState examplemaze coord) state_value_map ])
     where 
         width = 3
         height = 3
