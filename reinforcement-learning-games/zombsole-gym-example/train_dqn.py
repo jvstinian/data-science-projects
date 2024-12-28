@@ -30,12 +30,12 @@ register(
     }
 )
 
-def delete_dir(path):
+# Remove if exists and recreate directory
+def truncate_dir(path):
     if tf.gfile.Exists(path):
         tf.gfile.DeleteRecursively(path)
     tf.gfile.MakeDirs(path)
     return path
-
 
 def main():
     parser = argparse.ArgumentParser(description=None)
@@ -64,7 +64,7 @@ def main():
     
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         saver = tf.train.Saver()
-        writer = tf.summary.FileWriter(delete_dir(log_dir), sess.graph_def)
+        writer = tf.summary.FileWriter(truncate_dir(log_dir), sess.graph_def)
         dqn.set_summary_writer(summary_writer=writer)
         
         sess.run(tf.global_variables_initializer())
