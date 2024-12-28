@@ -155,6 +155,7 @@ class DQN:
                 state = self.replay_memory.phi(frame)
                 action = self.choose_action(sess, state, self.epsilon_min)     
                 r, new_frame, termination = self.play(action)
+                total_reward += r
                 self.replay_memory.add(frame, action, r, termination)
                 frame = new_frame
 
