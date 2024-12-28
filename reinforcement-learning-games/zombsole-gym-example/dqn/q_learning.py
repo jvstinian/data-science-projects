@@ -141,7 +141,7 @@ class DQN:
             frame = self.env.reset()
             # self.env.get_current_feedback()
             for _ in range(self.num_nullops):
-                action_idx=5
+                action_idx=env.action_space.sample()
                 r, new_frame, termination = self.play(action_idx) # 2024-12-18 NOTE: Changed this from ...(action=action_idx)
                 total_reward += r
                 self.replay_memory.add(frame, 0, r, termination)
