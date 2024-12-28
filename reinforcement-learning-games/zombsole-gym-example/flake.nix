@@ -19,9 +19,6 @@
     };
   };
   outputs = { nixpkgs, flake-utils, libzombsole, libzombpyg, ... }: 
-    let
-        placeholder-value = "hell";
-    in 
       flake-utils.lib.eachDefaultSystem (system:
         let 
           # TODO: As noted below, the keras override seems to create a problem.
@@ -62,7 +59,6 @@
 
           my-process-bundle = pkgs.symlinkJoin {
               name = "my-process-bundle";
-              # meta.mainProgram = "process-example";
               buildInputs = [ pkgs.makeWrapper ];
               postBuild = ''
                   echo "NOTE: Links added in symlinkJoin"
@@ -89,26 +85,15 @@
         };
         packages = {
           pytrain = python-train-app;
-        #   zombpyg  = pkgs.python3Packages.zombpyg;
-        #   # default  = pkgs.python3Packages.jvstinian-zombsole;
         };
-        apps.train = {
+        apps.wrappertrain = {
           type = "app";
-          # program = "${train-script}/bin/train.sh";
           program = "${my-process-bundle}/bin/my-wrapper";
         };
         apps.pytrain = {
           type = "app";
           program = "${python-train-app}/bin/train_dqn.py";
         };
-        apps.zombsole = {
-          type = "app";
-          program = "${dev-python}/bin/zombsole";
-        };
-        # apps.zombsole-stdio-json = {
-        #   type = "app";
-        #   program = "${packages.zombsole}/bin/zombsole-stdio-json";
-        # };
       }
     );
 }
