@@ -42,7 +42,7 @@ def main():
     parser.add_argument('-c', '--config', default='zombsole_mlp', 
                         type=str, help='Game Configuration')
     parser.add_argument('-d', '--device', default='cpu', type=str, help='Device: cpu, gpu')
-    parser.add_argument('-r', '--render', default=False, type=bool, help='Use rendering callback')
+    parser.add_argument('-r', '--render', action='store_true', help='Use rendering callback')
     args = parser.parse_args()
 
     configid = args.config
