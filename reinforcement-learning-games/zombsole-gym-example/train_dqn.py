@@ -56,6 +56,10 @@ def main():
         # pulling this forward from the next branch
         game = gym.make('Zombsole-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25))
         conf = ZOMBSOLE_MLP
+    elif configid == 'zombpyg_mlp':
+        import zombpyg.gym_env # to register the demo gym environment
+        game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="survival", initial_zombies=25, minimum_zombies=10, enable_rendering=True)
+        conf = ZOMBSOLE_MLP
     elif configid == 'demo_mlp':
         import prlp_demo.gym_env # to register the demo gym environment
         game = gym.make('prlp/Demo-v0')
