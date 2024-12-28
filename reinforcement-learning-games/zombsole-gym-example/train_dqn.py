@@ -42,6 +42,7 @@ def main():
     parser.add_argument('-c', '--config', default='zombsole_mlp', 
                         type=str, help='Game Configuration')
     parser.add_argument('-d', '--device', default='cpu', type=str, help='Device: cpu, gpu')
+    parser.add_argument('-r', '--render', default=False, type=bool, help='Use rendering callback')
     args = parser.parse_args()
 
     configid = args.config
@@ -58,9 +59,9 @@ def main():
     model_dir = os.path.join(conf['log_dir'], args.config)
     
     device = '/{}:0'.format(args.device)
+    lcallback = game.render if args.render else None
     with tf.device(device):
-        dqn = DQN(conf, game, model_dir, callback=game.render, verbose=True) # TODO
-        # dqn = DQN(conf, game, model_dir, callback=None, verbose=True)
+        dqn = DQN(conf, game, model_dir, callback=lcallback, verbose=True)
     
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         saver = tf.train.Saver()
