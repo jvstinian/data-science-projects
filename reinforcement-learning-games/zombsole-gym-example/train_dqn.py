@@ -76,7 +76,7 @@ def main():
     # def saver(model):
     #     tf.saved_model.save(model, model_dir)
     saver = tf.saved_model.save
-    writer = tf.summary.create_file_writer(delete_dir(log_dir))
+    writer = tf.summary.create_file_writer(truncate_dir(log_dir))
     dqn.set_summary_writer(summary_writer=writer)
     dqn.train(saver)
 
