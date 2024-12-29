@@ -5,11 +5,13 @@ Created on Mar 25, 2018
 '''
 import numpy
 import tensorflow as tf
+# import tensorflow.compat.v1 as tf
+# tf.disable_v2_behavior()
 
 
 def get_variable(shape, initializer, name, dtype=tf.float32, trainable=True):
-    var = tf.get_variable(shape=shape, initializer=initializer, 
-                          dtype=dtype, name=name, trainable=trainable)
+    var = tf.compat.v1.get_variable(shape=shape, initializer=initializer, 
+                                    dtype=dtype, name=name, trainable=trainable)
     return var
 
 
@@ -138,4 +140,5 @@ class DenseLayer(tf.Module):
                 output = self.activation(output)
     
         return output
+
 
