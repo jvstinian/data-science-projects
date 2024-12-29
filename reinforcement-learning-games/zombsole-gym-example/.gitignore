@@ -23,6 +23,8 @@ dqn/sampler.py
 dqn/simulator.py
 dqn/test.py
 dqn/train.py
+dqn/logger.py
+dqn/layer.py
 dqn/train_ch03.py
 dqn/trpo.py
 dqn/value/

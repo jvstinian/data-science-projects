@@ -5,8 +5,6 @@ Created on 4 Sep 2017
 '''
 import numpy
 import tensorflow as tf
-# import tensorflow.compat.v1 as tf
-# tf.disable_v2_behavior()
 from dqn.utils import flatten_tensor_variables
 from dqn.utils import unflatten_tensors, get_param_values
 from dqn.utils import get_param_assign_ops, set_param_values
