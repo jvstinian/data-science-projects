@@ -208,14 +208,19 @@ class Optimizer:
                                        feed_dict=feed_dict)
             self.summary_writer.add_summary(summary_str, step)
             self.summary_writer.flush()
-        else:
+        elif step % 50 == 0:
             nzrew = len([r for _, r, _ in self.replay_memory.others if r != 0])
+            posrew = len([r for _, r, _ in self.replay_memory.others if r > 0])
             memlen = len(self.replay_memory.others)
+            posrewpct = 100.0 * posrew / max(memlen, 1)
             nzrewpct = 100.0 * nzrew / max(memlen, 1)
             local_print_op = tf.print(
-                "Percent of memories with non-zero reward: ", nzrewpct
+                "Percent of memories with non-zero reward: ", nzrewpct, "\n",
+                "Percent of memories with positive reward: ", posrewpct,
             )
             sess.run([self.train_op, local_print_op], feed_dict=feed_dict)
+        else:
+            sess.run(self.train_op, feed_dict=feed_dict)
 
     
 if __name__ == "__main__":

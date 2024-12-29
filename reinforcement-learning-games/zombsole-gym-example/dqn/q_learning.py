@@ -115,6 +115,12 @@ class DQN:
                 
                 state = self.replay_memory.phi(frame)
                 action_idx = self.choose_action(sess, state, epsilon_greedy)
+                temp_x = numpy.asarray(numpy.expand_dims(state, axis=0) / self.input_scale, dtype=numpy.float32)
+                temp_q_value_for_action = self.q_network.get_q_value(sess, temp_x)[0]
+                if self.verbose:
+                    print("epi {}, frame {}k: q_value {}".format(episode, 
+                                                                 int(num_of_trials / 1000), 
+                                                                 temp_q_value_for_action))
                 r, new_frame, termination = self.play(action_idx)
                 total_reward += r
                 self.replay_memory.add(frame, action_idx, r, termination)
