@@ -209,7 +209,13 @@ class Optimizer:
             self.summary_writer.add_summary(summary_str, step)
             self.summary_writer.flush()
         else:
-            sess.run(self.train_op, feed_dict=feed_dict)
+            nzrew = len([r for _, r, _ in self.replay_memory.others if r != 0])
+            memlen = len(self.replay_memory.others)
+            nzrewpct = 100.0 * nzrew / max(memlen, 1)
+            local_print_op = tf.print(
+                "Percent of memories with non-zero reward: ", nzrewpct
+            )
+            sess.run([self.train_op, local_print_op], feed_dict=feed_dict)
 
     
 if __name__ == "__main__":
