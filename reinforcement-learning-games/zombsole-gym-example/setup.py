@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(
-        name='demo-train',
+        name='dqn-train-example',
         version='1.0',
         # Modules to import from other scripts:
         # packages=find_packages(include=["dqn"]),
