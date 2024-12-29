@@ -13,6 +13,10 @@
 # Python
 **/__pycache__
 
+# Zig
+**/zig-out
+**/.zig-cache
+
 # Nix
 **/result
 
