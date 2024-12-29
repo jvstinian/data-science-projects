@@ -16,8 +16,9 @@ class DQN:
     def __init__(self, config, env, directory, callback=None, summary_writer=None, verbose=False):
         
         self.env = env
-        print(self.env.action_space)
-        self.actions = range(0, env.action_space.n) # TODO: Improve this
+        if verbose:
+            print(self.env.action_space)
+        self.actions = range(0, env.action_space.n)
         self.feedback_size = env.get_frame_size()
         print("feedback_size: %s" % (self.feedback_size,))
         self.callback = callback
@@ -77,12 +78,10 @@ class DQN:
             action = random.choice(self.actions)
         else:
             x = numpy.asarray(numpy.expand_dims(state, axis=0) / self.input_scale, dtype=numpy.float32)
-            # print("dim state=%s, dim x=%s" % (state.shape, x.shape))
             action = self.q_network.get_q_action(sess, x)[0]
         return action
     
-    def play(self, action_idx):
-        action = action_idx # self.env.action_space[action_idx]
+    def play(self, action):
         new_state, r, termination, truncated, _ = self.env.step(action)
         return r, new_state, (termination or truncated)
         
@@ -94,9 +93,8 @@ class DQN:
         for episode in range(self.n_episode):
             total_reward = 0
             frame = self.env.reset()
-            # frame = self.env.get_current_feedback()
             for _ in range(self.num_nullops):
-                action_idx=4
+                action_idx=self.env.action_space.sample()
                 r, new_frame, termination = self.play(action_idx)
                 total_reward += r
                 self.replay_memory.add(frame, action_idx, r, termination)
@@ -143,7 +141,7 @@ class DQN:
             frame = self.env.reset()
             # self.env.get_current_feedback()
             for _ in range(self.num_nullops):
-                action_idx=5
+                action_idx=self.env.action_space.sample()
                 r, new_frame, termination = self.play(action_idx) # 2024-12-18 NOTE: Changed this from ...(action=action_idx)
                 total_reward += r
                 self.replay_memory.add(frame, 0, r, termination)
@@ -157,6 +155,7 @@ class DQN:
                 state = self.replay_memory.phi(frame)
                 action = self.choose_action(sess, state, self.epsilon_min)     
                 r, new_frame, termination = self.play(action)
+                total_reward += r
                 self.replay_memory.add(frame, action, r, termination)
                 frame = new_frame
 

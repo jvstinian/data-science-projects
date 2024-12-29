@@ -61,7 +61,7 @@
           
           # Will likely go this way instead
           python-train-app = pkgs.python3Packages.buildPythonApplication {
-            pname = "demo-train";
+            pname = "dqn-train-example";
             version = "1.0";
             propagatedBuildInputs = dev-python-packages pkgs.python3Packages;
             src = ./.;
@@ -71,7 +71,7 @@
           buildInputs = with pkgs; [
             dev-python
           ];
-          shellHook = "export PS1='\\[\\e[1;34m\\]prlp-dqn-dev > \\[\\e[0m\\]'";
+          shellHook = "export PS1='\\[\\e[1;34m\\]dqn-train-dev > \\[\\e[0m\\]'";
         };
         packages = {
           pytrain = python-train-app;

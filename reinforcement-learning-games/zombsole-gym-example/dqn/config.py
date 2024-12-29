@@ -65,7 +65,7 @@ ZOMBSOLE_MLP = {
     'num_frames': 2,
     'num_nullops': 3, # tried 10 also
     'time_between_two_copies': 1000,
-    'input_scale': 1.0,
+    'input_scale': 2048.0,
     'update_interval': 1,
     'T': 990,
     
