@@ -1,6 +1,5 @@
 dqn/log/**
-log/**
-log_tfv2/**
+log*/**
 
 .flake8
 Dockerfile

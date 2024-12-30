@@ -5,18 +5,17 @@ Author: Justin Smith (jvstinian@gmail.com)
 '''
 import os
 import argparse
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
 import gym
 from gym.envs.registration import registry, register
+import tensorflow as tf
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
 from zombsole.renderer import OpencvRenderer
 from dqn.q_learning import DQN
 from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP
 
-
 register(
     id='Zombsole-v0', 
+    # entry_point='zombsole.gym_env:ZombsoleGymEnv', 
     entry_point='zombsole.gym_env:ZombsoleGymEnvDiscreteAction', 
     max_episode_steps=1000,
     kwargs={
@@ -32,10 +31,11 @@ register(
 
 # Remove if exists and recreate directory
 def truncate_dir(path):
-    if tf.gfile.Exists(path):
-        tf.gfile.DeleteRecursively(path)
-    tf.gfile.MakeDirs(path)
+    if tf.io.gfile.exists(path):
+        tf.io.gfile.rmtree(path)
+    tf.io.gfile.makedirs(path)
     return path
+
 
 def main():
     parser = argparse.ArgumentParser(description=None)
@@ -58,27 +58,36 @@ def main():
         game = gym.make('prlp/Demo-v0')
         conf = DEMO
     else:
+        game = gym.make('Zombsole-v0', rules_name="safehouse", renderer=OpencvRenderer(111, 18))
         game = gym.make('Zombsole-v0')
         conf = ZOMBSOLE_MLP
-
+        
     log_dir = os.path.join(conf['log_dir'], '{}/train'.format(args.config))
-    if not tf.gfile.Exists(log_dir):
-        tf.gfile.MakeDirs(log_dir)
+    if not tf.io.gfile.exists(log_dir):
+        tf.io.gfile.makedirs(log_dir)
     model_dir = os.path.join(conf['log_dir'], args.config)
     
-    device = '/{}:0'.format(args.device)
     lcallback = game.render if args.render else None
+    device = '/{}:0'.format(args.device)
     with tf.device(device):
         dqn = DQN(conf, game, model_dir, callback=lcallback, verbose=True)
-    
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-        saver = tf.train.Saver()
-        writer = tf.summary.FileWriter(truncate_dir(log_dir), sess.graph_def)
-        dqn.set_summary_writer(summary_writer=writer)
-        
-        sess.run(tf.global_variables_initializer())
-        dqn.train(sess, saver)
-        
+
+    # TODO
+    # with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
+    #     saver = tf.train.Saver()
+    #     writer = tf.summary.FileWriter(delete_dir(log_dir), sess.graph_def)
+    #     dqn.set_summary_writer(summary_writer=writer)
+    #     
+    #     sess.run(tf.global_variables_initializer())
+    #     dqn.train(sess, saver)
+    # NOTE: The following probably wasn't the way to go
+    # def saver(model):
+    #     tf.saved_model.save(model, model_dir)
+    saver = tf.saved_model.save
+    writer = tf.summary.create_file_writer(truncate_dir(log_dir))
+    dqn.set_summary_writer(summary_writer=writer)
+    dqn.train(saver)
+
 
 if __name__ == "__main__":
     main()
