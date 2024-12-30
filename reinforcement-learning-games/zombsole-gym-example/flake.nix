@@ -14,11 +14,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
+    libprlpdemo = {
+      url = "github:jvstinian/data-science-projects/prlp-demo-test?dir=reinforcement-learning-games/prlp-demo";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
     flake-utils = {
       url = "github:numtide/flake-utils";
     };
   };
-  outputs = { nixpkgs, flake-utils, libzombsole, libzombpyg, ... }: 
+  outputs = { nixpkgs, flake-utils, libzombsole, libzombpyg, libprlpdemo, ... }: 
       flake-utils.lib.eachDefaultSystem (system:
         let 
           # TODO: As noted below, the keras override seems to create a problem.
@@ -35,8 +40,8 @@
     
           pkgs = import nixpkgs {
             inherit system;
-            # overlays = [ libzombsole.overlays.default libzombpyg.overlays.default python-keras-overlay ];
-            overlays = [ libzombsole.overlays.default libzombpyg.overlays.default ];
+            # overlays = [ libzombsole.overlays.default libzombpyg.overlays.default libprlpdemo.overlays.default python-keras-overlay ];
+            overlays = [ libzombsole.overlays.default libzombpyg.overlays.default libprlpdemo.overlays.default ];
           };
 
           dev-python-packages = ps: with ps; [
@@ -46,6 +51,7 @@
               keras
               gym
               jvstinian-zombsole
+	      prlp-demo
               zombpyg 
               jupyter
               ipython
