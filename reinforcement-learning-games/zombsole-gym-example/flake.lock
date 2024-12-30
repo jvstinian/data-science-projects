@@ -1,0 +1,136 @@
+{
+  "nodes": {
+    "flake-utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "libprlpdemo": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "dir": "reinforcement-learning-games/prlp-demo",
+        "lastModified": 1735018519,
+        "narHash": "sha256-Zr8a38sTDEmtJTxEv9PguGooEZ/AasdG9WznJzW8L7A=",
+        "owner": "jvstinian",
+        "repo": "data-science-projects",
+        "rev": "8c7263798ba182464eedef17e51f6d18b4920e82",
+        "type": "github"
+      },
+      "original": {
+        "dir": "reinforcement-learning-games/prlp-demo",
+        "owner": "jvstinian",
+        "ref": "prlp-demo-test",
+        "repo": "data-science-projects",
+        "type": "github"
+      }
+    },
+    "libzombpyg": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1735071374,
+        "narHash": "sha256-AGivsnzQ/x/GMA6h7PiOQASU4udk2TmSYXooK2ENk70=",
+        "owner": "jvstinian",
+        "repo": "zombpyg",
+        "rev": "94ddc1ce9fe9ea2777c091d9f07f73d80a38c18e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "jvstinian",
+        "repo": "zombpyg",
+        "type": "github"
+      }
+    },
+    "libzombsole": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1734906943,
+        "narHash": "sha256-LLZULdVsTu8DearNRTTlxNLl7lhk1rhGwJMicRKlvuw=",
+        "owner": "jvstinian",
+        "repo": "libzombsole",
+        "rev": "aa2113192c80f0e1030b6e4c857bf6139721a4b2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "jvstinian",
+        "repo": "libzombsole",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1720535198,
+        "narHash": "sha256-zwVvxrdIzralnSbcpghA92tWu2DV2lwv89xZc8MTrbg=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "205fd4226592cc83fd4c0885a3e4c9c400efabb5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-23.11",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "libprlpdemo": "libprlpdemo",
+        "libzombpyg": "libzombpyg",
+        "libzombsole": "libzombsole",
+        "nixpkgs": "nixpkgs"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
