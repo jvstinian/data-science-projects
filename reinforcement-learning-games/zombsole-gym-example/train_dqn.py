@@ -49,6 +49,10 @@ def main():
     if configid == 'zombsole_mlp':
         game = gym.make('Zombsole-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25))
         conf = ZOMBSOLE_MLP
+    elif configid == 'demo_mlp':
+        import prlp_demo.gym_env # to register the demo gym environment
+        game = gym.make('prlp/Demo-v0')
+        conf = DEMO
     else:
         game = gym.make('Zombsole-v0')
         conf = ZOMBSOLE_MLP
