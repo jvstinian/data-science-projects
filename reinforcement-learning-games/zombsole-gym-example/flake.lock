@@ -54,11 +54,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1734966240,
-        "narHash": "sha256-gaN9NspUPZU+VhKxGUmwbUpbWE7iCoyDE+Njdu+BJvI=",
+        "lastModified": 1735071374,
+        "narHash": "sha256-AGivsnzQ/x/GMA6h7PiOQASU4udk2TmSYXooK2ENk70=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "fc14f77c1b5b4df8cdec0b28ae7f5ff9bec8ea66",
+        "rev": "94ddc1ce9fe9ea2777c091d9f07f73d80a38c18e",
         "type": "github"
       },
       "original": {
