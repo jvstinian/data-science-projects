@@ -5,7 +5,7 @@
       url = "github:nixos/nixpkgs/nixos-23.11";
     };
     libzombsole = {
-      url = "github:jvstinian/libzombsole/frame-size-fix";
+      url = "github:jvstinian/libzombsole";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
