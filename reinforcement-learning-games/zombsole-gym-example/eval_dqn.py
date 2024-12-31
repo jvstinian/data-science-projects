@@ -69,6 +69,10 @@ def main():
         import zombpyg.gym_env # to register the demo gym environment
         game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="survival", initial_zombies=25, minimum_zombies=10, enable_rendering=True)
         conf = ZOMBSOLE_MLP
+    elif rom == 'zombsole_surroundings_mlp':
+        import zombsole.gym_env # to register the demo gym environment
+        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25), initial_zombies=5)
+        conf = ZOMBSOLE_MLP
     elif rom == 'demo_mlp':
         import prlp_demo.gym_env # to register the demo gym environment
         game = gym.make('prlp/Demo-v0')
@@ -80,7 +84,7 @@ def main():
     model_dir = os.path.join(conf['log_dir'], rom)
     device = '/{}:0'.format(args.device)
     with tf.device(device):
-        dqn = DQN(conf, game, model_dir, callback=game.render)
+        dqn = DQN(conf, game, model_dir, callback=game.render, verbose=True)
     
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
         summary_writer = tf.summary.FileWriter(str(model_dir), sess.graph)

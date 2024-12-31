@@ -117,9 +117,11 @@ class DQN:
                 action_idx = self.choose_action(sess, state, epsilon_greedy)
                 temp_x = numpy.asarray(numpy.expand_dims(state, axis=0) / self.input_scale, dtype=numpy.float32)
                 temp_q_value_for_action = self.q_network.get_q_value(sess, temp_x)[0]
+                temp_q_action = self.q_network.get_q_action(sess, temp_x)[0]
                 if self.verbose:
-                    print("epi {}, frame {}k: q_value {}".format(episode, 
+                    print("epi {}, frame {}k: model q_action {}, q_value {:.4}".format(episode, 
                                                                  int(num_of_trials / 1000), 
+                                                                 temp_q_action,
                                                                  temp_q_value_for_action))
                 r, new_frame, termination = self.play(action_idx)
                 total_reward += r
@@ -154,16 +156,17 @@ class DQN:
                 frame = new_frame
             
             for _ in range(self.config['T']):
-                if self.verbose:
-                    print("episode {}, total reward {}".format(episode, 
-                                                            total_reward))
-                
                 state = self.replay_memory.phi(frame)
-                action = self.choose_action(sess, state, self.epsilon_min)     
+                # action = self.choose_action(sess, state, self.epsilon_min)
+                action = self.choose_action(sess, state, 0.0)
                 r, new_frame, termination = self.play(action)
                 total_reward += r
                 self.replay_memory.add(frame, action, r, termination)
                 frame = new_frame
+                
+                if self.verbose:
+                    print("episode {}, action {}, total reward {}".format(episode, action,
+                                                            total_reward))
 
                 if self.callback:
                     self.callback()

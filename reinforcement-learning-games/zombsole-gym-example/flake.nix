@@ -5,7 +5,7 @@
       url = "github:nixos/nixpkgs/nixos-23.11";
     };
     libzombsole = {
-      url = "github:jvstinian/libzombsole";
+      url = "github:jvstinian/libzombsole/frame-size-fix";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
@@ -15,7 +15,7 @@
       inputs.flake-utils.follows = "flake-utils";
     };
     libprlpdemo = {
-      url = "github:jvstinian/data-science-projects/prlp-demo-test?dir=reinforcement-learning-games/prlp-demo";
+      url = "github:jvstinian/data-science-projects?dir=reinforcement-learning-games/prlp-demo";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
