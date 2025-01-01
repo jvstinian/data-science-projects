@@ -71,7 +71,7 @@ def main():
         conf = ZOMBSOLE_MLP
     elif rom == 'zombsole_surroundings_mlp':
         import zombsole.gym_env # to register the demo gym environment
-        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25), initial_zombies=5)
+        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25), initial_zombies=8)
         conf = ZOMBSOLE_MLP
     elif rom == 'demo_mlp':
         import prlp_demo.gym_env # to register the demo gym environment
