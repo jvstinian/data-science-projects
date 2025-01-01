@@ -12,7 +12,8 @@ from gym.envs.registration import registry, register
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
 from zombsole.renderer import OpencvRenderer
 from dqn.q_learning import DQN
-from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP
+from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP, ZOMBSOLE_CNN
+import zombpyg.gym_env # to register the zombpyg gym environment
 
 
 register(
@@ -38,6 +39,7 @@ def truncate_dir(path):
     return path
 
 def main():
+    import gym
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-c', '--config', default='zombsole_mlp', 
                         type=str, help='Game Configuration')
@@ -50,20 +52,30 @@ def main():
         game = gym.make('Zombsole-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25), initial_zombies=5)
         conf = ZOMBSOLE_MLP
     elif configid == 'zombpyg_mlp':
-        import zombpyg.gym_env # to register the demo gym environment
-        game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="survival", initial_zombies=25, minimum_zombies=10, enable_rendering=True)
+        game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="survival", initial_zombies=10, minimum_zombies=5, enable_rendering=True)
         conf = ZOMBSOLE_MLP
-    elif configid == 'zombpyg_mlp':
-        import zombpyg.gym_env # to register the demo gym environment
-        game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="survival", initial_zombies=25, minimum_zombies=10, enable_rendering=True)
-        conf = ZOMBSOLE_MLP
+        conf['input_scale'] = 1
+        conf['T'] = 2000
     elif configid == 'zombsole_surroundings_mlp':
-        import zombsole.gym_env # to register the demo gym environment
-        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25), initial_zombies=5)
+        import zombsole.gym_env # to register the zombsole gym environment
+        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25), initial_zombies=8)
         conf = ZOMBSOLE_MLP
+    elif configid == 'zombsole_surroundings_cnn':
+        import zombsole.gym_env # to register the zombsole gym environment
+        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25), initial_zombies=8)
+        conf = ZOMBSOLE_CNN
     elif configid == 'demo_mlp':
         import prlp_demo.gym_env # to register the demo gym environment
         game = gym.make('prlp/Demo-v0')
+        conf = DEMO
+    elif configid == 'cartpole_mlp':
+        import gym.envs
+        game = gym.make('CartPole-v1')
+        def cartpole_frame_size(self):
+            return (4,1)
+        print("gym type: ", type(gym))
+        game.get_frame_size = cartpole_frame_size.__get__(gym, type(gym))
+        # setattr(game, "get_frame_size", cartpole_frame_size)
         conf = DEMO
     else:
         game = gym.make('Zombsole-v0')
@@ -80,11 +92,12 @@ def main():
         dqn = DQN(conf, game, model_dir, callback=lcallback, verbose=True)
     
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-        saver = tf.train.Saver()
+        # saver = tf.train.Saver()
         writer = tf.summary.FileWriter(truncate_dir(log_dir), sess.graph_def)
         dqn.set_summary_writer(summary_writer=writer)
         
         sess.run(tf.global_variables_initializer())
+        saver = tf.train.Saver()
         dqn.train(sess, saver)
         
 
