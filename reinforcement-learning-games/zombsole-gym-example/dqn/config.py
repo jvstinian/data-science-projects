@@ -77,3 +77,26 @@ ZOMBSOLE_MLP = {
     'log_dir': 'log_debug/'
 }
 
+ZOMBSOLE_CNN = {
+    'network_type': 'cnn',
+    'gamma': 0.99,
+    'batch_size': 32,
+    'num_episode': 10000,
+    'capacity': 200000, # ATARI had 1000000
+    'epsilon_decay': 100000,
+    'epsilon_min': 0.1,
+    'num_frames': 4,
+    'num_nullops': 5,
+    'time_between_two_copies': 500,
+    'input_scale': 1.0,
+    'update_interval': 1,
+    'T': 290,
+    
+    'learning_rate': 2e-4,
+    'optimizer': 'rmsprop',
+    'rho': 0.99,
+    'rmsprop_epsilon': 1e-6,
+    
+    'log_dir': 'log_debug/'
+}
+
