@@ -107,7 +107,7 @@ class DemoGymEnv(object):
             observation (object): the initial observation.
         """
         self.game.reset()
-        return self.get_observation()
+        return self.get_observation(), {}
 
     def render(self, mode='human'):
         """Renders the environment.
