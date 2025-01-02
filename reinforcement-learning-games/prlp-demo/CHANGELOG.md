@@ -1,3 +1,8 @@
+# 1.2.0 
+
+Adjusting the reset method in the gym implementation to return both an initial observation and an info dictionary.
+This is to align with the gym specification.
+
 # 1.1.0 
 
 Adding a gym wrapper for the demo environment.
