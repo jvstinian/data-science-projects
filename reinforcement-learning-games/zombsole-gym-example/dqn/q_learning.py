@@ -92,7 +92,7 @@ class DQN:
         num_of_trials = -1
         for episode in range(self.n_episode):
             total_reward = 0
-            frame = self.env.reset()
+            frame, _ = self.env.reset()
             for _ in range(self.num_nullops):
                 action_idx=self.env.action_space.sample()
                 r, new_frame, termination = self.play(action_idx)
@@ -148,7 +148,7 @@ class DQN:
         
         for episode in range(self.n_episode):
             total_reward = 0
-            frame = self.env.reset()
+            frame, _ = self.env.reset()
             # self.env.get_current_feedback()
             for _ in range(self.num_nullops):
                 action_idx=self.env.action_space.sample()
