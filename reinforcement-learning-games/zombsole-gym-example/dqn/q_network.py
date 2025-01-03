@@ -32,6 +32,8 @@ class QNetwork:
         with tf.variable_scope(scope):
             self.build()
             self.build_loss()
+
+        print("Trainable vars: ", self.vars)
         
     def build(self):
         
@@ -39,7 +41,7 @@ class QNetwork:
         self.net['input'] = tf.transpose(self.x, perm=(0, 2, 3, 1))
             
         if self.network_type == 'cnn':
-            self.net['conv1'] = conv2d(self.net['input'], 32, kernel=(8, 8), stride=(4, 4), 
+            self.net['conv1'] = conv2d(self.net['input'], 32, kernel=(4, 4), stride=(2, 2), # kernel=(8, 8), stride=(4, 4), 
                                        init_b=tf.constant_initializer(0.01), name='conv1')
             self.net['conv2'] = conv2d(self.net['conv1'], 64, kernel=(4, 4), stride=(2, 2), 
                                        init_b=tf.constant_initializer(0.01), name='conv2')
@@ -56,16 +58,17 @@ class QNetwork:
                                         init_b=tf.constant_initializer(0.01), name='fc1')
         elif self.network_type == 'mlp':
             self.net['fc1'] = dense(self.net['input'], 50, 
-                                    init_W=tf.constant_initializer(0.0),
+                                    init_W=tf.constant_initializer(0.01),
                                     init_b=tf.constant_initializer(0.0), name='fc1')
             self.net['feature'] = dense(self.net['fc1'], 50, 
-                                    init_W=tf.constant_initializer(0.0),
+                                        init_W=tf.constant_initializer(0.01),
                                         init_b=tf.constant_initializer(0.0), name='fc2')
+            # self.net['feature'] = self.net['input']
         else:
             raise NotImplementedError('Unknown network type: {}'.format(self.network_type))
             
         self.net['values'] = dense(self.net['feature'], self.n_outputs, activation=None,
-                                    init_W=tf.constant_initializer(0.0),
+                                    init_W=tf.constant_initializer(0.01),
                                    init_b=tf.constant_initializer(0.0), name='values')
         
         self.net['q_value'] = tf.reduce_max(self.net['values'], axis=1, name='q_value')
@@ -88,7 +91,11 @@ class QNetwork:
         self.print_op = tf.print(
                 self.scope, " loss: ", self.loss,
                 "\nq_action: ", self.net['q_action'],
-                "\nq_value: ", self.net['q_value']
+                "\nq_value: ", self.net['q_value'],
+                "\n",
+                "vars: ", self.vars,
+                "\n",
+                "gradient: ", self.gradient
         )
         
     def get_q_value(self, sess, state):
