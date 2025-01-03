@@ -58,17 +58,17 @@ class QNetwork:
                                         init_b=tf.constant_initializer(0.01), name='fc1')
         elif self.network_type == 'mlp':
             self.net['fc1'] = dense(self.net['input'], 50, 
-                                    init_W=tf.constant_initializer(0.01),
+                                    # init_W=tf.constant_initializer(0.01),
                                     init_b=tf.constant_initializer(0.0), name='fc1')
             self.net['feature'] = dense(self.net['fc1'], 50, 
-                                        init_W=tf.constant_initializer(0.01),
+                                        # init_W=tf.constant_initializer(0.01),
                                         init_b=tf.constant_initializer(0.0), name='fc2')
             # self.net['feature'] = self.net['input']
         else:
             raise NotImplementedError('Unknown network type: {}'.format(self.network_type))
             
         self.net['values'] = dense(self.net['feature'], self.n_outputs, activation=None,
-                                    init_W=tf.constant_initializer(0.01),
+                                    # init_W=tf.constant_initializer(0.01),
                                    init_b=tf.constant_initializer(0.0), name='values')
         
         self.net['q_value'] = tf.reduce_max(self.net['values'], axis=1, name='q_value')
