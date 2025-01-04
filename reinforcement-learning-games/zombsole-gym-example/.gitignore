@@ -3,9 +3,6 @@ log*/**
 output/**
 
 .flake8
-Dockerfile
-Makefile
-Pipfile
 alt-diff-out.txt
 alt.diff
 dqn/Experiments.ipynb
@@ -28,4 +25,3 @@ dqn/train_ch03.py
 dqn/trpo.py
 dqn/value/
 gym_script.py
-train.nix
