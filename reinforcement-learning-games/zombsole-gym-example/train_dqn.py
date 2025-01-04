@@ -8,12 +8,15 @@ import argparse
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 import gym
+import gym.envs
 from gym.envs.registration import registry, register
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
 from zombsole.renderer import OpencvRenderer
+from envs.cartpole import CartPoleObservationWrapper
 from dqn.q_learning import DQN
 from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP, ZOMBSOLE_CNN
 import zombpyg.gym_env # to register the zombpyg gym environment
+import prlp_demo.gym_env # to register the demo gym environment
 
 
 register(
@@ -65,17 +68,10 @@ def main():
         game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25), initial_zombies=8)
         conf = ZOMBSOLE_CNN
     elif configid == 'demo_mlp':
-        import prlp_demo.gym_env # to register the demo gym environment
         game = gym.make('prlp/Demo-v0')
         conf = DEMO
     elif configid == 'cartpole_mlp':
-        import gym.envs
-        game = gym.make('CartPole-v1')
-        def cartpole_frame_size(self):
-            return (4,1)
-        print("gym type: ", type(gym))
-        game.get_frame_size = cartpole_frame_size.__get__(gym, type(gym))
-        # setattr(game, "get_frame_size", cartpole_frame_size)
+        game = CartPoleObservationWrapper()
         conf = DEMO
     else:
         game = gym.make('Zombsole-v0')
