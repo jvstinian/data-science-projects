@@ -160,8 +160,8 @@ class DQN:
             for _ in range(self.config['T']):
                 state = self.replay_memory.phi(frame)
                 # print("state shape: ", state.shape)
-                # action = self.choose_action(sess, state, self.epsilon_min)
-                action = self.choose_action(sess, state, 0.0)
+                action = self.choose_action(sess, state, self.epsilon_min)
+                # action = self.choose_action(sess, state, 0.0)
                 r, new_frame, termination = self.play(action)
                 total_reward += r
                 self.replay_memory.add(frame, action, r, termination)
