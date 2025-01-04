@@ -11,8 +11,11 @@ import gym
 from gym.envs.registration import registry, register
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
 from zombsole.renderer import OpencvRenderer
+from envs.cartpole import CartPoleObservationWrapper
 from dqn.q_learning import DQN
 from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP
+import zombpyg.gym_env # to register the zombpyg gym environment
+import prlp_demo.gym_env # to register the demo gym environment
 
 
 register(
@@ -38,6 +41,7 @@ def truncate_dir(path):
     return path
 
 def main():
+    import gym
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-c', '--config', default='zombsole_mlp', 
                         type=str, help='Game Configuration')
@@ -50,12 +54,13 @@ def main():
         game = gym.make('Zombsole-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25))
         conf = ZOMBSOLE_MLP
     elif configid == 'zombpyg_mlp':
-        import zombpyg.gym_env # to register the demo gym environment
         game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="survival", initial_zombies=25, minimum_zombies=10, enable_rendering=True)
         conf = ZOMBSOLE_MLP
     elif configid == 'demo_mlp':
-        import prlp_demo.gym_env # to register the demo gym environment
         game = gym.make('prlp/Demo-v0')
+        conf = DEMO
+    elif configid == 'cartpole_mlp':
+        game = CartPoleObservationWrapper()
         conf = DEMO
     else:
         game = gym.make('Zombsole-v0')
