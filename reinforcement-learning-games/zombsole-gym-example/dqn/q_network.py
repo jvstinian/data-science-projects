@@ -57,12 +57,36 @@ class QNetwork:
             self.net['feature'] = dense(self.net['conv2'], 256, 
                                         init_b=tf.constant_initializer(0.01), name='fc1')
         elif self.network_type == 'mlp':
-            self.net['fc1'] = dense(self.net['input'], 50, 
-                                    # init_W=tf.constant_initializer(0.01),
-                                    init_b=tf.constant_initializer(0.0), name='fc1')
-            self.net['feature'] = dense(self.net['fc1'], 50, 
+            self.net['fc1'] = dense(self.net['input'], 2500, 
+                                    # init_W=tf.random_uniform_initializer(minval=-0.01, maxval=0.01), # good for zombsole
+                                    # init_b=tf.random_uniform_initializer(minval=-0.01, maxval=0.01), # zombsole
+                                    # init_W=tf.random_normal_initializer(mean=0.0, stddev=0.25),
+                                    # init_b=tf.random_normal_initializer(mean=0.0, stddev=0.25),
+                                    # init_W=tf.constant_initializer(0.00),
+                                    # init_b=tf.constant_initializer(0.0), 
+                                    # activation=None,
+                                    name='fc1')
+            # self.net['fc2'] = dense(self.net['fc1'], 1000, 
+            #                             init_W=tf.random_uniform_initializer(minval=0.0, maxval=0.25),
+            #                             init_b=tf.random_uniform_initializer(minval=0.0, maxval=0.25),
+            #                             # init_W=tf.constant_initializer(0.01),
+            #                             # init_b=tf.constant_initializer(0.0), 
+            #                             # activation=None,
+            #                             name='fc2')
+            # self.net['fc3'] = dense(self.net['fc2'], 500, 
+            #                             init_W=tf.random_uniform_initializer(minval=0.0, maxval=0.25),
+            #                             init_b=tf.random_uniform_initializer(minval=0.0, maxval=0.25),
+            #                             # init_W=tf.constant_initializer(0.01),
+            #                             # init_b=tf.constant_initializer(0.0), 
+            #                             # activation=None,
+            #                             name='fc3')
+            self.net['feature'] = dense(self.net['fc1'], 100,
+                                        init_W=tf.random_uniform_initializer(minval=-0.02, maxval=0.02),
+                                        init_b=tf.random_uniform_initializer(minval=-0.02, maxval=0.02),
                                         # init_W=tf.constant_initializer(0.01),
-                                        init_b=tf.constant_initializer(0.0), name='fc2')
+                                        # init_b=tf.constant_initializer(0.0), 
+                                        # activation=None,
+                                        name='fc2')
             # self.net['feature'] = self.net['input']
         else:
             raise NotImplementedError('Unknown network type: {}'.format(self.network_type))

@@ -64,12 +64,12 @@ ZOMBSOLE_MLP = {
     'epsilon_min': 0.1,
     'num_frames': 2,
     'num_nullops': 3, # tried 10 also
-    'time_between_two_copies': 100, # changed from 1000
+    'time_between_two_copies': 1000, # changed from 1000, 100
     'input_scale': 2048.0,
     'update_interval': 1,
     'T': 290, # changed from 990
     
-    'learning_rate': 0.1, # 0.5e-2,
+    'learning_rate': 0.01, # 0.5e-2, 0.1
     'optimizer': 'momentum', # tried rmsprop
     'rho': 0.9, # tried 0.0
     'rmsprop_epsilon': 1e-6,
