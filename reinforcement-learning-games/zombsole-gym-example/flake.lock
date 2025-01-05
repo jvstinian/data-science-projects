@@ -53,16 +53,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1736013542,
+        "lastModified": 1736115522,
         "narHash": "sha256-Vo/WeskCs6BDw/L4GnMzP8wMMnmYdfv1Dkn1mjzKe0k=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "c8eea82affdcb1364d769cd7fc09c0b016e1ccf8",
+        "rev": "5c53a7d5f669e224297a86e6f3fc05f6f03948fb",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
-        "ref": "observation-consistency",
         "repo": "zombpyg",
         "type": "github"
       }
@@ -77,16 +76,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1736009679,
+        "lastModified": 1736115236,
         "narHash": "sha256-E4Dyygqjv51aE9nAL/dl6b5G6hzUTmmSp8J8IgY8wdA=",
         "owner": "jvstinian",
         "repo": "libzombsole",
-        "rev": "19248c779213583852814a04f0acd7ebe438c219",
+        "rev": "cd80e16ac09a51ab134128b688f8386b8358e8dc",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
-        "ref": "more-maps",
         "repo": "libzombsole",
         "type": "github"
       }
