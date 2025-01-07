@@ -81,8 +81,8 @@ class QNetwork:
             #                             # activation=None,
             #                             name='fc3')
             self.net['feature'] = dense(self.net['fc1'], 100,
-                                        init_W=tf.random_uniform_initializer(minval=-0.02, maxval=0.02),
-                                        init_b=tf.random_uniform_initializer(minval=-0.02, maxval=0.02),
+                                        # init_W=tf.random_uniform_initializer(minval=-0.02, maxval=0.02),
+                                        # init_b=tf.random_uniform_initializer(minval=-0.02, maxval=0.02),
                                         # init_W=tf.constant_initializer(0.01),
                                         # init_b=tf.constant_initializer(0.0), 
                                         # activation=None,
