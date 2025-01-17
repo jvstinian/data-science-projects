@@ -53,15 +53,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1735860713,
-        "narHash": "sha256-BAO2JHs/ES5Af+guKSVZ/Lrg7n90KhNkjQtMJI/JEvo=",
+        "lastModified": 1737152376,
+        "narHash": "sha256-e6O4xVB6/gEltZg28VLgtch5KQryc81QQ/HtJL7Wvd0=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "9e12a396ad6465f00b2d27e815ed22676de46b9f",
+        "rev": "3fe3b81720f29aceaa1fccbdf24129aa45fbb72c",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
+        "ref": "nixos2405",
         "repo": "zombpyg",
         "type": "github"
       }
@@ -76,31 +77,32 @@
         ]
       },
       "locked": {
-        "lastModified": 1735860691,
-        "narHash": "sha256-bUnVsV4noEw4sRLW/F1mjZF6OmgoVffjV1KSRCeDtwg=",
+        "lastModified": 1737156523,
+        "narHash": "sha256-jq5c3lEpZF679FekQkIyzRQo4F+ebEOjyeB6ZYO698E=",
         "owner": "jvstinian",
         "repo": "libzombsole",
-        "rev": "41d7081c6e60b7b1f0efd344ca103df1362ca473",
+        "rev": "98e9e7ba0bd05288be6edf00b59d54c260b8d312",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
+        "ref": "nixos2405",
         "repo": "libzombsole",
         "type": "github"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1720535198,
-        "narHash": "sha256-zwVvxrdIzralnSbcpghA92tWu2DV2lwv89xZc8MTrbg=",
+        "lastModified": 1735563628,
+        "narHash": "sha256-OnSAY7XDSx7CtDoqNh8jwVwh4xNL/2HaJxGjryLWzX8=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "205fd4226592cc83fd4c0885a3e4c9c400efabb5",
+        "rev": "b134951a4c9f3c995fd7be05f3243f8ecd65d798",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixos-23.11",
+        "ref": "nixos-24.05",
         "repo": "nixpkgs",
         "type": "github"
       }

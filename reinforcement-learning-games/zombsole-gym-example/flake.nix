@@ -2,15 +2,15 @@
 {
   inputs = {
     nixpkgs = {
-      url = "github:nixos/nixpkgs/nixos-23.11";
+      url = "github:nixos/nixpkgs/nixos-24.05";
     };
     libzombsole = {
-      url = "github:jvstinian/libzombsole";
+      url = "github:jvstinian/libzombsole/nixos2405";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
     libzombpyg = {
-      url = "github:jvstinian/zombpyg";
+      url = "github:jvstinian/zombpyg/nixos2405";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
