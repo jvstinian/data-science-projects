@@ -7,8 +7,8 @@ import os
 import argparse
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
-import gym
-from gym.envs.registration import registry, register
+import gymnasium as gym
+from gymnasium.envs.registration import registry, register
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
 from zombsole.renderer import OpencvRenderer
 from envs.cartpole import CartPoleObservationWrapper
@@ -41,7 +41,7 @@ def truncate_dir(path):
     return path
 
 def main():
-    import gym
+    import gymnasium as gym
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-c', '--config', default='zombsole_mlp', 
                         type=str, help='Game Configuration')

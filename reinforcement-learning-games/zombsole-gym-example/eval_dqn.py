@@ -6,12 +6,12 @@ Created on Mar 28, 2018
 import os
 import argparse
 #import tensorflow as tf
-import gym
+import gymnasium as gym
 from dqn.q_learning import DQN
 from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
 from zombsole.renderer import OpencvRenderer
-from gym.envs.registration import registry, register
+from gymnasium.envs.registration import registry, register
 # from dqn.environment import new_atari_game, new_demo, new_zombpyg
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
