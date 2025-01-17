@@ -53,15 +53,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1735860713,
-        "narHash": "sha256-BAO2JHs/ES5Af+guKSVZ/Lrg7n90KhNkjQtMJI/JEvo=",
+        "lastModified": 1737152038,
+        "narHash": "sha256-ZYJgd5+ptVZiQjM2YM5hQtJaarg1NbL4KZGJPXqYMsk=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "9e12a396ad6465f00b2d27e815ed22676de46b9f",
+        "rev": "88896e8912a933d1fdc3eca53180e4062489f069",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
+        "ref": "gymnasium-switch",
         "repo": "zombpyg",
         "type": "github"
       }
@@ -76,15 +77,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1735860691,
-        "narHash": "sha256-bUnVsV4noEw4sRLW/F1mjZF6OmgoVffjV1KSRCeDtwg=",
+        "lastModified": 1737153296,
+        "narHash": "sha256-RFLJeORF6fFojm2E8Pbs0aPuYtz6yLDoXeYapKp0q0I=",
         "owner": "jvstinian",
         "repo": "libzombsole",
-        "rev": "41d7081c6e60b7b1f0efd344ca103df1362ca473",
+        "rev": "a3a9b2b4b5af8cde9bdb3e410e602c5fc3b74dd3",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
+        "ref": "gymnasium-switch",
         "repo": "libzombsole",
         "type": "github"
       }
