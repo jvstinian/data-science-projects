@@ -6,6 +6,7 @@ Created on Mar 25, 2018
 import numpy, random
 from collections import deque
 
+import numpy as np
 
 class ReplayMemory:
     
@@ -42,8 +43,13 @@ class ReplayMemory:
     
     def sample(self):
         
+        # weights = [self.others[idx][1] for idx in range(self.history_length-1, len(self.frames)-1)]
+        # weights = np.array([-1.0*min(wgt,0)/200 + max(wgt,0) + 0.25*int(wgt==0) for wgt in weights])
+        # twght = weights.sum()
+        # cwghts = (weights.cumsum() / twght).tolist()
         while True:
             
+            # index = random.choices(list(range(self.history_length-1, len(self.frames)-1)), cum_weights=cwghts, k=1)[0]
             index = random.randint(a=self.history_length-1, b=len(self.frames)-2)
             infos = [self.others[index-i] for i in range(self.history_length)]
             # Check if termination=1 before "index"

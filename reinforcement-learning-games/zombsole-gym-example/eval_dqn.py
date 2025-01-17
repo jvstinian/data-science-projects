@@ -68,19 +68,36 @@ def main():
     elif rom == 'zombpyg_mlp':
         import zombpyg.gym_env # to register the demo gym environment
         # NOTE: We make some changes relative to the training environment
-        game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="extermination", initial_zombies=15, minimum_zombies=0, enable_rendering=True)
+        # The following has more zombies that the environment used to train
+        game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="extermination", initial_zombies=50, minimum_zombies=30, enable_rendering=True)
+        # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="extermination", initial_zombies=15, minimum_zombies=0, enable_rendering=True)
+        # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="extermination", initial_zombies=15, minimum_zombies=0, enable_rendering=True)
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="survival", initial_zombies=25, minimum_zombies=5, enable_rendering=True)
         conf = ZOMBSOLE_MLP
         conf['input_scale'] = 2
-        conf['T'] = 2000
-        conf['num_episode'] = 10
-        conf['epsilon_min'] = 0.01
+        conf['T'] = 4000
+        conf['num_episode'] = 2 # 10
+        conf['epsilon_min'] = 0.1 # this is the default, not needed
+        # conf['log_dir'] = "log_debug/"
+        # conf['log_dir'] = "log/"
         # conf['learning_rate'] = 0.5e-2
         # conf['epsilon_decay'] = 100000
+    elif rom == 'zombpyg_withplayers_mlp':
+        import zombpyg.gym_env # to register the demo gym environment
+        # game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=50, minimum_zombies=25, player_specs="terminator:random:2", enable_rendering=True)
+        game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=10, minimum_zombies=10, player_specs="terminator:random:5", enable_rendering=True)
+        conf = ZOMBSOLE_MLP
+        conf['input_scale'] = 2
+        conf['T'] = 4000
+        conf['num_episode'] = 2 # 10
+        conf['epsilon_min'] = 0.1 # this is the default, not needed
     elif rom == 'zombsole_surroundings_mlp':
         import zombsole.gym_env # to register the demo gym environment
         game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', map_name="easy_exit_v2", rules_name="safehouse", renderer=OpencvRenderer(50, 25), initial_zombies=4)
         conf = ZOMBSOLE_MLP
+        conf['num_episode'] = 5
+        conf['epsilon_min'] = 0.005
+        # conf['T'] = 50
     elif rom == 'demo_mlp':
         import prlp_demo.gym_env # to register the demo gym environment
         game = gym.make('prlp/Demo-v0')

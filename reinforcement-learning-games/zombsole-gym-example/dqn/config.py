@@ -74,7 +74,7 @@ ZOMBSOLE_MLP = {
     'rho': 0.9, # tried 0.0
     'rmsprop_epsilon': 1e-6,
     
-    'log_dir': 'log/'
+    'log_dir': 'log_debug/'
 }
 
 ZOMBSOLE_CNN = {
