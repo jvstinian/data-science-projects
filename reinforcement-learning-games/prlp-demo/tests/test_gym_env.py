@@ -1,7 +1,7 @@
 # tests/test_gym_env.py
 import pytest
 from prlp_demo.gym_env import DemoGymEnv
-import gym
+import gymnasium as gym
 
 
 def test_gym_env_registry():

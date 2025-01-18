@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-from gym.spaces.discrete import Discrete
-from gym.spaces.box import Box
-from gym.envs.registration import register
+from gymnasium.spaces.discrete import Discrete
+from gymnasium.spaces.box import Box
+from gymnasium.envs.registration import register
 import pygame
 from prlp_demo.game import Game
 
