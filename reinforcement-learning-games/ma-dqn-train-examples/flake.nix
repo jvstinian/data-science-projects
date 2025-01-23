@@ -25,6 +25,7 @@
               numpy
               opencv4
               tensorflowWithCuda
+	      keras
               gym
               zombpyg
           ];

@@ -28,11 +28,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1737217528,
-        "narHash": "sha256-Pi9TLgI5B6vw2vEOS3dNpbqJBGpM6kSd1+7E9z6PJAM=",
+        "lastModified": 1737242741,
+        "narHash": "sha256-2bbmeFC7spvrrM/3aaUetV3Q/Y/34nH71uU8HawSUvc=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "8251f654e720b4b964b4a6096ca23b6cc3a56031",
+        "rev": "8214d11562c8a916ffc6d0b6c8b43ba8dd896e56",
         "type": "github"
       },
       "original": {
