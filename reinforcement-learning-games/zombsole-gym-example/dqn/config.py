@@ -28,7 +28,7 @@ DEMO = {
     'rho': 0.9,
     'rmsprop_epsilon': 1e-6,
     
-    'log_dir': 'log_debug/'
+    'log_dir': 'log/'
 }
 
 DEMO_CNN = {

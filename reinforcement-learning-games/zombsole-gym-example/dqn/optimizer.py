@@ -203,6 +203,7 @@ class Optimizer:
         feed_dict = self.q_network.get_feed_dict(states, actions, targets)
         
         if self.summary_writer and step % 1000 == 0:
+            # TODO: Revert the following
             # summary_str, loss_str, _ = sess.run([self.q_network.summary_op, self.q_network.print_op,
             #                             self.train_op], 
             #                            feed_dict=feed_dict)
@@ -210,7 +211,8 @@ class Optimizer:
             summary_str, _ = sess.run([self.q_network.summary_op, self.q_network.print_op], feed_dict=feed_dict)
             self.summary_writer.add_summary(summary_str, step)
             self.summary_writer.flush()
-        elif step % 50 == 0:
+            
+            # print info about memories
             nzrew = len([r for _, r, _ in self.replay_memory.others if r != 0])
             posrew = len([r for _, r, _ in self.replay_memory.others if r > 0])
             memlen = len(self.replay_memory.others)
@@ -220,13 +222,7 @@ class Optimizer:
                 "Percent of memories with non-zero reward: ", nzrewpct, "\n",
                 "Percent of memories with positive reward: ", posrewpct,
             )
-            # local_print_op2 = tf.print(
-            #     "Sample states: ", states,
-            #     "Sample actions: ", actions,
-            #     "Sample targets: ", targets
-            # )
-            sess.run([self.train_op, local_print_op], feed_dict=feed_dict)
-            # sess.run(local_print_op2, feed_dict=feed_dict)
+            sess.run([local_print_op], feed_dict=feed_dict) # TODO: Is feed_dict needed here?
         else:
             sess.run(self.train_op, feed_dict=feed_dict)
 
