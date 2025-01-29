@@ -33,8 +33,6 @@ class QNetwork:
             self.build()
             self.build_loss()
 
-        print("Trainable vars: ", self.vars)
-        
     def build(self):
         
         self.net = {}
