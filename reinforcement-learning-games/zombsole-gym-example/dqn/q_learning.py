@@ -115,11 +115,9 @@ class DQN:
                 
                 state = self.replay_memory.phi(frame)
                 action_idx = self.choose_action(sess, state, epsilon_greedy)
-                temp_x = numpy.asarray(numpy.expand_dims(state, axis=0) / self.input_scale, dtype=numpy.float32)
-                temp_q_value_for_action = self.q_network.get_q_value(sess, temp_x)[0]
-                temp_q_action = self.q_network.get_q_action(sess, temp_x)[0]
-                temp_values = self.get_tensor_values(sess, frame)[0]
+
                 if self.verbose:
+                    temp_q_value_for_action, temp_q_action, temp_values = self.get_tensor_values(sess, state)[0]
                     print("epi {}, frame {}k: model q_action {}, q_value {:.4}, values {}".format(episode, 
                                                                  int(num_of_trials / 1000), 
                                                                  temp_q_action,
@@ -159,9 +157,7 @@ class DQN:
             
             for _ in range(self.config['T']):
                 state = self.replay_memory.phi(frame)
-                # print("state shape: ", state.shape)
                 action = self.choose_action(sess, state, self.epsilon_min)
-                # action = self.choose_action(sess, state, 0.0)
                 r, new_frame, termination = self.play(action)
                 total_reward += r
                 self.replay_memory.add(frame, action, r, termination)
@@ -170,17 +166,22 @@ class DQN:
                 if self.verbose:
                     print("episode {}, action {}, total reward {}".format(episode, action, total_reward))
                     print("unscaled state: ", state)
-                    print("values for state: ", self.get_tensor_values(sess, frame)[0])
+                    state = self.replay_memory.phi(frame) # TODO: Remove
+                    print("values for state: ", self.get_tensor_values(sess, state)[2])
 
                 if self.callback:
                     self.callback()
-                    if termination: # TODO: Move up one level
-                        break
 
-    def get_tensor_values(self, sess, frame):
-        state = self.replay_memory.phi(frame)
+                if termination:
+                    break
+
+    def get_tensor_values(self, sess, state):
+        # state = self.replay_memory.phi(frame) # TODO: Remove
         temp_x = numpy.asarray(numpy.expand_dims(state, axis=0) / self.input_scale, dtype=numpy.float32)
-        return sess.run(self.q_network.net['values'], feed_dict={self.q_network.x: temp_x})
+        temp_q_value_for_action = self.q_network.get_q_value(sess, temp_x)[0]
+        temp_q_action = self.q_network.get_q_action(sess, temp_x)[0]
+        temp_values, = sess.run(self.q_network.net['values'], feed_dict={self.q_network.x: temp_x})
+        return temp_q_value_for_action, temp_q_action, temp_values
     
     def save(self, sess, saver, model_name='model.ckpt'):
         if saver:
