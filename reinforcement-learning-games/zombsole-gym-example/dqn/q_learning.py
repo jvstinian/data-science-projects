@@ -117,7 +117,7 @@ class DQN:
                 action_idx = self.choose_action(sess, state, epsilon_greedy)
 
                 if self.verbose:
-                    temp_q_value_for_action, temp_q_action, temp_values = self.get_tensor_values(sess, state)[0]
+                    temp_q_value_for_action, temp_q_action, temp_values = self.get_tensor_values(sess, state)
                     print("epi {}, frame {}k: model q_action {}, q_value {:.4}, values {}".format(episode, 
                                                                  int(num_of_trials / 1000), 
                                                                  temp_q_action,
