@@ -69,13 +69,16 @@ def main():
         import zombpyg.gym_env # to register the demo gym environment
         # NOTE: We make some changes relative to the training environment
         # The following has more zombies that the environment used to train
+        # TODO: Need to track environment settings
         game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="extermination", initial_zombies=50, minimum_zombies=30, enable_rendering=True)
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="extermination", initial_zombies=15, minimum_zombies=0, enable_rendering=True)
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="extermination", initial_zombies=15, minimum_zombies=0, enable_rendering=True)
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="survival", initial_zombies=25, minimum_zombies=5, enable_rendering=True)
+        # TODO: Need zombpyg specific model configuration.
         conf = ZOMBSOLE_MLP
         conf['input_scale'] = 2
         conf['T'] = 4000
+        # TODO: Perhaps make num_episode a command-line argument?
         conf['num_episode'] = 2 # 10
         conf['epsilon_min'] = 0.1 # this is the default, not needed
         # conf['log_dir'] = "log_debug/"
@@ -102,6 +105,7 @@ def main():
         import prlp_demo.gym_env # to register the demo gym environment
         game = gym.make('prlp/Demo-v0')
         conf = DEMO
+        conf['num_episode'] = 2
     else:
         game = gym.make('Zombsole-v0')
         conf = ZOMBSOLE_MLP

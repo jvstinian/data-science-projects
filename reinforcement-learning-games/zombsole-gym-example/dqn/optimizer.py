@@ -218,6 +218,7 @@ class Optimizer:
             memlen = len(self.replay_memory.others)
             posrewpct = 100.0 * posrew / max(memlen, 1)
             nzrewpct = 100.0 * nzrew / max(memlen, 1)
+            # TODO: Just use print here, tensorflow is not being used
             local_print_op = tf.print(
                 "Percent of memories with non-zero reward: ", nzrewpct, "\n",
                 "Percent of memories with positive reward: ", posrewpct,

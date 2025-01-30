@@ -55,10 +55,12 @@ def main():
         game = gym.make('Zombsole-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25), initial_zombies=5)
         conf = ZOMBSOLE_MLP
     elif configid == 'zombpyg_mlp':
+        # TODO: Need to track environment settings
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=30, minimum_zombies=10, enable_rendering=True) # "log_debug/"
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="survival", initial_zombies=15, minimum_zombies=5, enable_rendering=True) # "log/"
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=40, minimum_zombies=20, player_specs="terminator:random:4", enable_rendering=True)
         game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=40, minimum_zombies=20, enable_rendering=True)
+        # TODO: Need zombpyg specific model configuration.
         conf = ZOMBSOLE_MLP
         conf['input_scale'] = 2
         conf['T'] = 4000

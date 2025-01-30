@@ -64,17 +64,17 @@ ZOMBSOLE_MLP = {
     'epsilon_min': 0.1,
     'num_frames': 2,
     'num_nullops': 3, # tried 10 also
-    'time_between_two_copies': 1000, # changed from 1000, 100
+    'time_between_two_copies': 1000, # also tried 100
     'input_scale': 2048.0,
     'update_interval': 1,
     'T': 290, # changed from 990
     
-    'learning_rate': 0.01, # 0.5e-2, 0.1
+    'learning_rate': 0.01, # also tried 0.5e-2, 0.1
     'optimizer': 'momentum', # tried rmsprop
     'rho': 0.9, # tried 0.0
     'rmsprop_epsilon': 1e-6,
     
-    'log_dir': 'log_debug/'
+    'log_dir': 'log_debug/' # TODO: Revert when ready
 }
 
 ZOMBSOLE_CNN = {
@@ -97,6 +97,6 @@ ZOMBSOLE_CNN = {
     'rho': 0.99,
     'rmsprop_epsilon': 1e-6,
     
-    'log_dir': 'log_debug/'
+    'log_dir': 'log_debug/' # TODO: Use "log/"
 }
 
