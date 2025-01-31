@@ -117,13 +117,13 @@ def main():
         dqn = DQN(conf, game, model_dir, callback=lcallback, verbose=True)
     
     with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-        # saver = tf.train.Saver()
+        saver = tf.train.Saver()
         writer = tf.summary.FileWriter(truncate_dir(log_dir), sess.graph_def)
         dqn.set_summary_writer(summary_writer=writer)
         
         sess.run(tf.global_variables_initializer())
-        saver = tf.train.Saver()
-        if configid == "zombpyg_withplayers_mlp": # TODO
+        # saver = tf.train.Saver() # TODO: Remove
+        if configid == "zombpyg_withplayers_mlp": # TODO: Figure out how to train agents when there are other players or agents
             dqn.load(sess, saver)
         dqn.train(sess, saver)
         
