@@ -84,8 +84,13 @@ class QNetwork(tf.Module):
             # self.net['feature'] = dense(self.net['conv2'], 256, 
             #                             init_b=tf.constant_initializer(0.01), name='fc1')
         elif self.network_type == 'mlp':
-            self.net['fc1'] = DenseLayer(50, init_W=tf.constant_initializer(0.0), init_b=tf.constant_initializer(0.0), name='fc1')
-            self.net['feature'] = DenseLayer(50, init_W=tf.constant_initializer(0.0), init_b=tf.constant_initializer(0.0), name='fc2')
+            # TODO: Changing from merge
+            # self.net['fc1'] = DenseLayer(50, init_W=tf.constant_initializer(0.0), init_b=tf.constant_initializer(0.0), name='fc1')
+            # self.net['feature'] = DenseLayer(50, init_W=tf.constant_initializer(0.0), init_b=tf.constant_initializer(0.0), name='fc2')
+            self.net['fc1'] = DenseLayer(2500, # 50
+                                    name='fc1')
+            self.net['feature'] = DenseLayer(500, # 100
+                                        name='fc2')
             self.layers.extend(
                 [ self.net['fc1'], self.net['feature']  ]
             )
@@ -95,10 +100,19 @@ class QNetwork(tf.Module):
             #                             init_b=tf.constant_initializer(0.0), name='fc2')
         else:
             raise NotImplementedError('Unknown network type: {}'.format(self.network_type))
-            
+
+        # TODO: Do we want to initialize the bias to 0?
         self.net['values'] = DenseLayer(
-                self.n_outputs, activation=None, init_W=tf.constant_initializer(0.0), init_b=tf.constant_initializer(0.0), name='values'
+                self.n_outputs, activation=None, init_b=tf.constant_initializer(0.0), name='values'
         )
+            
+        # self.net['q_value'] = tf.reduce_max(self.net['values'], axis=1, name='q_value')
+        # self.net['q_action'] = tf.argmax(self.net['values'], axis=1, 
+        #                                  name='q_action', output_type=tf.int32)
+        # 
+        # self.vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 
+        #                               tf.get_variable_scope().name)
+    
         self.layers.append(self.net['values'])
         # self.net['values'] = dense(self.net['feature'], self.n_outputs, activation=None,
         #                            init_b=tf.constant_initializer(0.0), name='values')
@@ -112,7 +126,6 @@ class QNetwork(tf.Module):
         # self.vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 
         #                               tf.get_variable_scope().name)
     
-    # TODO: Not sure what to do here
     # def build_loss(self):
     #     
     #     indices = tf.transpose(tf.stack([tf.range(tf.shape(self.a)[0]), self.a], axis=0))
@@ -123,6 +136,14 @@ class QNetwork(tf.Module):
     #     
     #     tf.summary.scalar("loss", self.loss, collections=['q_network'])
     #     self.summary_op = tf.summary.merge_all('q_network')
+    #     self.print_op = tf.print(
+    #             self.scope, " loss: ", self.loss,
+    #             "\nq_action: ", self.net['q_action'],
+    #             "\nq_value: ", self.net['q_value'],
+    #             "\n",
+    #             "vars: ", self.vars,
+    #             "\n",
+    #             "gradient: ", self.gradient
         
     # def get_q_value(self, sess, state):
     #     return sess.run(self.net['q_value'], feed_dict={self.x: state})
