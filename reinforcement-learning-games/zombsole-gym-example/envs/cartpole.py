@@ -1,6 +1,6 @@
 import numpy as np
+import gym
 from gym.core import Env
-import gym.envs
 
 
 class Wrapper(Env):
