@@ -67,7 +67,7 @@ def main():
         conf['num_episode'] = 300
         # conf['learning_rate'] = 0.1e-2 # 0.5e-2 worked for 10 zombies
         # conf['gamma'] = 0.7
-        conf['learning_rate'] = 0.5e-2 # 0.1e-2 works when for easy_exit with no players # 0.5e-2 for open_room
+        conf['learning_rate'] = 0.1e-2 # 0.1e-2 works when for easy_exit with no players # 0.5e-2 for open_room # had issue with 0.5e-2 for easy_exit
         conf['update_interval'] = 50
         conf['batch_size'] = 1600
         conf['epsilon_decay'] = 100000
