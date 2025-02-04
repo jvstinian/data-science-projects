@@ -4,9 +4,7 @@ Created on 4 Sep 2017
 @author: ywz
 '''
 import numpy
-# import tensorflow as tf
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import tensorflow as tf
 from dqn.utils import flatten_tensor_variables
 from dqn.utils import unflatten_tensors, get_param_values
 from dqn.utils import get_param_assign_ops, set_param_values
@@ -163,19 +161,29 @@ class Optimizer:
         self.gamma = config['gamma']
         self.num_frames = config['num_frames']
         
-        optimizer = create_optimizer(config['optimizer'], 
-                                     config['learning_rate'], 
-                                     config['rho'], 
-                                     config['rmsprop_epsilon'])
+        self.optimizer = create_optimizer(
+                config['optimizer'], 
+                config['learning_rate'], 
+                config['rho'], 
+                config['rmsprop_epsilon']
+        )
         
-        self.train_op = optimizer.apply_gradients(
-                 zip(self.q_network.gradient, 
-                 self.q_network.vars))
+        # self.train_op = optimizer.apply_gradients(
+        #          zip(self.q_network.gradient, 
+        #          self.q_network.vars))
         
+    # def local_apply_gradients(self, inputs, actions, ys):
+    #     gradient, loss = self.q_network.get_gradients_and_loss(inputs, actions, ys)
+    #     self.optimizer.apply_gradients(
+    #          zip(gradient, self.q_network.trainable_variables)
+    #     )
+    #     return gradient, loss
+
     def set_summary_writer(self, summary_writer=None):
         self.summary_writer = summary_writer
         
-    def sample_transitions(self, sess, batch_size):
+    # def sample_transitions(self, sess, batch_size):  # TODO
+    def sample_transitions(self, batch_size): 
         
         w, h = self.feedback_size
         states = numpy.zeros((batch_size, self.num_frames, w, h), 
@@ -194,23 +202,37 @@ class Optimizer:
             targets[i] = r
             terminations[i] = t
 
-        targets += self.gamma * (1 - terminations) * self.target_network.get_q_value(sess, new_states)
+        # targets += self.gamma * (1 - terminations) * self.target_network.get_q_value(sess, new_states) # TODO
+        targets += self.gamma * (1 - terminations) * self.target_network.get_q_value(new_states)
         return states, actions, targets    
 
-    def train_one_step(self, sess, step, batch_size):
+    # def train_one_step(self, sess, step, batch_size): # TODO
+    def train_one_step(self, step, batch_size):
         
-        states, actions, targets = self.sample_transitions(sess, batch_size)
-        feed_dict = self.q_network.get_feed_dict(states, actions, targets)
+        # states, actions, targets = self.sample_transitions(sess, batch_size)
+        states, actions, targets = self.sample_transitions(batch_size)
+        # feed_dict = self.q_network.get_feed_dict(states, actions, targets)
         
         if self.summary_writer and step % 1000 == 0:
             # TODO: Revert the following
             # summary_str, loss_str, _ = sess.run([self.q_network.summary_op, self.q_network.print_op,
             #                             self.train_op], 
             #                            feed_dict=feed_dict)
-            sess.run(self.train_op, feed_dict=feed_dict)
-            summary_str, _ = sess.run([self.q_network.summary_op, self.q_network.print_op], feed_dict=feed_dict)
-            self.summary_writer.add_summary(summary_str, step)
-            self.summary_writer.flush()
+            # self.summary_writer.add_summary(summary_str, step)
+            # self.summary_writer.flush()
+            gradient, loss = self.q_network.get_gradients_and_loss(states, actions, targets)
+            self.optimizer.apply_gradients(
+                zip(gradient, self.q_network.trainable_variables)
+            )
+
+            with self.summary_writer.as_default():
+              tf.summary.scalar("loss", loss, step=step)
+              self.summary_writer.flush()
+
+            # sess.run(self.train_op, feed_dict=feed_dict)
+            # summary_str, _ = sess.run([self.q_network.summary_op, self.q_network.print_op], feed_dict=feed_dict)
+            # self.summary_writer.add_summary(summary_str, step)
+            # self.summary_writer.flush()
             
             # print info about memories
             nzrew = len([r for _, r, _ in self.replay_memory.others if r != 0])
@@ -223,9 +245,16 @@ class Optimizer:
                 "Percent of memories with non-zero reward: ", nzrewpct, "\n",
                 "Percent of memories with positive reward: ", posrewpct,
             )
+            # TODO: The following probably doesn't work in tfv2
             sess.run([local_print_op], feed_dict=feed_dict) # TODO: Is feed_dict needed here?
         else:
-            sess.run(self.train_op, feed_dict=feed_dict)
+            # sess.run(self.train_op, feed_dict=feed_dict)
+            gradient, _ = self.q_network.get_gradients_and_loss(states, actions, targets)
+            self.optimizer.apply_gradients(
+                zip(gradient, self.q_network.trainable_variables)
+            )
+            print("q_values", self.q_network.get_q_value(states))
+            print("q_action", self.q_network.get_q_action(states))
 
     
 if __name__ == "__main__":

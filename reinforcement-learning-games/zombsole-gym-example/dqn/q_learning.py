@@ -3,9 +3,9 @@ Created on Mar 25, 2018
 Author: Justin Smith
 '''
 import numpy, random, os
-# import tensorflow as tf
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import tensorflow as tf
+# import tensorflow.compat.v1 as tf
+# tf.disable_v2_behavior()
 from dqn.replay_memory import ReplayMemory
 from dqn.optimizer import Optimizer
 from dqn.q_network import QNetwork
@@ -18,7 +18,7 @@ class DQN:
         self.env = env
         if verbose:
             print(self.env.action_space)
-        self.actions = range(0, env.action_space.n)
+        self.actions = range(0, env.action_space.n) # TODO: Improve this
         self.feedback_size = env.get_frame_size()
         print("feedback_size: %s" % (self.feedback_size,))
         self.callback = callback
@@ -63,36 +63,98 @@ class DQN:
                                    target_network=self.target_network, 
                                    replay_memory=self.replay_memory)
         # Ops for updating target network
-        self.clone_op = self.target_network.get_clone_op(self.q_network)
+        # self.clone_op = self.target_network.get_clone_op(self.q_network) # TODO
         # For tensorboard
-        self.t_score = tf.placeholder(dtype=tf.float32, shape=[], name='new_score')
-        tf.summary.scalar("score", self.t_score, collections=['dqn'])
-        self.summary_op = tf.summary.merge_all('dqn')
+        # TODO: The following are logged explicitly below using the v2 approach
+        # self.t_score = tf.placeholder(dtype=tf.float32, shape=[], name='new_score')
+        # tf.summary.scalar("score", self.t_score, collections=['dqn'])
+        # self.summary_op = tf.summary.merge_all('dqn')
     
     def set_summary_writer(self, summary_writer=None):
         self.summary_writer = summary_writer
         self.optimizer.set_summary_writer(summary_writer)
     
-    def choose_action(self, sess, state, epsilon_greedy):
+    # def choose_action(self, sess, state, epsilon_greedy):
+    #     if numpy.random.binomial(1, epsilon_greedy) == 1:
+    #         action = random.choice(self.actions)
+    #     else:
+    #         x = numpy.asarray(numpy.expand_dims(state, axis=0) / self.input_scale, dtype=numpy.float32)
+    #         # print("dim state=%s, dim x=%s" % (state.shape, x.shape))
+    #         action = self.q_network.get_q_action(sess, x)[0]
+    #     return action
+    
+    def choose_action(self, state, epsilon_greedy):
         if numpy.random.binomial(1, epsilon_greedy) == 1:
             action = random.choice(self.actions)
         else:
             x = numpy.asarray(numpy.expand_dims(state, axis=0) / self.input_scale, dtype=numpy.float32)
-            action = self.q_network.get_q_action(sess, x)[0]
+            # print("dim state=%s, dim x=%s" % (state.shape, x.shape))
+            action = self.q_network.get_q_action(x)[0]
         return action
     
-    def play(self, action):
+    def play(self, action_idx):
+        action = action_idx # self.env.action_space[action_idx]
         new_state, r, termination, truncated, _ = self.env.step(action)
         return r, new_state, (termination or truncated)
         
-    def update_target_network(self, sess):
-        sess.run(self.clone_op)
+    # def update_target_network(self, sess):
+    #     sess.run(self.clone_op)
         
-    def train(self, sess, saver=None):
+    def update_target_network(self):
+        self.target_network.clone_op(self.q_network)
+
+    # def train(self, sess, saver=None):
+    #     num_of_trials = -1
+    #     for episode in range(self.n_episode):
+    #         total_reward = 0
+    #         frame = self.env.reset()
+    #         # frame = self.env.get_current_feedback()
+    #         for _ in range(self.num_nullops):
+    #             action_idx=4
+    #             r, new_frame, termination = self.play(action_idx)
+    #             total_reward += r
+    #             self.replay_memory.add(frame, action_idx, r, termination)
+    #             frame = new_frame
+    #         
+    #         for _ in range(self.config['T']):
+    #             num_of_trials += 1
+    #             epsilon_greedy = self.epsilon_min + \
+    #                 max(self.epsilon_decay - num_of_trials, 0) / \
+    #                 self.epsilon_decay * (1 - self.epsilon_min)
+    #             if self.verbose:
+    #                 print("epi {}, frame {}k: reward {}, eps {}".format(episode, 
+    #                                                                     int(num_of_trials / 1000), 
+    #                                                                     total_reward,
+    #                                                                     epsilon_greedy))
+    #             if num_of_trials % self.update_interval == 0:
+    #                 self.optimizer.train_one_step(sess, num_of_trials, self.batch_size)
+    #             
+    #             state = self.replay_memory.phi(frame)
+    #             action_idx = self.choose_action(sess, state, epsilon_greedy)
+    #             r, new_frame, termination = self.play(action_idx)
+    #             total_reward += r
+    #             self.replay_memory.add(frame, action_idx, r, termination)
+    #             frame = new_frame
+    #             
+    #             if num_of_trials % self.time_between_two_copies == 0:
+    #                 self.update_target_network(sess)
+    #                 self.save(sess, saver)
+    #             
+    #             if self.callback:
+    #                 self.callback()
+    #             if termination:
+    #                 score = total_reward # self.env.get_total_reward()
+    #                 summary_str = sess.run(self.summary_op, feed_dict={self.t_score: score})
+    #                 self.summary_writer.add_summary(summary_str, num_of_trials)
+    #                 self.summary_writer.flush()
+    #                 break
+    
+    def train(self, saver=None):
         num_of_trials = -1
         for episode in range(self.n_episode):
             total_reward = 0
             frame, _ = self.env.reset()
+            # frame = self.env.get_current_feedback()
             for _ in range(self.num_nullops):
                 action_idx=self.env.action_space.sample()
                 r, new_frame, termination = self.play(action_idx)
@@ -111,11 +173,14 @@ class DQN:
                                                                         total_reward,
                                                                         epsilon_greedy))
                 if num_of_trials % self.update_interval == 0:
-                    self.optimizer.train_one_step(sess, num_of_trials, self.batch_size)
+                    # self.optimizer.train_one_step(sess, num_of_trials, self.batch_size) # TODO
+                    self.optimizer.train_one_step(num_of_trials, self.batch_size)
                 
                 state = self.replay_memory.phi(frame)
-                action_idx = self.choose_action(sess, state, epsilon_greedy)
+                # action_idx = self.choose_action(sess, state, epsilon_greedy) # TODO
+                action_idx = self.choose_action(state, epsilon_greedy)
 
+                # TODO: Does it make sense to keep the following in tfv2?
                 if self.verbose:
                     temp_q_value_for_action, temp_q_action, temp_values = self.get_tensor_values(sess, state)
                     print("epi {}, frame {}k: model q_action {}, q_value {:.4}, values {}".format(episode, 
@@ -130,18 +195,23 @@ class DQN:
                 
                 # Perhaps added (num_of_trials > 0)
                 if num_of_trials % self.time_between_two_copies == 0:
-                    self.update_target_network(sess)
-                    self.save(sess, saver)
+                    # self.update_target_network(sess) # TODO
+                    self.save(saver)
+                    self.update_target_network()
                 
                 if self.callback:
                     self.callback()
                 if termination:
                     score = total_reward # self.env.get_total_reward()
-                    summary_str = sess.run(self.summary_op, feed_dict={self.t_score: score})
-                    self.summary_writer.add_summary(summary_str, num_of_trials)
-                    self.summary_writer.flush()
+                    # summary_str = sess.run(self.summary_op, feed_dict={self.t_score: score}) # TODO
+                    # self.summary_writer.add_summary(summary_str, num_of_trials) # TODO
+                    # self.summary_writer.flush()
+                    with self.summary_writer.as_default():
+                      tf.summary.scalar("t_score", score, step=num_of_trials)
+                      self.summary_writer.flush()
                     break
     
+    # TODO: Where is the following used?
     def evaluate(self, sess):
         
         for episode in range(self.n_episode):
@@ -183,20 +253,27 @@ class DQN:
         temp_values, = sess.run(self.q_network.net['values'], feed_dict={self.q_network.x: temp_x})
         return temp_q_value_for_action, temp_q_action, temp_values
     
-    def save(self, sess, saver, model_name='model.ckpt'):
+    # def save(self, sess, saver, model_name='model.ckpt'):
+    def save(self, saver, model_name='model.ckpt'):
+        # if saver:
+        #     try:
+        #         checkpoint_path = os.path.join(self.directory, model_name)
+        #         saver.save(sess, checkpoint_path)
+        #     except:
+        #         pass
         if saver:
             try:
                 checkpoint_path = os.path.join(self.directory, model_name)
-                saver.save(sess, checkpoint_path)
+                save(self.target_network, checkpoint_path)
             except:
                 pass
     
-    def load(self, sess, saver, model_name='model.ckpt'):
-        if saver:
-            try:
-                checkpoint_path = os.path.join(self.directory, model_name)
-                saver.restore(sess, checkpoint_path)
-            except:
-                pass
+    # TODO
+    # def load(self, sess, saver, model_name='model.ckpt'):
+    #     if saver:
+    #         try:
+    #             checkpoint_path = os.path.join(self.directory, model_name)
+    #             saver.restore(sess, checkpoint_path)
+    #         except:
+    #             pass
             
-                

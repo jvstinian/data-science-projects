@@ -1,7 +1,6 @@
 dqn/log/**
 log*/**
 output/**
-
 .flake8
 alt-diff-out.txt
 alt.diff
