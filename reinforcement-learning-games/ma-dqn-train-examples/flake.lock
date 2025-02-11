@@ -28,16 +28,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1737242741,
-        "narHash": "sha256-2bbmeFC7spvrrM/3aaUetV3Q/Y/34nH71uU8HawSUvc=",
+        "lastModified": 1739246311,
+        "narHash": "sha256-2EFucXegoJHszeh4a0sEiUl9+EwRg02ng6IM0rKdxlk=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "8214d11562c8a916ffc6d0b6c8b43ba8dd896e56",
+        "rev": "b80be320b25c34413f6e122f2e3c1e8ac92d544b",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
-        "ref": "multiagent-gym-env",
+        "ref": "reward-testing",
         "repo": "zombpyg",
         "type": "github"
       }
