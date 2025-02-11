@@ -70,10 +70,15 @@ def main():
         # NOTE: We make some changes relative to the training environment
         # The following has more zombies that the environment used to train
         # TODO: Need to track environment settings
-        game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="extermination", initial_zombies=50, minimum_zombies=30, enable_rendering=True)
+        # game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="extermination", initial_zombies=50, minimum_zombies=30, enable_rendering=True) # previous
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="extermination", initial_zombies=15, minimum_zombies=0, enable_rendering=True)
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="extermination", initial_zombies=15, minimum_zombies=0, enable_rendering=True)
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="survival", initial_zombies=25, minimum_zombies=5, enable_rendering=True)
+        # game = gym.make('zombpyg/Zombpyg-v0', map_id="tiny_space_v1", rules_id="safehouse", initial_zombies=10, minimum_zombies=10, enable_rendering=True)
+        # game = gym.make('zombpyg/Zombpyg-v0', map_id="tiny_space_v0", rules_id="safehouse", initial_zombies=10, minimum_zombies=2, enable_rendering=True)
+        # game = gym.make('zombpyg/Zombpyg-v0', map_id="simple_hallway", rules_id="safehouse", initial_zombies=10, minimum_zombies=10, enable_rendering=True)
+        # game = gym.make('zombpyg/Zombpyg-v0', map_id="narrow_hallway", rules_id="safehouse", initial_zombies=10, minimum_zombies=10, enable_rendering=True)
+        game = gym.make('zombpyg/Zombpyg-v0', map_id="elevator", rules_id="safehouse", initial_zombies=20, minimum_zombies=40, enable_rendering=True)
         # TODO: Need zombpyg specific model configuration.
         conf = ZOMBSOLE_MLP
         conf['input_scale'] = 2
@@ -81,6 +86,8 @@ def main():
         # TODO: Perhaps make num_episode a command-line argument?
         conf['num_episode'] = 2 # 10
         conf['epsilon_min'] = 0.1 # this is the default, not needed
+        conf['gamma'] = 0.7
+        conf['learning_rate'] = 0.1e-2
         # conf['log_dir'] = "log_debug/"
         # conf['log_dir'] = "log/"
         # conf['learning_rate'] = 0.5e-2

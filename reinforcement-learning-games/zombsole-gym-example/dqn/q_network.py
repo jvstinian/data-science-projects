@@ -58,6 +58,7 @@ class QNetwork:
             self.net['fc1'] = dense(self.net['input'], 2500, # 50
                                     name='fc1')
             self.net['feature'] = dense(self.net['fc1'], 500, # 100
+                                        # activation=tf.math.sigmoid,
                                         name='fc2')
         else:
             raise NotImplementedError('Unknown network type: {}'.format(self.network_type))

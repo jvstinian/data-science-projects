@@ -157,6 +157,8 @@ class DQN:
             
             for _ in range(self.config['T']):
                 state = self.replay_memory.phi(frame)
+                if self.verbose:
+                    print("values for state: ", self.get_tensor_values(sess, state)[2])
                 action = self.choose_action(sess, state, self.epsilon_min)
                 r, new_frame, termination = self.play(action)
                 total_reward += r
@@ -165,9 +167,9 @@ class DQN:
                 
                 if self.verbose:
                     print("episode {}, action {}, total reward {}".format(episode, action, total_reward))
-                    print("unscaled state: ", state)
-                    state = self.replay_memory.phi(frame)
-                    print("values for state: ", self.get_tensor_values(sess, state)[2])
+                    # print("unscaled state: ", state)
+                    # state = self.replay_memory.phi(frame)
+                    # print("values for state: ", self.get_tensor_values(sess, state)[2])
 
                 if self.callback:
                     self.callback()

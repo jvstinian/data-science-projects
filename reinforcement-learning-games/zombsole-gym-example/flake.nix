@@ -10,7 +10,7 @@
       inputs.flake-utils.follows = "flake-utils";
     };
     libzombpyg = {
-      url = "github:jvstinian/zombpyg";
+      url = "github:jvstinian/zombpyg/reward-testing";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
