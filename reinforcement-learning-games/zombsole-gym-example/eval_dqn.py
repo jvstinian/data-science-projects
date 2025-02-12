@@ -74,11 +74,11 @@ def main():
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="extermination", initial_zombies=15, minimum_zombies=0, enable_rendering=True)
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="extermination", initial_zombies=15, minimum_zombies=0, enable_rendering=True)
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="survival", initial_zombies=25, minimum_zombies=5, enable_rendering=True)
-        # game = gym.make('zombpyg/Zombpyg-v0', map_id="tiny_space_v1", rules_id="safehouse", initial_zombies=10, minimum_zombies=10, enable_rendering=True)
+        game = gym.make('zombpyg/Zombpyg-v0', map_id="tiny_space_v1", rules_id="safehouse", initial_zombies=10, minimum_zombies=10, enable_rendering=True)
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="tiny_space_v0", rules_id="safehouse", initial_zombies=10, minimum_zombies=2, enable_rendering=True)
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="simple_hallway", rules_id="safehouse", initial_zombies=10, minimum_zombies=10, enable_rendering=True)
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="narrow_hallway", rules_id="safehouse", initial_zombies=10, minimum_zombies=10, enable_rendering=True)
-        game = gym.make('zombpyg/Zombpyg-v0', map_id="elevator", rules_id="safehouse", initial_zombies=20, minimum_zombies=40, enable_rendering=True)
+        # game = gym.make('zombpyg/Zombpyg-v0', map_id="elevator", rules_id="safehouse", initial_zombies=20, minimum_zombies=40, enable_rendering=True)
         # TODO: Need zombpyg specific model configuration.
         conf = ZOMBSOLE_MLP
         conf['input_scale'] = 2
