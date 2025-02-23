@@ -28,16 +28,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1739246311,
-        "narHash": "sha256-2EFucXegoJHszeh4a0sEiUl9+EwRg02ng6IM0rKdxlk=",
+        "lastModified": 1740331509,
+        "narHash": "sha256-YIYbJgCy0S9VG1JsRU5VOGAM6ycYC3+fc1bV3YC1Drc=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "b80be320b25c34413f6e122f2e3c1e8ac92d544b",
+        "rev": "0d7d2ae92ce06830dff9f7437b68ac0e4120deba",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
-        "ref": "reward-testing",
+        "ref": "gym-env-renaming",
         "repo": "zombpyg",
         "type": "github"
       }

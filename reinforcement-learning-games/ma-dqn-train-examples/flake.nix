@@ -5,7 +5,7 @@
       url = "github:nixos/nixpkgs/nixos-23.11";
     };
     libzombpyg = {
-      url = "github:jvstinian/zombpyg/reward-testing";
+      url = "github:jvstinian/zombpyg/gym-env-renaming";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
