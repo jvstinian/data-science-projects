@@ -44,9 +44,6 @@ def main():
             friendly_fire_guard=True
         )
         conf = ZOMBPYG_MLP
-        conf['num_episode'] = 300
-        conf['T'] = 6000
-        conf['learning_rate'] = 0.1e-2
     elif configid == '1pzombpyg_mlp':
         #import zombpyg.gym_env # to register the demo gym environment
         # world_config={
@@ -112,9 +109,6 @@ def main():
             enable_rendering=True
         )
         conf = ZOMBPYG_MLP
-        conf['num_episode'] = 300
-        conf['T'] = 6000
-        conf['learning_rate'] = 0.1e-2
     else:
         raise ValueError(f"config {configid} not supported")
         
