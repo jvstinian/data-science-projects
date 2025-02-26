@@ -147,10 +147,9 @@ class DQN:
         for episode in range(self.n_episode):
             total_reward = 0
             frame, _ = self.env.reset()
-            # self.env.get_current_feedback()
             for _ in range(self.num_nullops):
                 action_idx=self.env.action_space.sample()
-                r, new_frame, termination = self.play(action_idx) # 2024-12-18 NOTE: Changed this from ...(action=action_idx)
+                r, new_frame, termination = self.play(action_idx)
                 total_reward += r
                 self.replay_memory.add(frame, 0, r, termination)
                 frame = new_frame
@@ -175,7 +174,6 @@ class DQN:
                     break
 
     def get_tensor_values(self, sess, state):
-        # state = self.replay_memory.phi(frame) # TODO: Remove
         temp_x = numpy.asarray(numpy.expand_dims(state, axis=0) / self.input_scale, dtype=numpy.float32)
         temp_q_value_for_action = self.q_network.get_q_value(sess, temp_x)[0]
         temp_q_action = self.q_network.get_q_action(sess, temp_x)[0]

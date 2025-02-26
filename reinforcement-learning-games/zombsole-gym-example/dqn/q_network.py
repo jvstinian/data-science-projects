@@ -63,7 +63,7 @@ class QNetwork:
             raise NotImplementedError('Unknown network type: {}'.format(self.network_type))
             
         self.net['values'] = dense(self.net['feature'], self.n_outputs, activation=None,
-                                   init_b=tf.constant_initializer(0.0), name='values') # TODO: Do we want to initialize the bias to 0?
+                                   init_b=tf.constant_initializer(0.0), name='values')
         
         self.net['q_value'] = tf.reduce_max(self.net['values'], axis=1, name='q_value')
         self.net['q_action'] = tf.argmax(self.net['values'], axis=1, 

@@ -4,7 +4,6 @@ Created on 4 Sep 2017
 @author: ywz
 '''
 import numpy
-# import tensorflow as tf
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 from dqn.utils import flatten_tensor_variables
@@ -223,7 +222,7 @@ class Optimizer:
                 "Percent of memories with non-zero reward: ", nzrewpct, "\n",
                 "Percent of memories with positive reward: ", posrewpct,
             )
-            sess.run([local_print_op], feed_dict=feed_dict) # TODO: Is feed_dict needed here?
+            sess.run([local_print_op], feed_dict={})
         else:
             sess.run(self.train_op, feed_dict=feed_dict)
 
