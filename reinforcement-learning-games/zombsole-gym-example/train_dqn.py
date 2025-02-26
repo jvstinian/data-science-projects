@@ -126,10 +126,9 @@ def main():
         dqn.set_summary_writer(summary_writer=writer)
         
         sess.run(tf.global_variables_initializer())
-        # saver = tf.train.Saver() # TODO: Remove
-        if configid == "zombpyg_withplayers_mlp": # TODO: Figure out how to train agents when there are other players or agents
+        if configid == "zombpyg_withplayers_mlp":
             dqn.load(sess, saver)
-        elif configid == "zombpyg_mlp": # TODO: Figure out how to train agents when there are other players or agents
+        elif configid == "zombpyg_mlp":
             dqn.load(sess, saver)
         dqn.train(sess, saver)
         
