@@ -1,8 +1,15 @@
 # data science project artifacts
 **/artifacts
 
+# notes
+**/*NOTES
+
 # specific data sets
 **/recs2015_public_v4.csv
+
+# Haskell
+**/dist
+**/dist-newstyle
 
 # Python
 **/__pycache__
@@ -12,6 +19,10 @@
 
 # Python
 **/__pycache__
+
+# Zig
+**/zig-out
+**/.zig-cache
 
 # Nix
 **/result
