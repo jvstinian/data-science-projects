@@ -167,9 +167,6 @@ class DQN:
                 
                 if self.verbose:
                     print("episode {}, action {}, total reward {}".format(episode, action, total_reward))
-                    # print("unscaled state: ", state)
-                    # state = self.replay_memory.phi(frame)
-                    # print("values for state: ", self.get_tensor_values(sess, state)[2])
 
                 if self.callback:
                     self.callback()
