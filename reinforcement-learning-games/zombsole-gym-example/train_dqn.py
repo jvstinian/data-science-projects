@@ -59,14 +59,18 @@ def main():
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=30, minimum_zombies=10, enable_rendering=True) # "log_debug/"
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="survival", initial_zombies=15, minimum_zombies=5, enable_rendering=True) # "log/"
         # game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=40, minimum_zombies=20, player_specs="terminator:random:4", enable_rendering=True)
-        game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=40, minimum_zombies=20, enable_rendering=True)
+        # game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=40, minimum_zombies=20, enable_rendering=True)
+        game = gym.make('zombpyg/Zombpyg-v0', map_id="tiny_space_v1", rules_id="safehouse", initial_zombies=10, minimum_zombies=10, enable_rendering=True)
+        # from zombpyg.map.spawns import SpawnLocation
+        # game.game.map.player_spawns[0] = SpawnLocation(int(640*3/5), int(480*2/5), int(640*1/5), int(480/5))
+        # game.game.map.zombie_spawns[1] = SpawnLocation(int(640*1/5), int(480*2/5), int(640*2/5), int(480/5))
         # TODO: Need zombpyg specific model configuration.
         conf = ZOMBSOLE_MLP
         conf['input_scale'] = 2
-        conf['T'] = 4000
-        conf['num_episode'] = 300
+        conf['T'] = 6000 # TODO: Change this back to 4000
+        conf['num_episode'] = 250
         # conf['learning_rate'] = 0.1e-2 # 0.5e-2 worked for 10 zombies
-        # conf['gamma'] = 0.7
+        conf['gamma'] = 0.7
         conf['learning_rate'] = 0.1e-2 # 0.1e-2 works when for easy_exit with no players # 0.5e-2 for open_room # had issue with 0.5e-2 for easy_exit
         conf['update_interval'] = 50
         conf['batch_size'] = 1600
@@ -122,8 +126,9 @@ def main():
         dqn.set_summary_writer(summary_writer=writer)
         
         sess.run(tf.global_variables_initializer())
-        # saver = tf.train.Saver() # TODO: Remove
-        if configid == "zombpyg_withplayers_mlp": # TODO: Figure out how to train agents when there are other players or agents
+        if configid == "zombpyg_withplayers_mlp":
+            dqn.load(sess, saver)
+        elif configid == "zombpyg_mlp":
             dqn.load(sess, saver)
         dqn.train(sess, saver)
         
