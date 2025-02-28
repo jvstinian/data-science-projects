@@ -19,21 +19,6 @@ import zombpyg.gym_env # to register the zombpyg gym environment
 import prlp_demo.gym_env # to register the demo gym environment
 
 
-register(
-    id='Zombsole-v0', 
-    entry_point='zombsole.gym_env:ZombsoleGymEnvDiscreteAction', 
-    max_episode_steps=1000,
-    kwargs={
-        'rules_name': 'extermination',
-        'player_names': [],
-        'map_name': 'bridge',
-        'agent_id': 0,
-        'initial_zombies': 5,
-        'minimum_zombies': 0,
-        'debug': False
-    }
-)
-
 # Remove if exists and recreate directory
 def truncate_dir(path):
     if tf.gfile.Exists(path):
@@ -52,42 +37,16 @@ def main():
 
     configid = args.config
     if configid == 'zombsole_mlp':
-        game = gym.make('Zombsole-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25), initial_zombies=5)
+        game = gym.make('jvstinian/Zombsole-v0', map_name="easy_exit", rules_name="safehouse", renderer=OpencvRenderer(50, 25), initial_zombies=5)
         conf = ZOMBSOLE_MLP
     elif configid == 'zombpyg_mlp':
         # TODO: Need to track environment settings
-        # game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=30, minimum_zombies=10, enable_rendering=True) # "log_debug/"
-        # game = gym.make('zombpyg/Zombpyg-v0', map_id="open_room", rules_id="survival", initial_zombies=15, minimum_zombies=5, enable_rendering=True) # "log/"
-        # game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=40, minimum_zombies=20, player_specs="terminator:random:4", enable_rendering=True)
-        # game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=40, minimum_zombies=20, enable_rendering=True)
-        game = gym.make('zombpyg/Zombpyg-v0', map_id="tiny_space_v1", rules_id="safehouse", initial_zombies=10, minimum_zombies=10, enable_rendering=True)
-        # from zombpyg.map.spawns import SpawnLocation
-        # game.game.map.player_spawns[0] = SpawnLocation(int(640*3/5), int(480*2/5), int(640*1/5), int(480/5))
-        # game.game.map.zombie_spawns[1] = SpawnLocation(int(640*1/5), int(480*2/5), int(640*2/5), int(480/5))
         # TODO: Need zombpyg specific model configuration.
-        conf = ZOMBSOLE_MLP
-        conf['input_scale'] = 2
-        conf['T'] = 6000 # TODO: Change this back to 4000
-        conf['num_episode'] = 250
-        # conf['learning_rate'] = 0.1e-2 # 0.5e-2 worked for 10 zombies
-        conf['gamma'] = 0.7
-        conf['learning_rate'] = 0.1e-2 # 0.1e-2 works when for easy_exit with no players # 0.5e-2 for open_room # had issue with 0.5e-2 for easy_exit
-        conf['update_interval'] = 50
-        conf['batch_size'] = 1600
-        conf['epsilon_decay'] = 100000
+        game = gym.make('jvstinian/Zombpyg-v0', map_id="tiny_space_v1", rules_id="safehouse", initial_zombies=10, minimum_zombies=10, enable_rendering=True)
+        conf = ZOMBPYG_MLP
     elif configid == 'zombpyg_withplayers_mlp':
-        game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=100, minimum_zombies=50, player_specs="terminator:random:5", enable_rendering=True)
-        # game = gym.make('zombpyg/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=100, minimum_zombies=50, enable_rendering=True)
+        game = gym.make('jvstinian/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=100, minimum_zombies=50, player_specs="terminator:random:5", enable_rendering=True)
         conf = ZOMBSOLE_MLP
-        conf['input_scale'] = 2
-        conf['T'] = 4000
-        conf['num_episode'] = 250 # 300
-        # conf['learning_rate'] = 0.1e-2 # 0.5e-2 worked for 10 zombies
-        # conf['gamma'] = 0.7
-        conf['learning_rate'] = 0.1e-2 # 0.1e-2 works when for easy_exit with no players # 0.5e-2 for open_room
-        conf['update_interval'] = 50
-        conf['batch_size'] = 1600
-        conf['epsilon_decay'] = 10000 # 100000
     elif configid == 'zombsole_surroundings_mlp':
         import zombsole.gym_env # to register the zombsole gym environment
         game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', map_name="easy_exit_v2", rules_name="safehouse", renderer=OpencvRenderer(50, 25), initial_zombies=4)
