@@ -58,7 +58,7 @@ def main():
         game = gym.make('jvstinian/Zombsole-v0')
         conf = ZOMBSOLE_MLP
 
-    model_dir = os.path.join(conf['log_dir'], rom)
+    model_dir = os.path.join(conf['log_dir'], rom, model_version)
     device = '/{}:0'.format(args.device)
     with tf.device(device):
         dqn = DQN(conf, game, model_dir, callback=game.render, verbose=True)
