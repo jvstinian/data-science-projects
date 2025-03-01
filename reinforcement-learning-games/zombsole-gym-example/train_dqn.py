@@ -76,7 +76,6 @@ def main():
         conf = DEMO
 
     model_dir = os.path.join(conf['log_dir'], args.config, model_version)
-    # log_dir = os.path.join(conf['log_dir'], '{}/train'.format(args.config))
     log_dir = os.path.join(model_dir, 'train')
     if not tf.gfile.Exists(log_dir):
         tf.gfile.MakeDirs(log_dir)
