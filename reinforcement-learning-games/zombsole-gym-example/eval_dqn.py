@@ -30,44 +30,39 @@ def main():
     model_version = args.model_version
     config = None
     if rom == 'zombsole_mlp':
-        # pulling this forward from the next branch
         config = ZombsoleMLPConfig
         env_config = config['environment']
+        env_config.update(config.get('eval_overrides', {}).get('environment', {}))
         game = gym.make('jvstinian/Zombsole-v0', **env_config)
-        conf = config['model']
     elif rom == 'zombpyg_mlp':
         import zombpyg.gym_env # to register the demo gym environment
         config = ZombpygMLPConfig
         env_config = config['environment']
+        env_config.update(config.get('eval_overrides', {}).get('environment', {}))
         game = gym.make('jvstinian/Zombpyg-v0', **env_config)
-        # TODO: Perhaps make num_episode a command-line argument?
-        conf = config['model']
-        conf['num_episode'] = 2 # 10
     elif rom == 'zombpyg_withplayers_mlp':
         import zombpyg.gym_env # to register the demo gym environment
         config = ZombpygWithPlayersMLPConfig
         env_config = config['environment']
+        env_config.update(config.get('eval_overrides', {}).get('environment', {}))
         game = gym.make('jvstinian/Zombpyg-v0', **env_config)
-        conf = config['model']
-        conf['num_episode'] = 2 # 10
     elif rom == 'zombsole_surroundings_mlp':
         import zombsole.gym_env # to register the demo gym environment
         config = ZombsoleSurroundingsMLPConfig
         env_config = config['environment']
+        env_config.update(config.get('eval_overrides', {}).get('environment', {}))
         game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', **env_config)
-        conf = config['model']
-        conf['num_episode'] = 5
-        conf['epsilon_min'] = 0.005
     elif rom == 'demo_mlp':
         import prlp_demo.gym_env # to register the demo gym environment
         config = DemoConfig
         game = gym.make('prlp/Demo-v0')
-        conf = config['model']
-        conf['num_episode'] = 2
     else:
         config = DemoConfig
         game = gym.make('prlp/Demo-v0')
-        conf = config['model']
+
+    # Set up model configuration with overrides for eval
+    conf = config['model']
+    conf.update(config.get('eval_overrides', {}).get('model', {}))
 
     model_dir = os.path.join(conf['log_dir'], rom, model_version)
     device = '/{}:0'.format(args.device)

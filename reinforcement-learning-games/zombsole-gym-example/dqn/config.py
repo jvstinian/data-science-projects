@@ -144,7 +144,12 @@ ZombsoleSurroundingsMLPConfig = {
         'render_mode': 'human', 
         'initial_zombies': 4
     },
-    'model': ZOMBSOLE_SURROUNDINGS_MLP
+    'model': ZOMBSOLE_SURROUNDINGS_MLP,
+    'eval_overrides': {
+        'model': {
+            'num_episode': 5
+        }
+    }
 }
 
 ZombsoleCNNConfig = {
@@ -165,7 +170,12 @@ ZombpygMLPConfig = {
         'minimum_zombies': 10,
         'enable_rendering': True
     },
-    'model': ZOMBPYG_MLP
+    'model': ZOMBPYG_MLP,
+    'eval_overrides': {
+        'model': {
+            'num_episode': 2
+        }
+    }
 }
 
 ZombpygWithPlayersMLPConfig = {
@@ -177,12 +187,22 @@ ZombpygWithPlayersMLPConfig = {
         'player_specs': 'terminator:random:5',
         'enable_rendering': True
     },
-    'model': ZOMBPYG_MLP
+    'model': ZOMBPYG_MLP,
+    'eval_overrides': {
+        'model': {
+            'num_episode': 2
+        }
+    }
 }
 
 DemoConfig = {
     'environment': None,
-    'model': DEMO
+    'model': DEMO,
+    'eval_overrides': {
+        'model': {
+            'num_episode': 2
+        }
+    }
 }
 
 CartpoleConfig = {
