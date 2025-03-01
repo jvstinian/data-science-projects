@@ -33,7 +33,7 @@ def main():
         # pulling this forward from the next branch
         config = ZombsoleMLPConfig
         env_config = config['environment']
-        game = gym.make('jvstinian/Zombsole-v0', **env_config) #  map_name="easy_exit", rules_name="safehouse", render_mode="human", initial_zombies=5)
+        game = gym.make('jvstinian/Zombsole-v0', **env_config)
         conf = config['model']
     elif rom == 'zombpyg_mlp':
         import zombpyg.gym_env # to register the demo gym environment
