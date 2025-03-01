@@ -8,7 +8,6 @@ import os
 import argparse
 import gym
 from dqn.q_learning import DQN
-# from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP
 from dqn.config import (
     ZombsoleMLPConfig, ZombsoleSurroundingsMLPConfig, ZombsoleCNNConfig,
     ZombpygMLPConfig, ZombpygWithPlayersMLPConfig,
@@ -29,6 +28,7 @@ def main():
     
     rom = args.game
     model_version = args.model_version
+    config = None
     if rom == 'zombsole_mlp':
         # pulling this forward from the next branch
         config = ZombsoleMLPConfig
@@ -37,9 +37,6 @@ def main():
         conf = config['model']
     elif rom == 'zombpyg_mlp':
         import zombpyg.gym_env # to register the demo gym environment
-        # NOTE: We make some changes relative to the training environment
-        # The following has more zombies than the environment used to train
-        # TODO: Need to track environment settings
         config = ZombpygMLPConfig
         env_config = config['environment']
         game = gym.make('jvstinian/Zombpyg-v0', **env_config)
@@ -50,7 +47,7 @@ def main():
         import zombpyg.gym_env # to register the demo gym environment
         config = ZombpygWithPlayersMLPConfig
         env_config = config['environment']
-        game = gym.make('jvstinian/Zombpyg-v0', **env_config) # map_id="easy_exit", rules_id="survival", initial_zombies=100, minimum_zombies=50, player_specs="terminator:random:5", enable_rendering=True
+        game = gym.make('jvstinian/Zombpyg-v0', **env_config)
         conf = config['model']
         conf['num_episode'] = 2 # 10
     elif rom == 'zombsole_surroundings_mlp':

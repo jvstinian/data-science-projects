@@ -51,26 +51,25 @@ def main():
     if configid == 'zombsole_mlp':
         config = ZombsoleMLPConfig
         env_config = config['environment']
-        game = gym.make('jvstinian/Zombsole-v0', **env_config) #  map_name="easy_exit", rules_name="safehouse", render_mode="human", initial_zombies=5)
+        game = gym.make('jvstinian/Zombsole-v0', **env_config)
     elif configid == 'zombpyg_mlp':
-        # TODO: Need to track environment settings
         config = ZombpygMLPConfig
         env_config = config['environment']
-        game = gym.make('jvstinian/Zombpyg-v0', **env_config) # map_id="tiny_space_v1", rules_id="safehouse", initial_zombies=10, minimum_zombies=10, enable_rendering=True
+        game = gym.make('jvstinian/Zombpyg-v0', **env_config)
     elif configid == 'zombpyg_withplayers_mlp':
         config = ZombpygWithPlayersMLPConfig
         env_config = config['environment']
-        game = gym.make('jvstinian/Zombpyg-v0', **env_config) # map_id="easy_exit", rules_id="survival", initial_zombies=100, minimum_zombies=50, player_specs="terminator:random:5", enable_rendering=True
+        game = gym.make('jvstinian/Zombpyg-v0', **env_config)
     elif configid == 'zombsole_surroundings_mlp':
         import zombsole.gym_env # to register the zombsole gym environment
         config = ZombsoleSurroundingsMLPConfig
         env_config = config['environment']
-        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', **env_config) # map_name="easy_exit_v2", rules_name="safehouse", render_mode="human", initial_zombies=4
+        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', **env_config)
     elif configid == 'zombsole_surroundings_cnn':
         import zombsole.gym_env # to register the zombsole gym environment
         config = ZombsoleCNNConfig
         env_config = config['environment']
-        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', **env_config) # map_name="easy_exit", rules_name="safehouse", render_mode="human", initial_zombies=8
+        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', **env_config)
     elif configid == 'demo_mlp':
         config = DemoConfig
         game = gym.make('prlp/Demo-v0')
