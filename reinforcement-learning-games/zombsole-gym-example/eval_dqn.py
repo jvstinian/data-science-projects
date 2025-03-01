@@ -8,7 +8,12 @@ import os
 import argparse
 import gym
 from dqn.q_learning import DQN
-from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP
+# from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP
+from dqn.config import (
+    ZombsoleMLPConfig, ZombsoleSurroundingsMLPConfig, ZombsoleCNNConfig,
+    ZombpygMLPConfig, ZombpygWithPlayersMLPConfig,
+    DemoConfig, CartpoleConfig,
+)
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
 from gym.envs.registration import registry, register
 import tensorflow.compat.v1 as tf
@@ -26,37 +31,46 @@ def main():
     model_version = args.model_version
     if rom == 'zombsole_mlp':
         # pulling this forward from the next branch
-        game = gym.make('jvstinian/Zombsole-v0', map_name="easy_exit", rules_name="safehouse", render_mode="human")
-        conf = ZOMBSOLE_MLP
+        config = ZombsoleMLPConfig
+        env_config = config['environment']
+        game = gym.make('jvstinian/Zombsole-v0', **env_config) #  map_name="easy_exit", rules_name="safehouse", render_mode="human", initial_zombies=5)
+        conf = config['model']
     elif rom == 'zombpyg_mlp':
         import zombpyg.gym_env # to register the demo gym environment
         # NOTE: We make some changes relative to the training environment
         # The following has more zombies than the environment used to train
         # TODO: Need to track environment settings
-        game = gym.make('jvstinian/Zombpyg-v0', map_id="tiny_space_v1", rules_id="safehouse", initial_zombies=10, minimum_zombies=10, enable_rendering=True)
-        conf = ZOMBPYG_MLP
+        config = ZombpygMLPConfig
+        env_config = config['environment']
+        game = gym.make('jvstinian/Zombpyg-v0', **env_config)
         # TODO: Perhaps make num_episode a command-line argument?
+        conf = config['model']
         conf['num_episode'] = 2 # 10
     elif rom == 'zombpyg_withplayers_mlp':
         import zombpyg.gym_env # to register the demo gym environment
-        game = gym.make('jvstinian/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=10, minimum_zombies=10, player_specs="terminator:random:5", enable_rendering=True)
-        conf = ZOMBPYG_MLP
+        config = ZombpygWithPlayersMLPConfig
+        env_config = config['environment']
+        game = gym.make('jvstinian/Zombpyg-v0', **env_config) # map_id="easy_exit", rules_id="survival", initial_zombies=100, minimum_zombies=50, player_specs="terminator:random:5", enable_rendering=True
+        conf = config['model']
         conf['num_episode'] = 2 # 10
     elif rom == 'zombsole_surroundings_mlp':
         import zombsole.gym_env # to register the demo gym environment
-        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', map_name="easy_exit_v2", rules_name="safehouse", render_mode="human", initial_zombies=4)
-        conf = ZOMBSOLE_MLP
+        config = ZombsoleSurroundingsMLPConfig
+        env_config = config['environment']
+        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', **env_config)
+        conf = config['model']
         conf['num_episode'] = 5
         conf['epsilon_min'] = 0.005
-        # conf['T'] = 50
     elif rom == 'demo_mlp':
         import prlp_demo.gym_env # to register the demo gym environment
+        config = DemoConfig
         game = gym.make('prlp/Demo-v0')
-        conf = DEMO
+        conf = config['model']
         conf['num_episode'] = 2
     else:
-        game = gym.make('jvstinian/Zombsole-v0')
-        conf = ZOMBSOLE_MLP
+        config = DemoConfig
+        game = gym.make('prlp/Demo-v0')
+        conf = config['model']
 
     model_dir = os.path.join(conf['log_dir'], rom, model_version)
     device = '/{}:0'.format(args.device)

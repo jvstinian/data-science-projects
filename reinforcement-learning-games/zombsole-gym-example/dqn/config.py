@@ -6,6 +6,7 @@ Created on Mar 25, 2018
 Modifications made by 
 Justin Smith (jvstinian@gmail.com) in 2021
 '''
+import copy
 
 
 DEMO = {
@@ -22,7 +23,6 @@ DEMO = {
     'input_scale': 1.0,
     'update_interval': 1,
     'T': 1000000,
-    
     'learning_rate': 0.5e-2,
     'optimizer': 'momentum',
     'rho': 0.9,
@@ -30,6 +30,8 @@ DEMO = {
     
     'log_dir': 'log/'
 }
+
+CARTPOLE = copy.deepcopy(DEMO)
 
 DEMO_CNN = {
     'network_type': 'cnn',
@@ -89,12 +91,10 @@ ZOMBSOLE_MLP = {
     'input_scale': 2048.0,
     'update_interval': 1,
     'T': 290, # changed from 990
-    
     'learning_rate': 0.01, # also tried 0.5e-2, 0.1
     'optimizer': 'momentum', # tried rmsprop
     'rho': 0.9, # tried 0.0
     'rmsprop_epsilon': 1e-6,
-    
     'log_dir': 'log/'
 }
 
@@ -119,5 +119,74 @@ ZOMBSOLE_CNN = {
     'rmsprop_epsilon': 1e-6,
     
     'log_dir': 'log/'
+}
+
+ZOMBSOLE_SURROUNDINGS_MLP = copy.deepcopy(ZOMBSOLE_MLP)
+ZOMBSOLE_SURROUNDINGS_MLP['num_episode'] = 2000
+ZOMBSOLE_SURROUNDINGS_MLP['epsilon_min'] = 0.005
+ZOMBSOLE_SURROUNDINGS_MLP['epsilon_decay'] = 50000
+ZOMBSOLE_SURROUNDINGS_MLP['gamma'] = 0.9
+
+ZombsoleMLPConfig = {
+    'environment': {
+        'map_name': 'easy_exit', 
+        'rules_name': 'safehouse', 
+        'render_mode': 'human', 
+        'initial_zombies': 5
+    },
+    'model': ZOMBSOLE_MLP
+}
+
+ZombsoleSurroundingsMLPConfig = {
+    'environment': {
+        'map_name': 'easy_exit_v2', 
+        'rules_name': 'safehouse', 
+        'render_mode': 'human', 
+        'initial_zombies': 4
+    },
+    'model': ZOMBSOLE_SURROUNDINGS_MLP
+}
+
+ZombsoleCNNConfig = {
+    'environment': {
+        'map_name': 'easy_exit',
+        'rules_name': 'safehouse', 
+        'render_mode': 'human', 
+        'initial_zombies': 8
+    },
+    'model': ZOMBSOLE_CNN
+}
+
+ZombpygMLPConfig = {
+    'environment': {
+        'map_id': 'tiny_space_v1',
+        'rules_id': 'safehouse',
+        'initial_zombies': 10,
+        'minimum_zombies': 10,
+        'enable_rendering': True
+    },
+    'model': ZOMBPYG_MLP
+}
+
+ZombpygWithPlayersMLPConfig = {
+    'environment': {
+        'map_id': 'easy_exit',
+        'rules_id': 'survival',
+        'initial_zombies': 100,
+        'minimum_zombies': 50,
+        'player_specs': 'terminator:random:5',
+        'enable_rendering': True
+    },
+    'model': ZOMBPYG_MLP
+}
+
+DemoConfig = {
+    'environment': None,
+    'model': DEMO
+}
+
+CartpoleConfig = {
+    'environment': None,
+    'model': CARTPOLE
 }
 
