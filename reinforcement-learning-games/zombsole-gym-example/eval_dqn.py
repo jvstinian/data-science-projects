@@ -7,6 +7,8 @@ Created on Mar 28, 2018
 import os
 import argparse
 import gym
+import prlp_demo.gym_env
+from envs.cartpole import CartPoleObservationWrapper
 from dqn.q_learning import DQN
 from dqn.config import (
     ZombsoleMLPConfig, ZombsoleSurroundingsMLPConfig, ZombsoleCNNConfig,
@@ -53,10 +55,13 @@ def main():
         env_config.update(config.get('eval_overrides', {}).get('environment', {}))
         game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', **env_config)
     elif rom == 'demo_mlp':
-        import prlp_demo.gym_env # to register the demo gym environment
         config = DemoConfig
         game = gym.make('prlp/Demo-v0')
+    elif configid == 'cartpole_mlp':
+        config = CartpoleConfig
+        game = CartPoleObservationWrapper()
     else:
+        import prlp_demo.gym_env # to register the demo gym environment
         config = DemoConfig
         game = gym.make('prlp/Demo-v0')
 

@@ -100,6 +100,9 @@ def main():
         dqn.set_summary_writer(summary_writer=writer)
         
         sess.run(tf.global_variables_initializer())
+        # if tf.train.latest_checkpoint(model_dir) is not None:
+        #     dqn.load(sess, saver)
+
         if configid == "zombpyg_withplayers_mlp":
             dqn.load(sess, saver)
         elif configid == "zombpyg_mlp":
