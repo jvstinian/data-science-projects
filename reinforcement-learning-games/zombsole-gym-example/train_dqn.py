@@ -15,7 +15,11 @@ from gym.envs.registration import registry, register
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
 from envs.cartpole import CartPoleObservationWrapper
 from dqn.q_learning import DQN
-from dqn.config import DEMO, DEMO_CNN, ZOMBSOLE_MLP, ZOMBSOLE_CNN
+from dqn.config import (
+    ZombsoleMLPConfig, ZombsoleSurroundingsMLPConfig, ZombsoleCNNConfig,
+    ZombpygMLPConfig, ZombpygWithPlayersMLPConfig,
+    DemoConfig, CartpoleConfig,
+)
 import zombpyg.gym_env # to register the zombpyg gym environment
 import prlp_demo.gym_env # to register the demo gym environment
 
@@ -42,46 +46,48 @@ def main():
     if model_version == "":
         print("ERROR: Model version must be a non-empty string", file=sys.stderr)
         sys.exit(1)
-        
+
+    config = None
     if configid == 'zombsole_mlp':
-        game = gym.make('jvstinian/Zombsole-v0', map_name="easy_exit", rules_name="safehouse", render_mode="human", initial_zombies=5)
-        conf = ZOMBSOLE_MLP
+        config = ZombsoleMLPConfig
+        env_config = config['environment']
+        game = gym.make('jvstinian/Zombsole-v0', **env_config)
     elif configid == 'zombpyg_mlp':
-        # TODO: Need to track environment settings
-        game = gym.make('jvstinian/Zombpyg-v0', map_id="tiny_space_v1", rules_id="safehouse", initial_zombies=10, minimum_zombies=10, enable_rendering=True)
-        conf = ZOMBPYG_MLP
+        config = ZombpygMLPConfig
+        env_config = config['environment']
+        game = gym.make('jvstinian/Zombpyg-v0', **env_config)
     elif configid == 'zombpyg_withplayers_mlp':
-        game = gym.make('jvstinian/Zombpyg-v0', map_id="easy_exit", rules_id="survival", initial_zombies=100, minimum_zombies=50, player_specs="terminator:random:5", enable_rendering=True)
-        conf = ZOMBSOLE_MLP
+        config = ZombpygWithPlayersMLPConfig
+        env_config = config['environment']
+        game = gym.make('jvstinian/Zombpyg-v0', **env_config)
     elif configid == 'zombsole_surroundings_mlp':
         import zombsole.gym_env # to register the zombsole gym environment
-        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', map_name="easy_exit_v2", rules_name="safehouse", render_mode="human", initial_zombies=4)
-        conf = ZOMBSOLE_MLP
-        conf['num_episode'] = 2000
-        conf['epsilon_min'] = 0.005 # testing
-        conf['epsilon_decay'] = 50000
-        conf['gamma'] = 0.9
+        config = ZombsoleSurroundingsMLPConfig
+        env_config = config['environment']
+        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', **env_config)
     elif configid == 'zombsole_surroundings_cnn':
         import zombsole.gym_env # to register the zombsole gym environment
-        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', map_name="easy_exit", rules_name="safehouse", render_mode="human", initial_zombies=8)
-        conf = ZOMBSOLE_CNN
+        config = ZombsoleCNNConfig
+        env_config = config['environment']
+        game = gym.make('jvstinian/Zombsole-SurroundingsView-v0', **env_config)
     elif configid == 'demo_mlp':
+        config = DemoConfig
         game = gym.make('prlp/Demo-v0')
-        conf = DEMO
     elif configid == 'cartpole_mlp':
+        config = CartpoleConfig
         game = CartPoleObservationWrapper()
-        conf = DEMO
     else:
+        config = DemoConfig
         game = gym.make('prlp/Demo-v0')
-        conf = DEMO
 
+    conf = config['model']
     model_dir = os.path.join(conf['log_dir'], args.config, model_version)
     log_dir = os.path.join(model_dir, 'train')
     if not tf.gfile.Exists(log_dir):
         tf.gfile.MakeDirs(log_dir)
     
-    with open(os.path.join(model_dir, "model_config.json"), "w") as model_config_file:
-        json.dump(conf, model_config_file, indent=4)
+    with open(os.path.join(model_dir, "run_config.json"), "w") as run_config_file:
+        json.dump(config, run_config_file, indent=4)
 
     device = '/{}:0'.format(args.device)
     lcallback = game.render if args.render else None
