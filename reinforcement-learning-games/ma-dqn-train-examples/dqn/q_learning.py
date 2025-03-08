@@ -224,6 +224,7 @@ class DQN:
 
     def checkpoint_save(self, model_name='model.ckpt'):
         # TODO: The following variable should possibly be defined as a member variable of the class
+        # TODO: We should save both the Q and the target network
         checkpoint = tf.train.Checkpoint(target_network=self.target_network)
         checkpoint_prefix = os.path.join(self.directory, model_name)
         save_path = checkpoint.save(file_prefix=checkpoint_prefix)
@@ -248,6 +249,7 @@ class DQN:
         status = checkpoint.restore(tf.train.latest_checkpoint(self.directory))
 
         # TODO: I have to make a call so the variables are created
+        # TODO: The shape used in the following needs to be generalized
         print("Evaluating restored model on dummy variable: ", self.target_network.call( tf.constant(1.0, shape=(1, 2, 312, 1)) ))
         print("Evaluating q_network on dummy variable: ", self.q_network.call( tf.constant(1.0, shape=(1, 2, 312, 1)) ))
 

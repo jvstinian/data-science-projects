@@ -9,6 +9,7 @@ import scipy.signal
 import tensorflow as tf
 
 
+# TODO: Which of the following methods are still needed?
 def flatten_tensor_variables(ts):
     return tf.concat(axis=0, values=[tf.reshape(x, [-1]) for x in ts])
 

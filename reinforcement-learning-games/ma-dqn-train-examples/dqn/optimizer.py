@@ -11,6 +11,7 @@ from dqn.utils import get_param_assign_ops, set_param_values
 from dqn.krylov import Krylov
 from dqn.utils import create_optimizer
 
+# TODO: Decide whether to keep and adapt this
 # class Hvp:
 #     
 #     def __init__(self):
@@ -211,6 +212,7 @@ class Optimizer:
             self.optimizer.apply_gradients(
                 zip(gradient, self.q_network.trainable_variables)
             )
+            # TODO: Maybe tf print?
             print("gradient", gradient)
             print("q_values", self.q_network.get_q_value(states))
             print("q_action", self.q_network.get_q_action(states))
