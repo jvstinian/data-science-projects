@@ -6,7 +6,8 @@ Created on Mar 28, 2018
 '''
 import os
 import argparse
-import gym
+#import tensorflow as tf
+import gymnasium as gym
 import prlp_demo.gym_env
 from envs.cartpole import CartPoleObservationWrapper
 from dqn.q_learning import DQN

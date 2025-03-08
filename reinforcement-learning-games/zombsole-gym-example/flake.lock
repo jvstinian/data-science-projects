@@ -29,16 +29,17 @@
       },
       "locked": {
         "dir": "reinforcement-learning-games/prlp-demo",
-        "lastModified": 1740577344,
-        "narHash": "sha256-hv7y1ZYIkFQudhGZkf0ukkYL/fjo4OX+porv2oPf/Cw=",
+        "lastModified": 1737159433,
+        "narHash": "sha256-TIy+606KAFs9mzohuJgURJ1xyCIxwg1+bBVF6KsZZmo=",
         "owner": "jvstinian",
         "repo": "data-science-projects",
-        "rev": "4fdda467aaf81770811eb2b30e7cae89754ec1fe",
+        "rev": "83748f65b473bec902dcab869885a655ccee58d5",
         "type": "github"
       },
       "original": {
         "dir": "reinforcement-learning-games/prlp-demo",
         "owner": "jvstinian",
+        "ref": "prlp-gymnasium-switch",
         "repo": "data-science-projects",
         "type": "github"
       }
@@ -53,15 +54,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1740404743,
-        "narHash": "sha256-YIYbJgCy0S9VG1JsRU5VOGAM6ycYC3+fc1bV3YC1Drc=",
+        "lastModified": 1737152038,
+        "narHash": "sha256-ZYJgd5+ptVZiQjM2YM5hQtJaarg1NbL4KZGJPXqYMsk=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "b98c7282d449c2e2644ba1a6c4e50df08219df09",
+        "rev": "88896e8912a933d1fdc3eca53180e4062489f069",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
+        "ref": "gymnasium-switch",
         "repo": "zombpyg",
         "type": "github"
       }
@@ -76,15 +78,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1740491422,
-        "narHash": "sha256-A270LqAq3xbQFl+lIWSAFKZpat7RupCNocqarnzrEag=",
+        "lastModified": 1737153296,
+        "narHash": "sha256-RFLJeORF6fFojm2E8Pbs0aPuYtz6yLDoXeYapKp0q0I=",
         "owner": "jvstinian",
         "repo": "libzombsole",
-        "rev": "7646232830bc57bcf32d232463e2e5827342dcb4",
+        "rev": "a3a9b2b4b5af8cde9bdb3e410e602c5fc3b74dd3",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
+        "ref": "gymnasium-switch",
         "repo": "libzombsole",
         "type": "github"
       }
