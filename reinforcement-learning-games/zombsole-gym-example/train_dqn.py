@@ -31,7 +31,6 @@ def truncate_dir(path):
     return path
 
 def main():
-    import gymnasium as gym
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-c', '--config', default='zombsole_mlp', 
                         type=str, help='Game Configuration')
