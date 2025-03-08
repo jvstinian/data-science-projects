@@ -168,21 +168,9 @@ class Optimizer:
                 config['rmsprop_epsilon']
         )
         
-        # self.train_op = optimizer.apply_gradients(
-        #          zip(self.q_network.gradient, 
-        #          self.q_network.vars))
-        
-    # def local_apply_gradients(self, inputs, actions, ys):
-    #     gradient, loss = self.q_network.get_gradients_and_loss(inputs, actions, ys)
-    #     self.optimizer.apply_gradients(
-    #          zip(gradient, self.q_network.trainable_variables)
-    #     )
-    #     return gradient, loss
-
     def set_summary_writer(self, summary_writer=None):
         self.summary_writer = summary_writer
         
-    # def sample_transitions(self, sess, batch_size):  # TODO
     def sample_transitions(self, batch_size): 
         
         w, h = self.feedback_size
@@ -202,23 +190,14 @@ class Optimizer:
             targets[i] = r
             terminations[i] = t
 
-        # targets += self.gamma * (1 - terminations) * self.target_network.get_q_value(sess, new_states) # TODO
         targets += self.gamma * (1 - terminations) * self.target_network.get_q_value(new_states)
         return states, actions, targets    
 
-    # def train_one_step(self, sess, step, batch_size): # TODO
     def train_one_step(self, step, batch_size):
         
-        # states, actions, targets = self.sample_transitions(sess, batch_size)
         states, actions, targets = self.sample_transitions(batch_size)
-        # feed_dict = self.q_network.get_feed_dict(states, actions, targets)
         
         if self.summary_writer and step % 1000 == 0:
-            # summary_str, _, = sess.run([self.q_network.summary_op, self.q_network.print_op,
-            #                             self.train_op], 
-            #                            feed_dict=feed_dict)
-            # self.summary_writer.add_summary(summary_str, step)
-            # self.summary_writer.flush()
             gradient, loss = self.q_network.get_gradients_and_loss(states, actions, targets)
             self.optimizer.apply_gradients(
                 zip(gradient, self.q_network.trainable_variables)
@@ -228,7 +207,6 @@ class Optimizer:
               tf.summary.scalar("loss", loss, step=step)
               self.summary_writer.flush()
         else:
-            # sess.run(self.train_op, feed_dict=feed_dict)
             gradient, _ = self.q_network.get_gradients_and_loss(states, actions, targets)
             self.optimizer.apply_gradients(
                 zip(gradient, self.q_network.trainable_variables)
