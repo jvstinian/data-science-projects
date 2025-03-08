@@ -4,9 +4,6 @@ Created on Mar 25, 2018
 @author: ywz
 '''
 import tensorflow as tf
-# import tensorflow.compat.v1 as tf
-# tf.disable_v2_behavior()
-# from dqn.layers import conv2d, dense
 from dqn.layers import Conv2dLayer, DenseLayer
 
 
@@ -21,17 +18,6 @@ class QNetwork(tf.Module):
         self.network_type = network_type
         self.scope = scope
         
-        # # Frame images
-        # self.x = tf.placeholder(dtype=tf.float32, 
-        #                         shape=(None, self.channel, self.width, self.height))
-        # # Estimates of Q-value
-        # self.y = tf.placeholder(dtype=tf.float32, shape=(None,))
-        # # Selected actions
-        # self.a = tf.placeholder(dtype=tf.int32, shape=(None,))
-        
-        # with tf.variable_scope(scope):
-        #     self.build()
-        #     self.build_loss() # TODO
         self.build()
         
     def build(self):
@@ -56,14 +42,6 @@ class QNetwork(tf.Module):
             self.layers.extend(
                 [ self.net['conv1'], self.net['conv2'], self.net['conv3'], self.net['feature']  ]
             )
-            # self.net['conv1'] = conv2d(self.net['input'], 32, kernel=(8, 8), stride=(4, 4), 
-            #                            init_b=tf.constant_initializer(0.01), name='conv1')
-            # self.net['conv2'] = conv2d(self.net['conv1'], 64, kernel=(4, 4), stride=(2, 2), 
-            #                            init_b=tf.constant_initializer(0.01), name='conv2')
-            # self.net['conv3'] = conv2d(self.net['conv2'], 64, kernel=(3, 3), stride=(1, 1), 
-            #                            init_b=tf.constant_initializer(0.01), name='conv3')
-            # self.net['feature'] = dense(self.net['conv3'], 512, 
-            #                             init_b=tf.constant_initializer(0.01), name='fc1')
         elif self.network_type == 'cnn_nips':
             self.net['conv1'] = Conv2dLayer(
                 16, kernel=(8, 8), stride=(4, 4), init_b=tf.constant_initializer(0.01), name='conv1'
@@ -77,12 +55,6 @@ class QNetwork(tf.Module):
             self.layers.extend(
                 [ self.net['conv1'], self.net['conv2'], self.net['feature']  ]
             )
-            # self.net['conv1'] = conv2d(self.net['input'], 16, kernel=(8, 8), stride=(4, 4), 
-            #                            init_b=tf.constant_initializer(0.01), name='conv1')
-            # self.net['conv2'] = conv2d(self.net['conv1'], 32, kernel=(4, 4), stride=(2, 2), 
-            #                            init_b=tf.constant_initializer(0.01), name='conv2')
-            # self.net['feature'] = dense(self.net['conv2'], 256, 
-            #                             init_b=tf.constant_initializer(0.01), name='fc1')
         elif self.network_type == 'mlp':
             self.net['fc1'] = DenseLayer(50, 
                                          # init_W=tf.constant_initializer(0.0), init_b=tf.constant_initializer(0.0), 
@@ -93,10 +65,6 @@ class QNetwork(tf.Module):
             self.layers.extend(
                 [ self.net['fc1'], self.net['feature']  ]
             )
-            # self.net['fc1'] = dense(self.net['input'], 50, 
-            #                         init_b=tf.constant_initializer(0.0), name='fc1')
-            # self.net['feature'] = dense(self.net['fc1'], 50, 
-            #                             init_b=tf.constant_initializer(0.0), name='fc2')
         else:
             raise NotImplementedError('Unknown network type: {}'.format(self.network_type))
             
@@ -107,36 +75,7 @@ class QNetwork(tf.Module):
                 name='values'
         )
         self.layers.append(self.net['values'])
-        # self.net['values'] = dense(self.net['feature'], self.n_outputs, activation=None,
-        #                            init_b=tf.constant_initializer(0.0), name='values')
-        
-        # TODO: Moving these to call methods below
-        # self.net['q_value'] = tf.reduce_max(self.net['values'], axis=1, name='q_value')
-        # self.net['q_action'] = tf.argmax(self.net['values'], axis=1, 
-        #                                  name='q_action', output_type=tf.int32)
-        
-        # TODO: What should be done with this?
-        # self.vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, 
-        #                               tf.get_variable_scope().name)
-    
-    # TODO: Not sure what to do here
-    # def build_loss(self):
-    #     
-    #     indices = tf.transpose(tf.stack([tf.range(tf.shape(self.a)[0]), self.a], axis=0))
-    #     value = tf.gather_nd(self.net['values'], indices, name='action_value')
-    #     
-    #     self.loss = 0.5 * tf.reduce_mean(tf.square((value - self.y)))
-    #     self.gradient = tf.gradients(self.loss, self.vars)
-    #     
-    #     tf.summary.scalar("loss", self.loss, collections=['q_network'])
-    #     self.summary_op = tf.summary.merge_all('q_network')
-        
-    # def get_q_value(self, sess, state):
-    #     return sess.run(self.net['q_value'], feed_dict={self.x: state})
-    # 
-    # def get_q_action(self, sess, state):
-    #     return sess.run(self.net['q_action'], feed_dict={self.x: state})
-    
+
     # TODO: Revert this as needed.  The following decorator does appear to allow us to save the model
     # @tf.function
     @tf.compat.v1.keras.utils.track_tf1_style_variables
@@ -147,30 +86,18 @@ class QNetwork(tf.Module):
                 ret = layer(ret)
             return ret
 
-    # @tf.compat.v1.keras.utils.track_tf1_style_variables
-    # def get_q_value(self, inputs):
-    #     with tf.compat.v1.variable_scope(self.scope):
-    #         values = self(inputs)
-    #         return tf.reduce_max(values, axis=1, name='q_value')
-    # @tf.compat.v1.keras.utils.track_tf1_style_variables
     # TODO: Revert this as needed.  The following decorator does appear to allow us to save the model
     # @tf.function
     def get_q_value(self, inputs):
         return tf.reduce_max(self.call(inputs), axis=1, name='q_value')
 
-    # @tf.compat.v1.keras.utils.track_tf1_style_variables
     def get_q_action(self, inputs):
         return tf.argmax(self.call(inputs), axis=1, name='q_action', output_type=tf.int32)
-    
-    # TODO: No idea what to do here
-    # def get_feed_dict(self, states, actions, values):
-    #     return {self.x: states, self.a: actions, self.y: values}
-                
+
     # TODO: No idea what to do here
     def clone_op(self, network):
         new_vars = {v.name.replace(network.scope, ''): v for v in network.variables}
         print("new vars: ", new_vars)
-        # return [tf.assign(v, new_vars[v.name.replace(self.scope, '')]) for v in self.variables]
         for v in self.variables:
             v.assign(new_vars[v.name.replace(self.scope, '')], read_value=True)
     
@@ -181,13 +108,8 @@ class QNetwork(tf.Module):
         
             loss = 0.5 * tf.reduce_mean(tf.square((value - ys)))
 
-        # gradient = tf.gradients(loss, self.trainable_variables)
         gradient = tape.gradient(loss, self.trainable_variables)
 
-        # print("actions: ", actions)
-        # print("value: ", value)
-        # print("ys: ", ys)
-        # print("gradient: ", gradient)
         print("loss: ", loss)
 
         return gradient, loss

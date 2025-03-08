@@ -135,7 +135,6 @@ class MultiAgentReplayMemory:
 
         index_choices = [ idx for idx, _ in weights_and_indices ]
         weights = numpy.array([sample_size for _, sample_size in weights_and_indices])
-        # print("Weights: ", weights)
 
         cwghts = (weights.cumsum() / weights.sum()).tolist()
         agent_idx = random.choices(index_choices, cum_weights=cwghts, k=1)[0]
