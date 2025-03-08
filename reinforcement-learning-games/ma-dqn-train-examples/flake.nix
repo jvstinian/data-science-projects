@@ -31,24 +31,6 @@
           ];
           dev-python = pkgs.python3.withPackages dev-python-packages;
 
-          # # This is probably not the way I'll go
-          # train-script = pkgs.writeShellScriptBin "train.sh" ''
-          #   python train_dqn.py --config zombsole_cnn
-          # '';
-
-          # my-process-bundle = pkgs.symlinkJoin {
-          #     name = "my-process-bundle";
-          #     buildInputs = [ pkgs.makeWrapper ];
-          #     postBuild = ''
-          #         echo "NOTE: Links added in symlinkJoin"
-          #         makeWrapper ${train-script}/bin/train.sh $out/bin/my-wrapper --prefix PATH : $out/bin
-          #     '';
-          #     paths = [
-          #       dev-python
-          #     ];
-          # };
-          
-          # Will likely go this way instead
           python-train-app = pkgs.python3Packages.buildPythonApplication {
             pname = "ma-dqn-train-examples";
             version = "1.0";
@@ -63,15 +45,17 @@
           shellHook = "export PS1='\\[\\e[1;34m\\]ma-dqn-train-dev > \\[\\e[0m\\]'";
         };
         packages = {
-          pytrain = python-train-app;
+          ma-dqn-train = python-train-app;
         };
-        # apps.wrappertrain = {
-        #   type = "app";
-        #   program = "${my-process-bundle}/bin/my-wrapper";
-        # };
-        apps.pytrain = {
-          type = "app";
-          program = "${python-train-app}/bin/train_dqn.py";
+        apps = {
+	  ma-dqn-train = {
+	    type = "app";
+            program = "${python-train-app}/bin/train_dqn.py";
+          };
+	  ma-dqn-eval = {
+	    type = "app";
+            program = "${python-train-app}/bin/eval_dqn.py";
+          };
         };
       }
     );
