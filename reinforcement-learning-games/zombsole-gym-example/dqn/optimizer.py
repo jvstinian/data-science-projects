@@ -4,7 +4,6 @@ Created on 4 Sep 2017
 @author: ywz
 '''
 import numpy
-# import tensorflow as tf
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 from dqn.utils import flatten_tensor_variables
@@ -203,12 +202,9 @@ class Optimizer:
         feed_dict = self.q_network.get_feed_dict(states, actions, targets)
         
         if self.summary_writer and step % 1000 == 0:
-            # TODO: Revert the following
-            # summary_str, loss_str, _ = sess.run([self.q_network.summary_op, self.q_network.print_op,
-            #                             self.train_op], 
-            #                            feed_dict=feed_dict)
-            sess.run(self.train_op, feed_dict=feed_dict)
-            summary_str, _ = sess.run([self.q_network.summary_op, self.q_network.print_op], feed_dict=feed_dict)
+            summary_str, _, _ = sess.run([self.q_network.summary_op, self.q_network.print_op,
+                                        self.train_op], 
+                                       feed_dict=feed_dict)
             self.summary_writer.add_summary(summary_str, step)
             self.summary_writer.flush()
             
@@ -218,12 +214,10 @@ class Optimizer:
             memlen = len(self.replay_memory.others)
             posrewpct = 100.0 * posrew / max(memlen, 1)
             nzrewpct = 100.0 * nzrew / max(memlen, 1)
-            # TODO: Just use print here, tensorflow is not being used
-            local_print_op = tf.print(
+            print(
                 "Percent of memories with non-zero reward: ", nzrewpct, "\n",
                 "Percent of memories with positive reward: ", posrewpct,
             )
-            sess.run([local_print_op], feed_dict=feed_dict) # TODO: Is feed_dict needed here?
         else:
             sess.run(self.train_op, feed_dict=feed_dict)
 
