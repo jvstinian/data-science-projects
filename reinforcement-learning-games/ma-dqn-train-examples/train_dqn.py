@@ -31,7 +31,6 @@ def main():
 
     configid = args.config
     if configid == 'zombpyg_mlp':
-        #import zombpyg.gym_env # to register the demo gym environment
         game = MultiagentZombpygEnv(
             map_id="elevator",
             rules_id="safehouse",
@@ -122,17 +121,6 @@ def main():
     with tf.device(device):
         dqn = DQN(conf, game, model_dir, callback=lcallback, verbose=True)
 
-    # TODO
-    # with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-    #     saver = tf.train.Saver()
-    #     writer = tf.summary.FileWriter(delete_dir(log_dir), sess.graph_def)
-    #     dqn.set_summary_writer(summary_writer=writer)
-    #     
-    #     sess.run(tf.global_variables_initializer())
-    #     dqn.train(sess, saver)
-    # NOTE: The following probably wasn't the way to go
-    # def saver(model):
-    #     tf.saved_model.save(model, model_dir)
     saver = tf.saved_model.save
     writer = tf.summary.create_file_writer(truncate_dir(log_dir))
     dqn.set_summary_writer(summary_writer=writer)

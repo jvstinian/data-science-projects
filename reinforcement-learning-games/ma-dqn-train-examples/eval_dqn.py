@@ -7,12 +7,9 @@ import os
 import argparse
 import gym
 from dqn.q_learning import DQN
-# from dqn.config import DEMO, DEMO_CNN, ZOMBPYG_MLP
 from dqn.config import ZOMBPYG_MLP
 from gym.envs.registration import registry, register
 import tensorflow as tf
-# import tensorflow.compat.v1 as tf
-# tf.disable_v2_behavior()
 from zombpyg.multiagent_env import MultiagentZombpygEnv
 
 
@@ -25,7 +22,6 @@ def main():
     
     rom = args.game
     if rom == 'zombpyg_mlp':
-        # import zombpyg.gym_env # to register the demo gym environment
         game = MultiagentZombpygEnv(
             map_id="elevator", rules_id="safehouse", 
             initial_zombies=50, minimum_zombies=5, 
@@ -105,13 +101,6 @@ def main():
     with tf.device(device):
         dqn = DQN(conf, game, model_dir, callback=game.render, verbose=True)
     
-    # with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-    #     summary_writer = tf.summary.FileWriter(str(model_dir), sess.graph)
-    #     dqn.set_summary_writer(summary_writer)
-    #     sess.run(tf.global_variables_initializer())
-    #     saver = tf.train.Saver()
-    #     dqn.load(sess, saver)
-    #     dqn.evaluate(sess)
     # TODO: Initially was using the tf.saved_model.load,
     #       but this format appears to be oriented to serving predictions,
     #       and didn't seem to provide the same interaction we had with v1.
