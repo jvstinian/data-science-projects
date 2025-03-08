@@ -9,5 +9,5 @@ setup(
         # packages=find_packages(include=["dqn"]),
         packages=find_packages(),
         # Executables
-        scripts=["train_dqn.py"],
+        scripts=["train_dqn.py", "eval_dqn.py"],
 )
