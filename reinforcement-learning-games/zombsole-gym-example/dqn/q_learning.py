@@ -193,7 +193,6 @@ class DQN:
             try:
                 checkpoint_path = os.path.join(self.directory, model_name)
                 saver.restore(sess, checkpoint_path)
-            except:
-                pass
-            
-                
+            except Exception as ex:
+                print(f"Caught exception while restoring model: {ex}")
+
