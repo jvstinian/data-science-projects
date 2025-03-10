@@ -31,11 +31,22 @@ def main():
 
     configid = args.config
     if configid == 'zombpyg_mlp':
+        world_config={
+            "tag": "SingleMap",
+            "parameters": {
+                "map_id": "tiny_space_v1",
+                "w": 640, 
+                "h": 480,
+                "initial_zombies": 20,
+                "minimum_zombies": 15,
+            }
+        }
         game = MultiagentZombpygEnv(
-            map_id="elevator",
+            world_config=world_config,
             rules_id="safehouse",
-            initial_zombies=50,
-            minimum_zombies=15,
+            # map_id="elevator",
+            # initial_zombies=50,
+            # minimum_zombies=15,
             agent_ids = [str(i) for i in range(3)],
             agent_weapons="rifle",
             player_specs="",
@@ -45,16 +56,6 @@ def main():
         conf = ZOMBPYG_MLP
     elif configid == '1pzombpyg_mlp':
         #import zombpyg.gym_env # to register the demo gym environment
-        # world_config={
-        #     "tag": "SingleMap",
-        #     "parameters": {
-        #         "map_id": "tiny_space_v1",
-        #         "w": 640, 
-        #         "h": 480,
-        #         "initial_zombies": 20,
-        #         "minimum_zombies": 10,
-        #     }
-        # }
         world_config = {
             "tag": "RandomMap",
             "parameters": [
