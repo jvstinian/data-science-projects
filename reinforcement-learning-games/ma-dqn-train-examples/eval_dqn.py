@@ -22,9 +22,21 @@ def main():
     
     rom = args.game
     if rom == 'zombpyg_mlp':
+        world_config={
+            "tag": "SingleMap",
+            "parameters": {
+                "map_id": "tiny_space_v1",
+                "w": 640, 
+                "h": 480,
+                "initial_zombies": 20,
+                "minimum_zombies": 10,
+            }
+        }
         game = MultiagentZombpygEnv(
-            map_id="elevator", rules_id="safehouse", 
-            initial_zombies=50, minimum_zombies=5, 
+            world_config=world_config,
+            rules_id="safehouse", 
+            # map_id="elevator", 
+            # initial_zombies=50, minimum_zombies=5, 
             agent_ids = [str(i) for i in range(3)],
             agent_weapons="rifle",
             player_specs="",
