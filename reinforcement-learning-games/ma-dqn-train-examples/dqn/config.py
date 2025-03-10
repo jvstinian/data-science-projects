@@ -17,7 +17,6 @@ ZOMBPYG_MLP = {
     'input_scale': 2.0,
     'update_interval': 50,
     'T': 6000,
-    
     'learning_rate': 0.1e-2,
     'optimizer': 'momentum',
     'rho': 0.9, 
