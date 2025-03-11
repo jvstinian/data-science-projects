@@ -57,7 +57,7 @@ def main():
     elif rom == 'demo_mlp':
         config = DemoConfig
         game = gym.make('prlp/Demo-v0')
-    elif configid == 'cartpole_mlp':
+    elif rom == 'cartpole_mlp':
         config = CartpoleConfig
         game = CartPoleObservationWrapper()
     else:
