@@ -9,8 +9,7 @@ import scipy.signal
 import tensorflow as tf
 
 
-# TODO: Which of the following methods are still needed?
-# Used in Hvp and ConjugateOptimizer
+# Only used in Hvp and ConjugateOptimizer
 def flatten_tensor_variables(ts):
     return tf.concat(axis=0, values=[tf.reshape(x, [-1]) for x in ts])
 
@@ -21,20 +20,20 @@ def flatten_tensors(tensors):
     else:
         return numpy.asarray([])
     
-# Used in Hvp
+# Only used in Hvp
 def unflatten_tensors(flattened, tensor_shapes):
     tensor_sizes = list(map(numpy.prod, tensor_shapes))
     indices = numpy.cumsum(tensor_sizes)[:-1]
     return [numpy.reshape(pair[0], pair[1]) for pair in zip(numpy.split(flattened, indices), tensor_shapes)]
 
-# Used in ConjugateOptimizer
+# Only used in ConjugateOptimizer
 def get_param_values(sess, params, flatten=True):
     values = sess.run(params)
     if flatten:
         values = flatten_tensors(values)
     return values
 
-# Used in ConjugateOptimizer
+# Only used in ConjugateOptimizer
 def get_param_assign_ops(params):
     
     assign_ops = []
@@ -64,7 +63,7 @@ def set_param_values(sess, assign_ops, input_tensors, values, flatten=True):
 #     # or rev(y)[t] - discount*rev(y)[t-1] = rev(x)[t]
 #     return scipy.signal.lfilter([1], [1, float(-discount)], x[::-1], axis=0)[::-1]
 
-# TODO: Not used
+# Not used
 def iterate_minibatches(input_list=None, batch_size=None, shuffle=False):
     
     if batch_size is None:
@@ -103,7 +102,7 @@ def create_optimizer(method, learning_rate, rho, epsilon):
     
     return opt
 
-# TODO: Not used.  Was likely used when there was atari code
+# Not used.  Was likely used when there was atari code
 def cv2_resize_image(image, resized_shape=(84, 84), method='crop', crop_offset=8):
         
         height, width = image.shape
