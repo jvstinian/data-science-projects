@@ -32,6 +32,9 @@ DEMO = {
 }
 
 CARTPOLE = copy.deepcopy(DEMO)
+CARTPOLE['epsilon_decay'] = 50000
+CARTPOLE['num_episode'] = 2000
+CARTPOLE['T'] = 200
 
 DEMO_CNN = {
     'network_type': 'cnn',
@@ -207,6 +210,11 @@ DemoConfig = {
 
 CartpoleConfig = {
     'environment': None,
-    'model': CARTPOLE
+    'model': CARTPOLE,
+    'eval_overrides': {
+        'model': {
+            'num_episode': 10
+        }
+    }
 }
 
