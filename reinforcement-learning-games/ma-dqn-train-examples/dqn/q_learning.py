@@ -18,16 +18,16 @@ class DQN:
         self.env = env
         if verbose:
             print(self.env.action_spaces[self.env.possible_agents[0]])
-        self.actions = range(0, self.env.action_spaces[self.env.possible_agents[0]].n) # TODO: Improve this
-        self.feedback_size = self.env.observation_spaces[self.env.possible_agents[0]].shape # NEW.  NOTE: The use of .shape might need adjustment in the future
+        self.actions = range(0, self.env.action_spaces[self.env.possible_agents[0]].n)
+        self.feedback_size = self.env.observation_spaces[self.env.possible_agents[0]].shape
         if len(self.feedback_size) >= 3:
             self.feedback_size = self.feedback_size[1:]
-        print("feedback_size: %s" % (self.feedback_size,))
+        if verbose:
+            print("feedback_size: %s" % (self.feedback_size,))
         self.callback = callback
         self.summary_writer = summary_writer
         
         self.config = config
-        # self.max_agents = config['max_agents'] # new
         self.batch_size = config['batch_size']
         self.n_episode = config['num_episode']
         self.capacity = config['capacity']
@@ -68,13 +68,6 @@ class DQN:
                                    q_network=self.q_network, 
                                    target_network=self.target_network, 
                                    replay_memory=self.replay_memory)
-        # Ops for updating target network
-        # self.clone_op = self.target_network.get_clone_op(self.q_network) # TODO
-        # For tensorboard
-        # TODO: The following are logged explicitly below using the v2 approach
-        # self.t_score = tf.placeholder(dtype=tf.float32, shape=[], name='new_score')
-        # tf.summary.scalar("score", self.t_score, collections=['dqn'])
-        # self.summary_op = tf.summary.merge_all('dqn')
     
     def set_summary_writer(self, summary_writer=None):
         self.summary_writer = summary_writer
@@ -84,11 +77,11 @@ class DQN:
         action = {}
         if numpy.random.binomial(1, epsilon_greedy) == 1:
             for agent_id in state:
-                action[agent_id] = random.choice(self.actions) # self.env.action_spaces[agent_id].sample()
+                action[agent_id] = random.choice(self.actions) # NOTE: Alternatively: self.env.action_spaces[agent_id].sample()
                 # TODO: The following can now be removed as we have friendly fire guards
-                if (state[agent_id][0,:,:].reshape((39,8))[18:21, 3] <= 1.0).any() and (action[agent_id] == 11):
-                    print("Looks like we're randomly firing at another player.  Changing to a healing action.")
-                    action[agent_id] = 13
+                # if (state[agent_id][0,:,:].reshape((39,8))[18:21, 3] <= 1.0).any() and (action[agent_id] == 11):
+                #     print("Looks like we're randomly firing at another player.  Changing to a healing action.")
+                #     action[agent_id] = 13
                 
         else:
             for agent_id in state:
@@ -113,23 +106,23 @@ class DQN:
             ret[agent_id] = self.env.action_spaces[agent_id].sample()
         return ret
 
+    # TODO: saver is no longer used
     def train(self, saver=None):
         num_of_trials = -1
         for episode in range(self.n_episode):
             total_rewards = {agent_id: 0.0 for agent_id in self.env.possible_agents}
-            total_reward = 0 # TODO: Will need to be total_rewards?
-            frame, _ = self.env.reset() # TODO: frames?
-            # frame = self.env.get_current_feedback()
+            combined_reward = 0
+            frame, _ = self.env.reset()
             for _ in range(self.num_nullops):
                 # NOTE: In the previous call to the step method, the environment updated the active agents after the frame was created.
                 #       We filter the frame to the active agents to guarantee consistency.
                 updated_frame = { agent_id: frame[agent_id] for agent_id in self.env.agents }
-                actions = self.sample_action_space() # TODO: multiagent sampling
+                actions = self.sample_action_space()
                 r, new_frame, termination = self.play(actions)
                 for agent_id in r:
                     total_rewards[agent_id] += r[agent_id]
-                total_reward += sum(r.values())
-                self.replay_memory.add(updated_frame, actions, r, termination) # TODO: support multiagent replay memory
+                combined_reward += sum(r.values())
+                self.replay_memory.add(updated_frame, actions, r, termination)
                 frame = new_frame
             
             for _ in range(self.config['T']):
@@ -140,7 +133,7 @@ class DQN:
                 if self.verbose:
                     print("epi {}, frame {}k: reward {}, eps {}".format(episode, 
                                                                         int(num_of_trials / 1000), 
-                                                                        total_reward,
+                                                                        combined_reward,
                                                                         epsilon_greedy))
                 if num_of_trials % self.update_interval == 0:
                     self.optimizer.train_one_step(num_of_trials, self.batch_size)
@@ -154,20 +147,19 @@ class DQN:
                 r, new_frame, termination = self.play(action)
                 for agent_id in r:
                     total_rewards[agent_id] += r[agent_id]
-                total_reward += sum(r.values())
+                combined_reward += sum(r.values())
                 self.replay_memory.add(updated_frame, action, r, termination)
                 frame = new_frame
                 
                 # Perhaps added (num_of_trials > 0)
                 if num_of_trials % self.time_between_two_copies == 0:
-                    # self.save(saver) # TODO: For now we're using the checkpoint saver functionality, should we consider using this save approach?
                     self.checkpoint_save()
                     self.update_target_network()
                 
                 if self.callback:
                     self.callback()
                 if all(termination.values()):
-                    score = total_reward
+                    score = combined_reward
                     with self.summary_writer.as_default():
                       tf.summary.scalar("t_score", score, step=num_of_trials)
                       self.summary_writer.flush()
@@ -177,23 +169,23 @@ class DQN:
     def evaluate(self):
         for episode in range(self.n_episode):
             total_rewards = {agent_id: 0.0 for agent_id in self.env.possible_agents}
-            total_reward = 0
+            combined_reward = 0
             frame, _ = self.env.reset()
             # self.env.get_current_feedback()
             for _ in range(self.num_nullops):
                 updated_frame = { agent_id: frame[agent_id] for agent_id in self.env.agents }
-                actions = self.sample_action_space() # TODO: multiagent sampling
+                actions = self.sample_action_space()
                 r, new_frame, termination = self.play(actions)
                 for agent_id in r:
                     total_rewards[agent_id] += r[agent_id]
-                total_reward += sum(r.values())
-                self.replay_memory.add(updated_frame, actions, r, termination) # TODO: support multiagent replay memory
+                combined_reward += sum(r.values())
+                self.replay_memory.add(updated_frame, actions, r, termination)
                 frame = new_frame
             
             for _ in range(self.config['T']):
                 if self.verbose:
                     print("episode {}, total reward {}".format(episode, 
-                                                            total_reward))
+                                                            combined_reward))
                 
                 # NOTE: In the step method, the environment updates the active agents after the frame is created
                 #       but before the step returns.  Before moving to the next step call, we filter the frame
@@ -204,7 +196,7 @@ class DQN:
                 r, new_frame, termination = self.play(action)
                 for agent_id in r:
                     total_rewards[agent_id] += r[agent_id]
-                total_reward += sum(r.values())
+                combined_reward += sum(r.values())
                 self.replay_memory.add(updated_frame, action, r, termination)
                 frame = new_frame
 
@@ -223,19 +215,16 @@ class DQN:
                 raise RuntimeError("Caught exception trying to save model.")
 
     def checkpoint_save(self, model_name='model.ckpt'):
-        # TODO: The following variable should possibly be defined as a member variable of the class
         # TODO: We should save both the Q and the target network
         checkpoint = tf.train.Checkpoint(target_network=self.target_network)
         checkpoint_prefix = os.path.join(self.directory, model_name)
         save_path = checkpoint.save(file_prefix=checkpoint_prefix)
         print(f"Saved to checkpoint at {save_path}")
     
-    # TODO
     # TODO: Probably moving away from the following for now
     def load(self, loader, model_name='model.ckpt'):
         try:
             checkpoint_path = os.path.join(self.directory, model_name)
-            # TODO: The following is not correct
             self.target_network = loader(checkpoint_path)
             print("Printing loaded model: ")
             print(self.target_network)
@@ -248,10 +237,10 @@ class DQN:
         print("checkpoint path: ", tf.train.latest_checkpoint(self.directory))
         status = checkpoint.restore(tf.train.latest_checkpoint(self.directory))
 
-        # TODO: I have to make a call so the variables are created
-        # TODO: The shape used in the following needs to be generalized
-        print("Evaluating restored model on dummy variable: ", self.target_network.call( tf.constant(1.0, shape=(1, 2, 312, 1)) ))
-        print("Evaluating q_network on dummy variable: ", self.q_network.call( tf.constant(1.0, shape=(1, 2, 312, 1)) ))
+        # A call is made so the variables are created
+        input_shape = (1, self.num_frames) + self.feedback_size
+        print("Evaluating restored model on dummy variable: ", self.target_network.call( tf.constant(1.0, shape=input_shape) ))
+        print("Evaluating q_network on dummy variable: ", self.q_network.call( tf.constant(1.0, shape=input_shape) ))
 
         print("target network scope: ", self.target_network.scope)
         # You only see variables if the calls are made above

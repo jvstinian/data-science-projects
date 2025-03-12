@@ -23,7 +23,6 @@ class QNetwork(tf.Module):
     def build(self):
         
         self.net = {}
-        # self.net['input'] = tf.transpose(self.x, perm=(0, 2, 3, 1)) # TODO: Not sure if this is the way to go
         self.layers = [ ]
             
         if self.network_type == 'cnn':
@@ -56,12 +55,8 @@ class QNetwork(tf.Module):
                 [ self.net['conv1'], self.net['conv2'], self.net['feature']  ]
             )
         elif self.network_type == 'mlp':
-            self.net['fc1'] = DenseLayer(50, 
-                                         # init_W=tf.constant_initializer(0.0), init_b=tf.constant_initializer(0.0), 
-                                         name='fc1')
-            self.net['feature'] = DenseLayer(50, 
-                                             # init_W=tf.constant_initializer(0.0), init_b=tf.constant_initializer(0.0), 
-                                             name='fc2')
+            self.net['fc1'] = DenseLayer(50, name='fc1')
+            self.net['feature'] = DenseLayer(50, name='fc2')
             self.layers.extend(
                 [ self.net['fc1'], self.net['feature']  ]
             )
@@ -70,7 +65,6 @@ class QNetwork(tf.Module):
             
         self.net['values'] = DenseLayer(
                 self.n_outputs, activation=None, 
-                # init_W=tf.constant_initializer(0.0), 
                 init_b=tf.constant_initializer(0.0), 
                 name='values'
         )
@@ -81,20 +75,17 @@ class QNetwork(tf.Module):
     @tf.compat.v1.keras.utils.track_tf1_style_variables
     def call(self, inputs):
         with tf.compat.v1.variable_scope(self.scope):
-            ret = tf.transpose(inputs, perm=(0, 2, 3, 1)) # TODO: Not sure if this is the way to go
+            ret = tf.transpose(inputs, perm=(0, 2, 3, 1))
             for layer in self.layers:
                 ret = layer(ret)
             return ret
 
-    # TODO: Revert this as needed.  The following decorator does appear to allow us to save the model
-    # @tf.function
     def get_q_value(self, inputs):
         return tf.reduce_max(self.call(inputs), axis=1, name='q_value')
 
     def get_q_action(self, inputs):
         return tf.argmax(self.call(inputs), axis=1, name='q_action', output_type=tf.int32)
 
-    # TODO: No idea what to do here
     def clone_op(self, network):
         new_vars = {v.name.replace(network.scope, ''): v for v in network.variables}
         print("new vars: ", new_vars)
