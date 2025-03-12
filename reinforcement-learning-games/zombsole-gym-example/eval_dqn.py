@@ -17,7 +17,7 @@ from dqn.config import (
     DemoConfig, CartpoleConfig,
 )
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
-from gym.envs.registration import registry, register
+from gymnasium.envs.registration import registry, register
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
