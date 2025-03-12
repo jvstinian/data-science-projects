@@ -115,7 +115,7 @@ def main():
     with tf.device(device):
         dqn = DQN(conf, game, model_dir, callback=game.render, verbose=True)
     
-    # TODO: Initially was using the tf.saved_model.load,
+    # NOTE: Initially was using the tf.saved_model.load,
     #       but this format appears to be oriented to serving predictions,
     #       and didn't seem to provide the same interaction we had with v1.
     #       We try the checkpoint approach now, but due to the new API, 
@@ -125,7 +125,6 @@ def main():
     dqn.set_summary_writer(summary_writer=writer)
     # dqn.load(loader)
     status = dqn.checkpoint_restore()
-    # print("Evaluating restored model: ", dqn.target_network.call( tf.constant(1.0, shape=(1, 2, 273, 1)) ))
     dqn.evaluate()
     print(status.assert_consumed())  # Optional sanity checks.
 
