@@ -112,7 +112,7 @@ class DemoGymEnv(object):
         self.game.reset()
         return self.get_observation(), {}
 
-    def render(self): # , mode='human'):
+    def render(self):
         """Renders the environment.
 
         The set of supported modes varies per environment. (And some
