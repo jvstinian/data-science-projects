@@ -5,17 +5,17 @@
       url = "github:nixos/nixpkgs/nixos-23.11";
     };
     libzombsole = {
-      url = "github:jvstinian/libzombsole/gymnasium-switch";
+      url = "github:jvstinian/libzombsole";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
     libzombpyg = {
-      url = "github:jvstinian/zombpyg/gymnasium-switch";
+      url = "github:jvstinian/zombpyg";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
     libprlpdemo = {
-      url = "github:jvstinian/data-science-projects/prlp-gymnasium-switch?dir=reinforcement-learning-games/prlp-demo";
+      url = "github:jvstinian/data-science-projects?dir=reinforcement-learning-games/prlp-demo";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
