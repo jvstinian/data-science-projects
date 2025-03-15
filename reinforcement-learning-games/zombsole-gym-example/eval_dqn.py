@@ -6,7 +6,8 @@ Created on Mar 28, 2018
 '''
 import os
 import argparse
-import gym
+#import tensorflow as tf
+import gymnasium as gym
 import prlp_demo.gym_env
 from envs.cartpole import CartPoleObservationWrapper
 from dqn.q_learning import DQN
@@ -16,7 +17,7 @@ from dqn.config import (
     DemoConfig, CartpoleConfig,
 )
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
-from gym.envs.registration import registry, register
+from gymnasium.envs.registration import registry, register
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 

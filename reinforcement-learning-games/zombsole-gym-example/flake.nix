@@ -35,7 +35,7 @@
               numpy
               opencv4
               tensorflowWithCuda
-              gym
+              gymnasium
               jvstinian-zombsole
               zombpyg
 	      prlp-demo
