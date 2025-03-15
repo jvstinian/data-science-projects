@@ -131,7 +131,6 @@ def main():
     saver = tf.saved_model.save
     writer = tf.summary.create_file_writer(truncate_dir(log_dir))
     dqn.set_summary_writer(summary_writer=writer)
-    # if (configid == 'zombpyg_mlp') or (configid == "1pzombpyg_mlp"):
     if tf.train.latest_checkpoint(model_dir) is not None:
         _ = dqn.checkpoint_restore()
     dqn.train(saver)
