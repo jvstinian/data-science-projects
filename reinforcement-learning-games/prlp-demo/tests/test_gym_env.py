@@ -9,7 +9,7 @@ def test_gym_env_registry():
 
 def test_gym_env_frame_size():
     env = DemoGymEnv(
-        enable_rendering=False
+        render_mode=None
     )
     observation, _ = env.reset()
     feedback_size = env.get_frame_size()
@@ -18,7 +18,7 @@ def test_gym_env_frame_size():
 
 def test_gym_env_step():
     env = DemoGymEnv(
-        enable_rendering=False
+        render_mode=None
     )
     observation, _ = env.reset()
     step_count = 0

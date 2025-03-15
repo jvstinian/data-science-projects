@@ -115,6 +115,14 @@ class DQN:
                 
                 state = self.replay_memory.phi(frame)
                 action_idx = self.choose_action(sess, state, epsilon_greedy)
+
+                if self.verbose:
+                    temp_q_value_for_action, temp_q_action, temp_values = self.get_tensor_values(sess, state)
+                    print("epi {}, frame {}k: model q_action {}, q_value {:.4}, values {}".format(episode, 
+                                                                 int(num_of_trials / 1000), 
+                                                                 temp_q_action,
+                                                                 temp_q_value_for_action,
+                                                                 temp_values))
                 r, new_frame, termination = self.play(action_idx)
                 total_reward += r
                 self.replay_memory.add(frame, action_idx, r, termination)
@@ -139,30 +147,38 @@ class DQN:
         for episode in range(self.n_episode):
             total_reward = 0
             frame, _ = self.env.reset()
-            # self.env.get_current_feedback()
             for _ in range(self.num_nullops):
                 action_idx=self.env.action_space.sample()
-                r, new_frame, termination = self.play(action_idx) # 2024-12-18 NOTE: Changed this from ...(action=action_idx)
+                r, new_frame, termination = self.play(action_idx)
                 total_reward += r
                 self.replay_memory.add(frame, 0, r, termination)
                 frame = new_frame
             
             for _ in range(self.config['T']):
-                if self.verbose:
-                    print("episode {}, total reward {}".format(episode, 
-                                                            total_reward))
-                
                 state = self.replay_memory.phi(frame)
-                action = self.choose_action(sess, state, self.epsilon_min)     
+                if self.verbose:
+                    print("values for state: ", self.get_tensor_values(sess, state)[2])
+                action = self.choose_action(sess, state, self.epsilon_min)
                 r, new_frame, termination = self.play(action)
                 total_reward += r
                 self.replay_memory.add(frame, action, r, termination)
                 frame = new_frame
+                
+                if self.verbose:
+                    print("episode {}, action {}, total reward {}".format(episode, action, total_reward))
 
                 if self.callback:
                     self.callback()
-                    if termination:
-                        break
+
+                if termination:
+                    break
+
+    def get_tensor_values(self, sess, state):
+        temp_x = numpy.asarray(numpy.expand_dims(state, axis=0) / self.input_scale, dtype=numpy.float32)
+        temp_q_value_for_action = self.q_network.get_q_value(sess, temp_x)[0]
+        temp_q_action = self.q_network.get_q_action(sess, temp_x)[0]
+        temp_values, = sess.run(self.q_network.net['values'], feed_dict={self.q_network.x: temp_x})
+        return temp_q_value_for_action, temp_q_action, temp_values
     
     def save(self, sess, saver, model_name='model.ckpt'):
         if saver:
@@ -177,7 +193,6 @@ class DQN:
             try:
                 checkpoint_path = os.path.join(self.directory, model_name)
                 saver.restore(sess, checkpoint_path)
-            except:
-                pass
-            
-                
+            except Exception as ex:
+                print(f"Caught exception while restoring model: {ex}")
+

@@ -18,31 +18,6 @@
         "type": "github"
       }
     },
-    "libprlpdemo": {
-      "inputs": {
-        "flake-utils": [
-          "flake-utils"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "dir": "reinforcement-learning-games/prlp-demo",
-        "lastModified": 1741996154,
-        "narHash": "sha256-bwBu2v0RC/Vdk4DFsj/0cG/8Qo7PTQVwGcbFe2had7U=",
-        "owner": "jvstinian",
-        "repo": "data-science-projects",
-        "rev": "26c33328ff0faa09181f72ab67c3fee1cc452aa4",
-        "type": "github"
-      },
-      "original": {
-        "dir": "reinforcement-learning-games/prlp-demo",
-        "owner": "jvstinian",
-        "repo": "data-science-projects",
-        "type": "github"
-      }
-    },
     "libzombpyg": {
       "inputs": {
         "flake-utils": [
@@ -53,39 +28,17 @@
         ]
       },
       "locked": {
-        "lastModified": 1741918565,
-        "narHash": "sha256-eQ8K7cxxWp0QxMR2di9ScJdHHCBiQlAyjYkXkchw6TY=",
+        "lastModified": 1740331509,
+        "narHash": "sha256-YIYbJgCy0S9VG1JsRU5VOGAM6ycYC3+fc1bV3YC1Drc=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "d6afa5a21f99a0ca0154dddbcbd58a4ed1dff48d",
+        "rev": "0d7d2ae92ce06830dff9f7437b68ac0e4120deba",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
+        "ref": "gym-env-renaming",
         "repo": "zombpyg",
-        "type": "github"
-      }
-    },
-    "libzombsole": {
-      "inputs": {
-        "flake-utils": [
-          "flake-utils"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1741918884,
-        "narHash": "sha256-aKNANT5b1UY0GMCmN0kEHDdB5VnUBC9eb9pMSHNoZO4=",
-        "owner": "jvstinian",
-        "repo": "libzombsole",
-        "rev": "d44412a21355fb3998b82b105a05dfa2f070bc7e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "jvstinian",
-        "repo": "libzombsole",
         "type": "github"
       }
     },
@@ -108,9 +61,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "libprlpdemo": "libprlpdemo",
         "libzombpyg": "libzombpyg",
-        "libzombsole": "libzombsole",
         "nixpkgs": "nixpkgs"
       }
     },
