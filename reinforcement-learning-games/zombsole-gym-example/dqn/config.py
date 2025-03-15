@@ -171,7 +171,7 @@ ZombpygMLPConfig = {
         'rules_id': 'safehouse',
         'initial_zombies': 10,
         'minimum_zombies': 10,
-        'enable_rendering': True
+        'render_mode': 'human'
     },
     'model': ZOMBPYG_MLP,
     'eval_overrides': {
@@ -188,7 +188,7 @@ ZombpygWithPlayersMLPConfig = {
         'initial_zombies': 100,
         'minimum_zombies': 50,
         'player_specs': 'terminator:random:5',
-        'enable_rendering': True
+        'render_mode': 'human'
     },
     'model': ZOMBPYG_MLP,
     'eval_overrides': {

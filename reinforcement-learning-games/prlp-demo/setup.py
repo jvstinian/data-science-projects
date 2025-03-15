@@ -69,7 +69,7 @@ setup(
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://caremad.io/posts/2013/07/setup-vs-requirement/
     install_requires=[
-        "pygame", "numpy", "gym"
+        "pygame", "numpy", "gymnasium"
     ],
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"
