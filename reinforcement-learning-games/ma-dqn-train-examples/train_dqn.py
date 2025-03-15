@@ -26,10 +26,16 @@ def main():
     parser.add_argument('-c', '--config', default='zombpyg_mlp', 
                         type=str, help='Game Configuration')
     parser.add_argument('-d', '--device', default='cpu', type=str, help='Device: cpu, gpu')
+    parser.add_argument('-m', '--model-version', default='v1', type=str, help='Model version: user-specified model version for experiment tracking')
     parser.add_argument('-r', '--render', action='store_true', help='Use rendering callback')
     args = parser.parse_args()
 
     configid = args.config
+    model_version = args.model_version
+    if model_version == "":
+        print("ERROR: Model version must be a non-empty string", file=sys.stderr)
+        sys.exit(1)
+
     if configid == 'zombpyg_mlp':
         world_config={
             "tag": "SingleMap",
@@ -112,10 +118,10 @@ def main():
     else:
         raise ValueError(f"config {configid} not supported")
         
-    log_dir = os.path.join(conf['log_dir'], '{}/train'.format(args.config))
+    model_dir = os.path.join(conf['log_dir'], args.config, model_version)
+    log_dir = os.path.join(model_dir, 'train')
     if not tf.io.gfile.exists(log_dir):
         tf.io.gfile.makedirs(log_dir)
-    model_dir = os.path.join(conf['log_dir'], args.config)
     
     lcallback = game.render if args.render else None
     device = '/{}:0'.format(args.device)
@@ -125,7 +131,7 @@ def main():
     saver = tf.saved_model.save
     writer = tf.summary.create_file_writer(truncate_dir(log_dir))
     dqn.set_summary_writer(summary_writer=writer)
-    if (configid == 'zombpyg_mlp') or (configid == "1pzombpyg_mlp"):
+    if tf.train.latest_checkpoint(model_dir) is not None:
         _ = dqn.checkpoint_restore()
     dqn.train(saver)
 

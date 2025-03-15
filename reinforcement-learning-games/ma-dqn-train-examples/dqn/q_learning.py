@@ -106,7 +106,6 @@ class DQN:
             ret[agent_id] = self.env.action_spaces[agent_id].sample()
         return ret
 
-    # TODO: saver is no longer used
     def train(self, saver=None):
         num_of_trials = -1
         for episode in range(self.n_episode):

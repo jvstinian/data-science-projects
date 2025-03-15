@@ -18,9 +18,11 @@ def main():
     parser = argparse.ArgumentParser(description=None)
     parser.add_argument('-g', '--game', default='demo', type=str, help='Game')
     parser.add_argument('-d', '--device', default='cpu', type=str, help='Device')
+    parser.add_argument('-m', '--model-version', default='v1', type=str, help='Model version: user-specified model version for experiment tracking')
     args = parser.parse_args()
     
     rom = args.game
+    model_version = args.model_version
     if rom == 'zombpyg_mlp':
         world_config={
             "tag": "SingleMap",
@@ -108,7 +110,7 @@ def main():
     else:
         raise ValueError(f"config {rom} not supported")
 
-    model_dir = os.path.join(conf['log_dir'], rom)
+    model_dir = os.path.join(conf['log_dir'], rom, model_version)
     device = '/{}:0'.format(args.device)
     with tf.device(device):
         dqn = DQN(conf, game, model_dir, callback=game.render, verbose=True)
