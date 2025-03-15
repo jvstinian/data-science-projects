@@ -29,17 +29,17 @@
       },
       "locked": {
         "dir": "reinforcement-learning-games/prlp-demo",
-        "lastModified": 1737159433,
-        "narHash": "sha256-TIy+606KAFs9mzohuJgURJ1xyCIxwg1+bBVF6KsZZmo=",
+        "lastModified": 1742052117,
+        "narHash": "sha256-Nk8A3IOc+kn/dMkD+gy1JgUraXNvzsf88kOeWUyCheQ=",
         "owner": "jvstinian",
         "repo": "data-science-projects",
-        "rev": "83748f65b473bec902dcab869885a655ccee58d5",
+        "rev": "f3ce4127933b306a46ef5219db4764040b39e0f1",
         "type": "github"
       },
       "original": {
         "dir": "reinforcement-learning-games/prlp-demo",
         "owner": "jvstinian",
-        "ref": "prlp-gymnasium-switch",
+        "ref": "prlp-nixos2405",
         "repo": "data-science-projects",
         "type": "github"
       }
@@ -54,11 +54,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1737152376,
-        "narHash": "sha256-e6O4xVB6/gEltZg28VLgtch5KQryc81QQ/HtJL7Wvd0=",
+        "lastModified": 1741918980,
+        "narHash": "sha256-YRRRnpQSAqaw+Cp2ZL0REfVKaEnM8uhY6opOajESRt8=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "3fe3b81720f29aceaa1fccbdf24129aa45fbb72c",
+        "rev": "d3e277bdb5a7713acfe949bb8467ac4ef87cf2db",
         "type": "github"
       },
       "original": {
@@ -78,11 +78,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1737156523,
-        "narHash": "sha256-jq5c3lEpZF679FekQkIyzRQo4F+ebEOjyeB6ZYO698E=",
+        "lastModified": 1741918913,
+        "narHash": "sha256-DBORFlWQ6f4P1rk1iHDA7VQh9sQCcAevz2GM9M895lg=",
         "owner": "jvstinian",
         "repo": "libzombsole",
-        "rev": "98e9e7ba0bd05288be6edf00b59d54c260b8d312",
+        "rev": "c5e9c99f079db9d02a118ba194ed4b52dbe50620",
         "type": "github"
       },
       "original": {
