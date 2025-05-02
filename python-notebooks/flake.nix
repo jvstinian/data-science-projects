@@ -27,6 +27,7 @@
               numpy
               statsmodels
               seaborn
+              plotly
               tabulate # for writing pandas dataframes to markdown
               xgboost
               scikit-learn

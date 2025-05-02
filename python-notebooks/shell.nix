@@ -10,6 +10,7 @@ let
     numpy
     statsmodels
     seaborn
+    # plotly
     tabulate # for writing pandas dataframes to markdown
     tensorflowWithCuda
   ];
