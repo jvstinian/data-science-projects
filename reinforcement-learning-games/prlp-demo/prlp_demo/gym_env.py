@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-from gym.spaces.discrete import Discrete
-from gym.spaces.box import Box
-from gym.envs.registration import register
+from gymnasium.spaces.discrete import Discrete
+from gymnasium.spaces.box import Box
+from gymnasium.envs.registration import register
 import pygame
 from prlp_demo.game import Game
 
@@ -39,15 +39,18 @@ class DemoGymEnv(object):
 
     def __init__(
         self,
-        enable_rendering=True,
+        render_mode="human",
         verbose=False
     ):
         self.w = 640
         self.h = 480
         self.window = None
-        if enable_rendering:
-            self.__initialize_renderer__()
+        if render_mode is not None and (render_mode not in self.metadata.get('render.modes', [])):
+            raise ValueError(f"In gymnasium environment, render_mode {render_mode} is not valid, must be one of {', '.join(self.metadata.get('render.modes', []))}")
+        self.render_mode = render_mode
 
+        if self.render_mode == "human":
+            self.__initialize_renderer__()
 
         # We pass None for the DISPLAYSURF, and configure the rendering below.
         self.game = Game(
@@ -107,9 +110,9 @@ class DemoGymEnv(object):
             observation (object): the initial observation.
         """
         self.game.reset()
-        return self.get_observation()
+        return self.get_observation(), {}
 
-    def render(self, mode='human'):
+    def render(self):
         """Renders the environment.
 
         The set of supported modes varies per environment. (And some
@@ -146,7 +149,7 @@ class DemoGymEnv(object):
                 else:
                     super(MyEnv, self).render(mode=mode) # just raise an exception
         """
-        if mode == 'human':
+        if self.render_mode == 'human':
             self.game.draw()
             return None
         else:
