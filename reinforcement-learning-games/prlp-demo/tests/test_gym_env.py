@@ -1,7 +1,7 @@
 # tests/test_gym_env.py
 import pytest
 from prlp_demo.gym_env import DemoGymEnv
-import gym
+import gymnasium as gym
 
 
 def test_gym_env_registry():
@@ -9,18 +9,18 @@ def test_gym_env_registry():
 
 def test_gym_env_frame_size():
     env = DemoGymEnv(
-        enable_rendering=False
+        render_mode=None
     )
-    observation = env.reset()
+    observation, _ = env.reset()
     feedback_size = env.get_frame_size()
     expected_observation_shape = (1,) + feedback_size
     assert observation.shape == expected_observation_shape
 
 def test_gym_env_step():
     env = DemoGymEnv(
-        enable_rendering=False
+        render_mode=None
     )
-    observation = env.reset()
+    observation, _ = env.reset()
     step_count = 0
     done = False
     while (not done) and (step_count < 100):

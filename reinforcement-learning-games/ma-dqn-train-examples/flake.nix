@@ -4,18 +4,8 @@
     nixpkgs = {
       url = "github:nixos/nixpkgs/nixos-23.11";
     };
-    libzombsole = {
-      url = "github:jvstinian/libzombsole";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-utils.follows = "flake-utils";
-    };
     libzombpyg = {
-      url = "github:jvstinian/zombpyg";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-utils.follows = "flake-utils";
-    };
-    libprlpdemo = {
-      url = "github:jvstinian/data-science-projects?dir=reinforcement-learning-games/prlp-demo";
+      url = "github:jvstinian/zombpyg/gym-env-renaming";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
@@ -23,28 +13,26 @@
       url = "github:numtide/flake-utils";
     };
   };
-  outputs = { nixpkgs, flake-utils, libzombsole, libzombpyg, libprlpdemo, ... }: 
+  outputs = { nixpkgs, flake-utils, libzombpyg, ... }: 
       flake-utils.lib.eachDefaultSystem (system:
         let 
           pkgs = import nixpkgs {
             inherit system;
-            overlays = [ libzombsole.overlays.default libzombpyg.overlays.default libprlpdemo.overlays.default ];
+            overlays = [ libzombpyg.overlays.default ];
           };
     
           dev-python-packages = ps: with ps; [
               numpy
               opencv4
               tensorflowWithCuda
-              gymnasium
-              jvstinian-zombsole
+	      keras
+              gym
               zombpyg
-	      prlp-demo
           ];
           dev-python = pkgs.python3.withPackages dev-python-packages;
 
-          # Will likely go this way instead
           python-train-app = pkgs.python3Packages.buildPythonApplication {
-            pname = "dqn-train-examples";
+            pname = "ma-dqn-train-examples";
             version = "1.0";
             propagatedBuildInputs = dev-python-packages pkgs.python3Packages;
             src = ./.;
@@ -54,21 +42,21 @@
           buildInputs = with pkgs; [
             dev-python
           ];
-          shellHook = "export PS1='\\[\\e[1;34m\\]dqn-train-dev > \\[\\e[0m\\]'";
+          shellHook = "export PS1='\\[\\e[1;34m\\]ma-dqn-train-dev > \\[\\e[0m\\]'";
         };
         packages = {
-          dqn-train = python-train-app;
+          ma-dqn-train = python-train-app;
         };
         apps = {
-	  dqn-train = {
+	  ma-dqn-train = {
 	    type = "app";
             program = "${python-train-app}/bin/train_dqn.py";
           };
-	  dqn-eval = {
+	  ma-dqn-eval = {
 	    type = "app";
             program = "${python-train-app}/bin/eval_dqn.py";
           };
-	};
+        };
       }
     );
 }

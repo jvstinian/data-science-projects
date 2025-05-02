@@ -1,14 +1,10 @@
 dqn/log/**
-log/**
-log_tfv2/**
+log*/**
+output/**
 
 .flake8
-Dockerfile
-Makefile
-Pipfile
 alt-diff-out.txt
 alt.diff
-develop.nix
 dqn/Experiments.ipynb
 dqn/MUJOCO_LOG.TXT
 dqn/distribution/
@@ -29,8 +25,3 @@ dqn/train_ch03.py
 dqn/trpo.py
 dqn/value/
 gym_script.py
-output_cnn_3zombies1min.v3.txt
-requirements.txt
-train.nix
-zombsole_train.out
-
