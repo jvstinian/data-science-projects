@@ -4,13 +4,13 @@ synopsis:       synopsis
 description:
   Description
 
-license:        BSD2
+license:        BSD-3-Clause
 license-file:   LICENSE
-homepage:       https://jvstinian.com
-bug-reports:    https://jvstinian.com
+homepage:       https://github.com/jvstinian/data-science-projects/haskell/statistics/statistical-models
+bug-reports:    https://github.com/jvstinian/data-science-projects/issues
 author:         Justin Smith <jvstinian@gmail.com>
 maintainer:     Justin Smith <jvstinian@gmail.com>
-copyright:      2024 Justin Smith, jvstinian.com
+copyright:      2024 - 2025 Justin Smith, jvstinian.com
 category:       Math, Statistics
 build-type:     Simple
 cabal-version:  >= 1.10
