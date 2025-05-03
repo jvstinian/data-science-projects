@@ -5,7 +5,6 @@ module Statistics.Regression.Internal
     ) where
 
 import Control.Applicative (liftA2)
--- import Data.Foldable
 import Data.Monoid (Sum(Sum), getSum)
 
 data Acc a = Acc {-# UNPACK #-} !Int !a

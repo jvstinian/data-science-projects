@@ -2,9 +2,7 @@ module Statistics.Regression.Logistic
   (Model, regress) where
 
 import Control.Applicative (liftA2)
--- import Data.Foldable
 import Data.Monoid (Sum(Sum), getSum)
--- import Data.Traversable
 import Numeric.AD (auto, gradientAscent)
 import Statistics.Regression.Internal (Acc(Acc), acc, dot)
 
