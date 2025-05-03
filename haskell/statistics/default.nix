@@ -15,10 +15,8 @@ let
     };
   };
   nixpkgs = (import pkgs.nixpkgs { inherit system; overlays = [ overlay ]; });
-  # local-statistical-models = pkgs.callPackage ../../statistical-models/build.nix { inherit (nixpkgs.haskell.packages.ghc948) ad vector math-functions; }
   jupyterlab = nixpkgs.python3.withPackages (ps: [ ps.jupyterlab ps.notebook ]);
 in nixpkgs.callPackage "${pkgs.ihaskell}/nix/release.nix" { compiler = "ghc948"; }{
   extraEnvironmentBinaries = [jupyterlab];
-  # packages = self: (with self; [local-statistical-models statistics]);
   packages = self: with self; [word8 statistics local-statistical-models hmatrix normaldistribution cassava Chart Chart-diagrams ihaskell-charts];
 }
