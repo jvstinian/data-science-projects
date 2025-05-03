@@ -20,5 +20,5 @@ let
 in nixpkgs.callPackage "${pkgs.ihaskell}/nix/release.nix" { compiler = "ghc948"; }{
   extraEnvironmentBinaries = [jupyterlab];
   # packages = self: (with self; [local-statistical-models statistics]);
-  packages = self: with self; [word8 statistics local-statistical-models Chart Chart-diagrams ihaskell-charts];
+  packages = self: with self; [word8 statistics local-statistical-models hmatrix normaldistribution cassava Chart Chart-diagrams ihaskell-charts];
 }
