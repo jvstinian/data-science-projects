@@ -18,5 +18,5 @@ let
   jupyterlab = nixpkgs.python3.withPackages (ps: [ ps.jupyterlab ps.notebook ]);
 in nixpkgs.callPackage "${pkgs.ihaskell}/nix/release.nix" { compiler = "ghc948"; }{
   extraEnvironmentBinaries = [jupyterlab];
-  packages = self: with self; [word8 statistics local-statistical-models hmatrix normaldistribution cassava Chart Chart-diagrams ihaskell-charts];
+  packages = self: with self; [word8 statistics local-statistical-models hmatrix normaldistribution cassava Chart Chart-diagrams ihaskell-charts ihaskell-diagrams];
 }
