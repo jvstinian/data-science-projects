@@ -36,11 +36,11 @@
     "ihaskell": {
       "flake": false,
       "locked": {
-        "lastModified": 1746155460,
-        "narHash": "sha256-TH1Ql18mNgQTV1aW+AZYnrXan1VEiu6FeOTAkZvRv2c=",
+        "lastModified": 1746628981,
+        "narHash": "sha256-IaV7XyrmanvJhg4zugrgrPjyaXF8WDj4XrBC2lxhXvc=",
         "owner": "IHaskell",
         "repo": "IHaskell",
-        "rev": "d507eb99d621ca860189a43dbde4207f7b4cbb61",
+        "rev": "fefb187c617b958458244a3919200d5f091a6f6e",
         "type": "github"
       },
       "original": {
@@ -66,16 +66,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1720535198,
-        "narHash": "sha256-zwVvxrdIzralnSbcpghA92tWu2DV2lwv89xZc8MTrbg=",
+        "lastModified": 1746810718,
+        "narHash": "sha256-VljtYzyttmvkWUKTVJVW93qAsJsrBbgAzy7DdnJaQfI=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "205fd4226592cc83fd4c0885a3e4c9c400efabb5",
+        "rev": "0c0bf9c057382d5f6f63d54fd61f1abd5e1c2f63",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "release-23.11",
+        "ref": "release-24.11",
         "repo": "nixpkgs",
         "type": "github"
       }
