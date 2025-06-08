@@ -78,6 +78,77 @@ fn GolfFieldContext(comptime T: type, comptime field_name: []const u8) type {
     };
 }
 
+fn GolfFieldContext2(comptime field_name: []const u8) type {
+    return struct {
+        const Self = @This();
+
+        field_name: []const u8,
+        offset: usize,
+        // offset: u8 = @offsetOf(GolfConditions, field_name),
+
+        pub const offset2: usize = @offsetOf(GolfConditions, field_name);
+
+        pub fn lessThan(self: Self, a: GolfConditions, b: GolfConditions) bool {
+            const T2: type = GolfFieldType(field_name);
+            // std.testing.expect(T == T2);
+            const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&a) + self.offset);
+            const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + self.offset);
+            // const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + .offset2);
+            return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
+        }
+
+        pub fn init() Self {
+            return Self{ .field_name = field_name, .offset = @offsetOf(GolfConditions, field_name) };
+        }
+
+        // This seems to work
+        pub fn sort(self: Self, train: []GolfConditions) void {
+            std.sort.insertion(GolfConditions, train, self, Self.lessThan);
+        }
+    };
+}
+
+// fn GolfFieldSort(comptime field_name: []const u8) type {
+//     return struct {
+//         const Self = @This();
+//
+//         field_name: []const u8,
+//         offset: usize,
+//         // offset: u8 = @offsetOf(GolfConditions, field_name),
+//
+//         pub const offset2: usize = @offsetOf(GolfConditions, field_name);
+//
+//         pub fn lessThan(self: Self, a: GolfConditions, b: GolfConditions) bool {
+//             const T2: type = GolfFieldType(field_name);
+//             // std.testing.expect(T == T2);
+//             const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&a) + self.offset);
+//             const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + self.offset);
+//             // const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + .offset2);
+//             return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
+//         }
+//
+//         pub fn init() Self {
+//             return Self{ .field_name = field_name, .offset = @offsetOf(GolfConditions, field_name) };
+//         }
+//         pub fn sort() void {}
+//     };
+// }
+
+test "golf context from field name" {
+    std.debug.print("Testing golf context construction using field name\n", .{});
+    const WindyContext = GolfFieldContext(Windy, "windy");
+    const windy_context = WindyContext.init();
+    const WindyContext2 = GolfFieldContext2("windy");
+    const windy_context2 = WindyContext2.init();
+    try std.testing.expect(windy_context.offset == windy_context2.offset);
+    const gc1 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .no, .play = .dont };
+    const gc2 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .yes, .play = .dont };
+    // try std.testing.expect(WindyContext.lessThan(gc1, gc2));
+    try std.testing.expect(windy_context.lessThan(gc1, gc2));
+    // try std.testing.expect(WindyContext2.lessThan(gc1, gc2));
+    try std.testing.expect(windy_context2.lessThan(gc1, gc2));
+}
+
 pub fn main() !void {
     // sunny   |      85     |    85    | false | Don't Play
     // sunny   |      80     |    90    | true  | Don't Play
@@ -114,6 +185,28 @@ pub fn main() !void {
     try stdout.print("Windy offset using declaration: {d}\n", .{WindyContext.offset2});
     try stdout.print("Windy offset using member variable: {d}\n", .{windy_context.offset});
     std.sort.insertion(GolfConditions, &train, windy_context, WindyContext.lessThan);
+    for (train) |rec| {
+        try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.windy) });
+    }
+
+    try stdout.print("Now using GolfContext2\n", .{});
+    const WindyContext2 = GolfFieldContext2("windy");
+    const windy_context2 = WindyContext2.init();
+    const WhetherToPlay2 = GolfFieldContext2("play");
+    const wtp2 = WhetherToPlay2.init();
+    try stdout.print("Now using GolfContext2: {s}\n", .{windy_context2.field_name});
+    std.sort.insertion(GolfConditions, &train, windy_context2, WindyContext2.lessThan);
+    for (train) |rec| {
+        try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.windy) });
+    }
+    try stdout.print("Now using GolfContext2: {s}\n", .{wtp2.field_name});
+    std.sort.insertion(GolfConditions, &train, wtp2, WhetherToPlay2.lessThan);
+    for (train) |rec| {
+        try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.play) });
+    }
+    try stdout.print("Trying new sort method on GolfContext2 with field {s}\n", .{windy_context2.field_name});
+    // WindyContext2.sort(windy_context2, &train);
+    windy_context2.sort(&train);
     for (train) |rec| {
         try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.windy) });
     }
