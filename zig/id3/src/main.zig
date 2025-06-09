@@ -94,7 +94,18 @@ fn GolfFieldContext2(comptime field_name: []const u8) type {
             const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&a) + self.offset);
             const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + self.offset);
             // const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + .offset2);
-            return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
+            // return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
+            switch (@typeInfo(T2)) {
+                .Enum => {
+                    return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
+                },
+                .Int => {
+                    return a_fld_ptr.* < b_fld_ptr.*;
+                },
+                else => {
+                    return false;
+                },
+            }
         }
 
         pub fn init() Self {
@@ -108,31 +119,71 @@ fn GolfFieldContext2(comptime field_name: []const u8) type {
     };
 }
 
-// fn GolfFieldSort(comptime field_name: []const u8) type {
-//     return struct {
-//         const Self = @This();
-//
-//         field_name: []const u8,
-//         offset: usize,
-//         // offset: u8 = @offsetOf(GolfConditions, field_name),
-//
-//         pub const offset2: usize = @offsetOf(GolfConditions, field_name);
-//
-//         pub fn lessThan(self: Self, a: GolfConditions, b: GolfConditions) bool {
-//             const T2: type = GolfFieldType(field_name);
-//             // std.testing.expect(T == T2);
-//             const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&a) + self.offset);
-//             const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + self.offset);
-//             // const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + .offset2);
-//             return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
-//         }
-//
-//         pub fn init() Self {
-//             return Self{ .field_name = field_name, .offset = @offsetOf(GolfConditions, field_name) };
-//         }
-//         pub fn sort() void {}
-//     };
+test "check GolfFieldContext2 type" {
+    const fld: []const u8 = "play";
+    const playType: type = GolfFieldContext2(fld);
+    const playDefault: playType = playType.init();
+    try comptime std.testing.expect(@TypeOf(playDefault) == playType);
+}
+
+// fn MakeSorterStruct(comptime field_names: []*const [:0]const u8) type
+fn MakeSorterStruct(comptime field_names: []const [*:0]const u8) type {
+    var fields: [field_names.len]std.builtin.Type.StructField = undefined;
+    for (field_names, 0..) |field_name, i| {
+        // std.fmt.comptimePrint("Making field {s} at index {d}\n", .{ field_name, i });
+        // const fieldName: [:0]const u8 = field_name[0.. :0];
+        const fieldName: [:0]const u8 = std.mem.span(field_name);
+        const fieldType: type = GolfFieldContext2(fieldName); // Note the coercion here
+        const defaultFieldValue: fieldType = fieldType.init();
+        // if (fieldName[0] == '?') {
+        //         //     fieldType = @Type(.{ .Optional = .{ .child = fieldType } });
+        //     fieldName = fieldName[1..];
+        // }
+        fields[i] = .{
+            .name = fieldName, // need sentinel termination for the field name
+            .type = fieldType,
+            .default_value = &defaultFieldValue,
+            .is_comptime = false,
+            .alignment = 0,
+        };
+    }
+    // _ = field_names.len; // to avoid unused variable warning
+    // const fld: [:0]const u8 = "play";
+    // const fld2: []const u8 = "play";
+    // const playType: type = GolfFieldContext2(fld2);
+    // const playDefault: playType = playType.init();
+    // var fields: [1]std.builtin.Type.StructField = .{
+    //     .{
+    //         .name = fld,
+    //         .type = playType, // GolfFieldContext2("play"), // WhetherToPlay,
+    //         .default_value = &playDefault, // GolfFieldContext2("play").init(), //  WhetherToPlay.dont,
+    //         .is_comptime = false,
+    //         .alignment = 0,
+    //     },
+    // };
+
+    return @Type(.{
+        .Struct = .{
+            .layout = .auto,
+            .fields = fields[0..],
+            .decls = &[_]std.builtin.Type.Declaration{},
+            .is_tuple = false,
+        },
+    });
+}
+
+const enum_fields: [4][*:0]const u8 = .{ "outlook", "windy", "play", "temperature" };
+// const enum_fields: [3]*const [:0]u8 = .{ "outlook", "windy", "play" }; // does not work
+
+const sorting_struct = MakeSorterStruct(&enum_fields){};
+
+// fn PrintSorterConstruct(comptime field_names: []const [*:0]const u8) void {
+//     @compileLog("Number of fields", field_names.len);
+//     for (field_names) |field_name| {
+//         @compileLog("Working with field ", field_name);
+//     }
 // }
+//
 
 test "golf context from field name" {
     std.debug.print("Testing golf context construction using field name\n", .{});
@@ -210,6 +261,22 @@ pub fn main() !void {
     for (train) |rec| {
         try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.windy) });
     }
+    try stdout.print("Now using the stuct sort methods\n", .{});
+    try stdout.print("Trying the struct sort methods with field {s}\n", .{"play"});
+    sorting_struct.play.sort(&train);
+    for (train) |rec| {
+        try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.play) });
+    }
+    try stdout.print("Trying the struct sort methods with field {s}\n", .{"windy"});
+    sorting_struct.windy.sort(&train);
+    for (train) |rec| {
+        try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.windy) });
+    }
+    try stdout.print("Trying the struct sort methods with field {s}\n", .{"temperature"});
+    sorting_struct.temperature.sort(&train);
+    for (train) |rec| {
+        try stdout.print("{d}: {d}\n", .{ rec.id, rec.temperature });
+    }
 
     try bw.flush(); // don't forget to flush!
 }
@@ -247,6 +314,33 @@ test "inline for for non-categorical variables" {
             try std.testing.expect(T2 == u8);
         } else {
             try std.testing.expect(false);
+        }
+    }
+}
+
+test "checking temperature type" {
+    const fld: []const u8 = "temperature";
+    const T2 = GolfFieldType(fld);
+    try std.testing.expect(T2 == u8);
+    try std.testing.expect(@typeInfo(T2).Int.signedness == .unsigned);
+    try std.testing.expect(@typeInfo(T2).Int.bits == 8);
+}
+
+test "checking types of features are acceptable" {
+    const noncat_fields: [4][]const u8 = .{ "outlook", "temperature", "windy", "play" };
+    inline for (noncat_fields) |fld| {
+        std.debug.print("Looking at field {s}\n", .{fld});
+        const T = GolfFieldType(fld);
+        switch (@typeInfo(T)) {
+            .Enum => {
+                try std.testing.expect(true);
+            },
+            .Int => {
+                try std.testing.expect(true);
+            },
+            else => {
+                try std.testing.expect(false);
+            },
         }
     }
 }
