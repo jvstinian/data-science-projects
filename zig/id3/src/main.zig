@@ -108,6 +108,24 @@ fn GolfFieldContext2(comptime field_name: []const u8) type {
             }
         }
 
+        // TODO: This probably doesn't work in this form
+        // fn compareFn(self: Self, context: GolfConditions, item: GolfConditions) std.math.Order {
+        //     const T2: type = GolfFieldType(field_name);
+        //     const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&context) + self.offset);
+        //     const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&item) + self.offset);
+        //     switch (@typeInfo(T2)) {
+        //         .Enum => {
+        //             return std.math.order(@intFromEnum(a_fld_ptr.*), @intFromEnum(b_fld_ptr.*));
+        //         },
+        //         .Int => {
+        //             return std.math.order(a_fld_ptr.*, b_fld_ptr.*);
+        //         },
+        //         else => {
+        //             return false;
+        //         },
+        //     }
+        // }
+
         pub fn init() Self {
             return Self{ .field_name = field_name, .offset = @offsetOf(GolfConditions, field_name) };
         }
@@ -116,6 +134,11 @@ fn GolfFieldContext2(comptime field_name: []const u8) type {
         pub fn sort(self: Self, train: []GolfConditions) void {
             std.sort.insertion(GolfConditions, train, self, Self.lessThan);
         }
+
+        // TODO: This probably doesn't work in this form
+        // pub fn upperBound(self: Self, items: []GolfConditions) void {
+        //     return std.sort.upperBound(GolfConditions, items, self, Self.lessThan);
+        // }
     };
 }
 
@@ -199,6 +222,91 @@ test "golf context from field name" {
     // try std.testing.expect(WindyContext2.lessThan(gc1, gc2));
     try std.testing.expect(windy_context2.lessThan(gc1, gc2));
 }
+
+fn calculate_entropy(comptime target_field_name: []const u8, records: []GolfConditions) f64 {
+    const FC = GolfFieldContext2(target_field_name);
+    const target_field_context = FC.init();
+    target_field_context.sort(records);
+
+    const T = GolfFieldType(target_field_name);
+    const N = @typeInfo(T).Enum.fields.len;
+    var counts: [N]usize = undefined;
+
+    if (records.len > 0) {
+        counts[0] = 1; // first record always counts
+    }
+    var idx: usize = 1;
+    var val_idx: usize = 0;
+    while (idx < records.len) : (idx += 1) {
+        if (@field(records[idx], target_field_name) != @field(records[idx - 1], target_field_name)) {
+            val_idx += 1;
+            counts[val_idx] = 1;
+        } else {
+            counts[val_idx] += 1;
+        }
+    }
+
+    const val_len = val_idx + 1;
+    const counts_slice: []usize = counts[0..val_len];
+    var total_count: usize = 0;
+    for (counts_slice) |count| {
+        total_count += count;
+    }
+
+    var entropy: f64 = 0.0;
+    for (counts_slice) |count| {
+        if (count > 0) {
+            const p: f64 = @as(f64, @floatFromInt(count)) / @as(f64, @floatFromInt(total_count));
+            entropy -= p * std.math.log2(p);
+        }
+    }
+
+    return entropy;
+}
+
+// TODO: Probably have to consider implementing compareFn and upperBound in a similar way to what was done for sort.
+// REFERENCES: https://ziglang.org/documentation/master/std/#std.sort.upperBound
+// fn calculate_gain(comptime nbr_of_attrs: usize, attrs: []const u8, comptime target_field_name: []const u8, records: []GolfConditions) f64 {
+//     const entropy: f64 = calculate_entropy(target_field_name, records);
+//     // var attrcounts0: [nbr_of_attrs]usize = undefined;
+//     // var attrcounts: []usize = attrcounts0[0..(attrs.len)];
+//     var gains0: [nbr_of_attrs]f64 = undefined;
+//     var gains: []f64 = gains0[0..(attrs.len)];
+//     // for (attrs, 0..) |attr, i| {
+//     //     @field(sorting_struct, attr).sort(records);
+//     //     if (records.len > 0) {
+//     //         attrcounts[0] = 1; // first record always counts
+//     //     }
+//     //     var idx: usize = 1;
+//     //     var val_idx: usize = 0;
+//     //     while (idx < records.len) : (idx += 1) {
+//     //         if (@field(records[idx], attr) == @field(records[idx - 1], attr)) {
+//     //             attrcounts[val_idx] += 1;
+//     //         } else {
+//     //             val_idx += 1;
+//     //             attrcounts[val_idx] = 1;
+//     //         }
+//     //     }
+//     //     const attr_entropy: f64 = calculate_entropy(attr, records);
+//     //     gains[i] = entropy - attr_entropy;
+//     // }
+// }
+
+test "testing entropy" {
+    var single_value_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .windy = .no, .play = .dont }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .windy = .no, .play = .dont } };
+    const actual_val1: f64 = calculate_entropy("play", &single_value_test);
+    try std.testing.expectApproxEqAbs(@as(f64, 0.0), actual_val1, 1e-12);
+
+    var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .windy = .yes, .play = .do } };
+    const actual_val2: f64 = calculate_entropy("play", &max_entropy_test);
+    const exp_val2: f64 = std.math.log2(@as(f64, 2.0));
+    std.debug.print("Expected value: {d}, Actual value: {d}\n", .{ exp_val2, actual_val2 });
+    try std.testing.expectApproxEqAbs(exp_val2, actual_val2, 1e-12);
+}
+
+// fn build_node(attribute_field_names: []const [*:0]const u8, comptime target_field_name: []const u8, records: []GolfConditions, lower_bound: usize, upper_bound: usize) type {
+//     // TODO
+// }
 
 pub fn main() !void {
     // sunny   |      85     |    85    | false | Don't Play
