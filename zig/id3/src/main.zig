@@ -42,7 +42,6 @@ fn GolfFieldType(comptime field_name: []const u8) type {
             return fld.type;
         }
     }
-    // return void;
     unreachable;
 }
 
@@ -321,9 +320,165 @@ test "testing entropy" {
     try std.testing.expectApproxEqAbs(exp_val2, actual_val2, 1e-12);
 }
 
-// fn build_node(attribute_field_names: []const [*:0]const u8, comptime target_field_name: []const u8, records: []GolfConditions, lower_bound: usize, upper_bound: usize) type {
-//     // TODO
+// function ID3 (R: a set of non-categorical attributes,
+// 		 C: the categorical attribute,
+// 		 S: a training set) returns a decision tree;
+//    begin
+// 	If S is empty, return a single node with value Failure;
+// 	If S consists of records all with the same value for
+// 	   the categorical attribute,
+// 	   return a single node with that value;
+// 	If R is empty, then return a single node with as value
+// 	   the most frequent of the values of the categorical attribute
+// 	   that are found in records of S; [note that then there
+// 	   will be errors, that is, records that will be improperly
+// 	   classified];
+// 	Let D be the attribute with largest Gain(D,S)
+// 	   among attributes in R;
+// 	Let {dj| j=1,2, .., m} be the values of attribute D;
+// 	Let {Sj| j=1,2, .., m} be the subsets of S consisting
+// 	   respectively of records with value dj for attribute D;
+// 	Return a tree with root labeled D and arcs labeled
+// 	   d1, d2, .., dm going respectively to the trees
+//
+// 	     ID3(R-{D}, C, S1), ID3(R-{D}, C, S2), .., ID3(R-{D}, C, Sm);
+//    end ID3;
+
+const ID3NodeTag = enum {
+    node,
+    most_frequent,
+    constant_value,
+    empty,
+};
+
+// fn ID3Node(comptime target_field_name: []const u8) type {
+//     return struct {
+//         const Self = @This();
+//
+//         values: []u64, // This will hold the values of the attribute field
+//         nodes: []ID3NodeType, // This will hold the child nodes
+//
+//         pub fn init(val: ReturnType, emp_prob: f64) Self {
+//             return Self{ .value = val, .empirical_probability = emp_prob };
+//         }
+//     };
 // }
+
+fn MostFrequentValueLeaf(comptime target_field_name: []const u8) type {
+    return struct {
+        const Self = @This();
+
+        value: ReturnType,
+        empirical_probability: f64,
+
+        const ReturnType: type = GolfFieldType(target_field_name);
+
+        pub fn init(val: ReturnType, emp_prob: f64) Self {
+            return Self{ .value = val, .empirical_probability = emp_prob };
+        }
+    };
+}
+
+fn ConstantValueLeaf(comptime target_field_name: []const u8) type {
+    return struct {
+        const Self = @This();
+
+        value: ReturnType,
+
+        const ReturnType: type = GolfFieldType(target_field_name);
+
+        pub fn init(val: ReturnType) Self {
+            return Self{ .value = val };
+        }
+    };
+}
+
+// TODO: Need to extend the return type to include the empirical probability of the most frequent value
+fn calculate_most_frequent_value(comptime target_field_name: []const u8, records: []GolfConditions) std.mem.Allocator.Error!MostFrequentValueLeaf(target_field_name) {
+    var buffer: [MEM_SIZE]u8 = undefined;
+    var fba = std.heap.FixedBufferAllocator.init(&buffer);
+    const allocator = fba.allocator();
+
+    var hm = std.hash_map.AutoHashMap(u64, usize).init(allocator);
+    defer hm.deinit();
+
+    for (records) |record| {
+        const k: u64 = @intFromEnum(@field(record, target_field_name));
+        const v_ptr_maybe: ?*u64 = hm.getPtr(k);
+        if (v_ptr_maybe) |v_ptr| {
+            v_ptr.* += 1;
+        } else {
+            try hm.put(k, 1);
+        }
+    }
+
+    const total_count: usize = records.len;
+    var max_count: usize = 0;
+    var most_frequent_value: u64 = 0;
+    var iterator = hm.iterator();
+    while (iterator.next()) |entry| {
+        const count: u64 = entry.value_ptr.*;
+        if (count > max_count) {
+            max_count = count;
+            most_frequent_value = entry.key_ptr.*;
+        }
+    }
+    const freq: f64 = @as(f64, @floatFromInt(max_count)) / @as(f64, @floatFromInt(total_count));
+    // return freq;
+    return MostFrequentValueLeaf(target_field_name).init(
+        @enumFromInt(most_frequent_value),
+        freq,
+    );
+}
+
+test "constant value node" {
+    const ConstantValueLeafType = ConstantValueLeaf("play");
+    const cvf = ConstantValueLeafType.init(WhetherToPlay.dont);
+    try std.testing.expect(cvf.value == WhetherToPlay.dont);
+    try std.testing.expect(@TypeOf(cvf.value) == WhetherToPlay);
+}
+
+const ID3NodeType = union(ID3NodeTag) {
+    // node,
+    // most_frequent,
+    constant_value: ConstantValueLeaf("play"),
+    empty: void,
+};
+
+fn all_target_values_equal(comptime target_field_name: []const u8, records: []GolfConditions) bool {
+    if (records.len == 0) {
+        return false; // No records to compare
+    }
+    const first_value: GolfFieldType(target_field_name) = @field(records[0], target_field_name);
+    for (records[1..]) |record| {
+        if (@field(record, target_field_name) != first_value) {
+            return false; // Found a different value
+        }
+    }
+    return true; // All values are equal
+}
+
+fn build_node(attribute_field_names: []const []const u8, comptime attribute_count: usize, comptime target_field_name: []const u8, records: []GolfConditions) std.mem.Allocator.Error!ID3NodeType {
+    if (records.len == 0) {
+        // If S is empty, return a single node with value Failure;
+        return ID3NodeType{ .empty = void };
+    } else if (all_target_values_equal(target_field_name, records)) {
+        // If S consists of records all with the same value for
+        // the categorical attribute,
+        // return a single node with that value;
+        return ID3NodeType{ .constant_value = ConstantValueLeaf(target_field_name).init(@field(records[0], target_field_name)) };
+    } else if (attribute_field_names.len == 0) {
+        return calculate_most_frequent_value(target_field_name, records);
+    } else {
+        // var updated_attributes: [attribute_count]const []const u8 = undefined;
+        // for (atribute_field_names, 0..) |attr, i| {
+        //     updated_attributes[i] = attr;
+        // }
+        _ = attribute_count; // to avoid unused variable warning
+        // TODO: Handle this case
+        unreachable;
+    }
+}
 
 pub fn main() !void {
     // sunny   |      85     |    85    | false | Don't Play
