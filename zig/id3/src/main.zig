@@ -210,11 +210,31 @@ fn MakeSorterStruct(comptime field_names: []const [*:0]const u8) type {
     });
 }
 
-const enum_fields: [4][*:0]const u8 = .{ "outlook", "windy", "play", "temperature" };
-const enum_fields2: [4][]const u8 = .{ "outlook", "windy", "play", "temperature" };
+const enum_fields: [3][*:0]const u8 = .{ "outlook", "windy", "humidity" };
+const enum_fields2: [3][]const u8 = .{ "outlook", "windy", "humidity" };
 // const enum_fields: [3]*const [:0]u8 = .{ "outlook", "windy", "play" }; // does not work
 
-const sorting_struct = MakeSorterStruct(&enum_fields){};
+const enum_and_target_fields: [5][*:0]const u8 = enum_fields ++ [2][*:0]const u8{ "temperature", "play" };
+const sorting_struct = MakeSorterStruct(&enum_and_target_fields){};
+
+fn sort_records(attribute_field_name: []const u8, records: []GolfConditions) void {
+    inline for (enum_fields2) |fld| {
+        if (std.mem.eql(u8, fld, attribute_field_name)) {
+            @field(sorting_struct, fld).sort(records);
+            return;
+        }
+    }
+    unreachable;
+}
+
+fn get_value_as_int(attribute_field_name: []const u8, record: GolfConditions) u64 {
+    inline for (enum_fields2) |fld| {
+        if (std.mem.eql(u8, fld, attribute_field_name)) {
+            return @field(sorting_struct, fld).getValueAsInt(record);
+        }
+    }
+    unreachable;
+}
 
 // fn PrintSorterConstruct(comptime field_names: []const [*:0]const u8) void {
 //     @compileLog("Number of fields", field_names.len);
@@ -351,19 +371,6 @@ const ID3NodeTag = enum {
     empty,
 };
 
-// fn ID3Node(comptime target_field_name: []const u8) type {
-//     return struct {
-//         const Self = @This();
-//
-//         values: []u64, // This will hold the values of the attribute field
-//         nodes: []ID3NodeType, // This will hold the child nodes
-//
-//         pub fn init(val: ReturnType, emp_prob: f64) Self {
-//             return Self{ .value = val, .empirical_probability = emp_prob };
-//         }
-//     };
-// }
-
 fn MostFrequentValueLeaf(comptime target_field_name: []const u8) type {
     return struct {
         const Self = @This();
@@ -438,11 +445,70 @@ test "constant value node" {
     try std.testing.expect(@TypeOf(cvf.value) == WhetherToPlay);
 }
 
+fn ID3Node(comptime target_field_name: []const u8) type {
+    return struct {
+        const Self = @This();
+
+        field_name: []const u8,
+        values: std.ArrayList(u64), // This will hold the values of the attribute field
+        nodes: std.ArrayList(ID3NodeType), // This will hold the child nodes
+
+        pub fn init(gpa: std.mem.Allocator, attribute_field_name: []const u8) Self {
+            // TODO: Is target_field_name needed here?
+            _ = target_field_name; // to avoid unused variable warning
+            return Self{ .field_name = attribute_field_name, .values = std.ArrayList(u64).init(gpa), .nodes = std.ArrayList(ID3NodeType).init(gpa) };
+        }
+
+        pub fn deinit(self: Self) void {
+            self.values.deinit();
+            for (self.nodes.items) |node| {
+                node.deinit();
+            }
+            self.nodes.deinit();
+        }
+
+        pub fn appendValue(self: *Self, value: u64, node: ID3NodeType) std.mem.Allocator.Error!void {
+            try self.values.append(value);
+            try self.nodes.append(node);
+        }
+    };
+}
+
 const ID3NodeType = union(ID3NodeTag) {
-    // node,
-    // most_frequent,
+    node: ID3Node("play"),
+    most_frequent: MostFrequentValueLeaf("play"),
     constant_value: ConstantValueLeaf("play"),
     empty: void,
+
+    // TODO: Use a pointer in the following instead?
+    pub fn deinit(self: ID3NodeType) void {
+        switch (self) {
+            .node => |node| node.deinit(),
+            .most_frequent => {},
+            .constant_value => {},
+            .empty => {},
+        }
+    }
+
+    // pub fn print(self: ID3NodeType) !void {
+    //     switch (self) {
+    //         .node => |node| {
+    //             std.debug.print("Node with values: {any}\n", .{node.values.items});
+    //             for (node.nodes.items) |sub_node| {
+    //                 try sub_node.print();
+    //             }
+    //         },
+    //         .most_frequent => |mfv| {
+    //             std.debug.print("Most Frequent Value Leaf: {d} with empirical probability {d}\n", .{ mfv.value, mfv.empirical_probability });
+    //         },
+    //         .constant_value => |cv| {
+    //             std.debug.print("Constant Value Leaf: {d}\n", .{cv.value});
+    //         },
+    //         .empty => {
+    //             std.debug.print("Empty Leaf\n", .{});
+    //         },
+    //     }
+    // }
 };
 
 fn all_target_values_equal(comptime target_field_name: []const u8, records: []GolfConditions) bool {
@@ -458,25 +524,73 @@ fn all_target_values_equal(comptime target_field_name: []const u8, records: []Go
     return true; // All values are equal
 }
 
-fn build_node(attribute_field_names: []const []const u8, comptime attribute_count: usize, comptime target_field_name: []const u8, records: []GolfConditions) std.mem.Allocator.Error!ID3NodeType {
+fn build_node(attribute_field_names: []const []const u8, comptime attribute_count: usize, comptime target_field_name: []const u8, records: []GolfConditions, allocator: std.mem.Allocator) std.mem.Allocator.Error!ID3NodeType {
+    std.debug.print("Entering build_node\n", .{});
     if (records.len == 0) {
         // If S is empty, return a single node with value Failure;
-        return ID3NodeType{ .empty = void };
+        std.debug.print("In build_node, constructing empty leaf\n", .{});
+        return ID3NodeType{ .empty = {} };
     } else if (all_target_values_equal(target_field_name, records)) {
         // If S consists of records all with the same value for
         // the categorical attribute,
         // return a single node with that value;
+        std.debug.print("In build_node, constructing constant value leaf\n", .{});
         return ID3NodeType{ .constant_value = ConstantValueLeaf(target_field_name).init(@field(records[0], target_field_name)) };
     } else if (attribute_field_names.len == 0) {
-        return calculate_most_frequent_value(target_field_name, records);
+        const mfv: MostFrequentValueLeaf(target_field_name) = try calculate_most_frequent_value(target_field_name, records);
+        std.debug.print("In build_node, constructing most frequent value leaf\n", .{});
+        return ID3NodeType{ .most_frequent = mfv };
     } else {
-        // var updated_attributes: [attribute_count]const []const u8 = undefined;
-        // for (atribute_field_names, 0..) |attr, i| {
-        //     updated_attributes[i] = attr;
-        // }
-        _ = attribute_count; // to avoid unused variable warning
-        // TODO: Handle this case
-        unreachable;
+        var max_gain: f64 = undefined;
+        var arg_max: usize = undefined;
+        for (attribute_field_names, 0..) |attr, i| {
+            std.debug.print("In build_node, attr is {s}\n", .{attr});
+            const gain: f64 = try calculate_gain_using_hash_map(target_field_name, attr, records);
+            if ((i == 0) or (gain > max_gain)) {
+                max_gain = gain;
+                arg_max = i;
+            }
+        }
+        const best_field_name: []const u8 = attribute_field_names[arg_max];
+        std.debug.print("In build_node, best attribute is {s}\n", .{best_field_name});
+
+        var updated_attributes: [attribute_count][]const u8 = undefined;
+        for (attribute_field_names, 0..) |attr, idx| {
+            if (idx == arg_max) {
+                // Skip the attribute with the maximum gain
+                continue;
+            } else if (idx < arg_max) {
+                // If the index is less than arg_max, we can keep the attribute as is
+                updated_attributes[idx] = attr;
+            } else { // idx > arg_max
+                // If the index is greater than arg_max, we need to adjust the index
+                updated_attributes[idx - 1] = attr;
+            }
+        }
+        const updated_attributes_slice: []const []const u8 = updated_attributes[0..(attribute_field_names.len - 1)];
+
+        // Sort the records
+        sort_records(attribute_field_names[arg_max], records);
+
+        // Create a list of nodes
+        var node: ID3Node("play") = ID3Node("play").init(allocator);
+        var start_idx: usize = 0;
+        var end_idx: usize = 0;
+        while (end_idx < records.len) : (end_idx += 1) {
+            // Find the end of the current value group
+            // TODO: best_field_name isn't comptime so we might need to adjust the value extraction
+            const start_value: u64 = get_value_as_int(best_field_name, records[start_idx]);
+            const end_value: u64 = get_value_as_int(best_field_name, records[end_idx]);
+            if (end_idx == records.len or (end_value != start_value)) {
+                // Create a sub-node for the current value group
+                const sub_records = records[start_idx..end_idx];
+                const sub_node = try build_node(updated_attributes_slice, attribute_count, target_field_name, sub_records, allocator);
+                try node.appendValue(start_value, sub_node);
+                start_idx = end_idx; // Move to the next group
+            }
+        }
+
+        return ID3NodeType{ .node = node };
     }
 }
 
@@ -559,6 +673,17 @@ pub fn main() !void {
     }
 
     try bw.flush(); // don't forget to flush!
+
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+    defer {
+        const deinit_status = gpa.deinit();
+        //fail test; can't try in defer as defer is executed after we return
+        if (deinit_status == .leak) std.testing.expect(false) catch @panic("TEST FAIL");
+    }
+
+    const root: ID3NodeType = try build_node(&enum_fields2, enum_fields2.len, "play", &train, allocator);
+    defer root.deinit(); // deinitialize the root node to free memory
 }
 
 test "simple test" {
@@ -716,13 +841,16 @@ test "testing hash_map_example" {
     try std.testing.expectApproxEqAbs(exp_val2, actual_val2, 1e-12);
 }
 
-fn calculate_gain_using_hash_map(comptime target_field_name: []const u8, attribute_field_name: []const u8, records: []GolfConditions) std.mem.Allocator.Error!u64 {
-    _ = target_field_name;
+fn calculate_gain_using_hash_map(comptime target_field_name: []const u8, attribute_field_name: []const u8, records: []GolfConditions) std.mem.Allocator.Error!f64 {
+    // _ = target_field_name; // to avoid unused variable warning
     inline for (enum_fields2) |fld| {
         // const adj_fld: [:0]const u8 = std.mem.span(fld);
+        // std.debug.print("In calculate_gain_using_hash_map, checking to see if field {s} matches {s}\n", .{ attribute_field_name, fld });
+        std.debug.print("In calculate_gain_using_hash_map, checking to see if field matches {s}\n", .{fld});
         if (std.mem.eql(u8, fld, attribute_field_name)) {
             std.debug.print("In calculate_gain_using_hash_map, Found field {s}\n", .{fld});
-            return @field(sorting_struct, fld).getValueAsInt(records[0]);
+            // return @field(sorting_struct, fld).getValueAsInt(records[0]);
+            return calculate_gain_using_hash_map0(target_field_name, fld, records);
         }
     }
     unreachable;
@@ -740,9 +868,10 @@ fn calculate_gain_using_hash_map0(comptime target_field_name: []const u8, compti
     defer hm.deinit();
 
     for (records) |record| {
-        const k: u8 = @intFromEnum(@field(record, attribute_field_name));
+        // const k: u64 = @intFromEnum(@field(record, attribute_field_name));
+        const k: u64 = @field(sorting_struct, attribute_field_name).getValueAsInt(record); // TODO: This approach needs improvement
         const gpresult: std.hash_map.AutoHashMap(u64, HMT).GetOrPutResult = try hm.getOrPut(k);
-        const resk: u8 = @intFromEnum(@field(record, target_field_name));
+        const resk: u64 = @intFromEnum(@field(record, target_field_name));
         if (gpresult.found_existing) {
             const v_ptr_maybe: ?*u64 = gpresult.value_ptr.*.getPtr(resk);
             if (v_ptr_maybe) |v_ptr| {
