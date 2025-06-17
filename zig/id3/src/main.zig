@@ -6,11 +6,14 @@ const WhetherToPlay = enum { dont, do };
 
 const Windy = enum(u1) { no = 0, yes = 1 };
 
+const HumidityBucket = enum(u1) { le75 = 0, gt75 = 1 };
+
 const GolfConditions = struct {
     id: u8,
     outlook: Outlook,
     temperature: u8,
     humidity: u8,
+    humidity_bucket: HumidityBucket,
     windy: Windy,
     play: WhetherToPlay,
 
@@ -32,7 +35,7 @@ test "golf field offsets" {
     std.debug.print("Testing golf field offsets\n", .{});
     try std.testing.expect(GolfFieldOffset("id") == 0);
     try std.testing.expect(GolfFieldOffset("outlook") == 1);
-    try std.testing.expect(GolfFieldOffset("windy") == 4);
+    try std.testing.expect(GolfFieldOffset("windy") == 5);
 }
 
 fn GolfFieldType(comptime field_name: []const u8) type {
@@ -211,10 +214,10 @@ fn MakeSorterStruct(comptime field_names: []const [*:0]const u8) type {
 }
 
 const enum_fields: [3][*:0]const u8 = .{ "outlook", "windy", "humidity" };
-const enum_fields2: [3][]const u8 = .{ "outlook", "windy", "humidity" };
+const enum_fields2: [3][]const u8 = .{ "outlook", "windy", "humidity_bucket" };
 // const enum_fields: [3]*const [:0]u8 = .{ "outlook", "windy", "play" }; // does not work
 
-const enum_and_target_fields: [5][*:0]const u8 = enum_fields ++ [2][*:0]const u8{ "temperature", "play" };
+const enum_and_target_fields: [6][*:0]const u8 = enum_fields ++ [3][*:0]const u8{ "humidity_bucket", "temperature", "play" };
 const sorting_struct = MakeSorterStruct(&enum_and_target_fields){};
 
 fn sort_records(attribute_field_name: []const u8, records: []GolfConditions) void {
@@ -251,8 +254,8 @@ test "golf context from field name" {
     const WindyContext2 = GolfFieldContext2("windy");
     const windy_context2 = WindyContext2.init();
     try std.testing.expect(windy_context.offset == windy_context2.offset);
-    const gc1 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .no, .play = .dont };
-    const gc2 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .yes, .play = .dont };
+    const gc1 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont };
+    const gc2 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .yes, .play = .dont };
     // try std.testing.expect(WindyContext.lessThan(gc1, gc2));
     try std.testing.expect(windy_context.lessThan(gc1, gc2));
     // try std.testing.expect(WindyContext2.lessThan(gc1, gc2));
@@ -329,11 +332,11 @@ fn calculate_entropy(comptime target_field_name: []const u8, records: []GolfCond
 // }
 
 test "testing entropy" {
-    var single_value_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .windy = .no, .play = .dont }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .windy = .no, .play = .dont } };
+    var single_value_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .dont } };
     const actual_val1: f64 = calculate_entropy("play", &single_value_test);
     try std.testing.expectApproxEqAbs(@as(f64, 0.0), actual_val1, 1e-12);
 
-    var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .windy = .yes, .play = .do } };
+    var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do } };
     const actual_val2: f64 = calculate_entropy("play", &max_entropy_test);
     const exp_val2: f64 = std.math.log2(@as(f64, 2.0));
     std.debug.print("Expected value: {d}, Actual value: {d}\n", .{ exp_val2, actual_val2 });
@@ -490,25 +493,80 @@ const ID3NodeType = union(ID3NodeTag) {
         }
     }
 
-    // pub fn print(self: ID3NodeType) !void {
-    //     switch (self) {
-    //         .node => |node| {
-    //             std.debug.print("Node with values: {any}\n", .{node.values.items});
-    //             for (node.nodes.items) |sub_node| {
-    //                 try sub_node.print();
-    //             }
-    //         },
-    //         .most_frequent => |mfv| {
-    //             std.debug.print("Most Frequent Value Leaf: {d} with empirical probability {d}\n", .{ mfv.value, mfv.empirical_probability });
-    //         },
-    //         .constant_value => |cv| {
-    //             std.debug.print("Constant Value Leaf: {d}\n", .{cv.value});
-    //         },
-    //         .empty => {
-    //             std.debug.print("Empty Leaf\n", .{});
-    //         },
-    //     }
-    // }
+    pub fn print(self: ID3NodeType) !void {
+        const stdout_file = std.io.getStdOut().writer();
+        var bw = std.io.bufferedWriter(stdout_file);
+        const stdout = bw.writer();
+
+        // try ID3NodeType.printNext(self, 0, stdout);
+        try self.printNext(0, stdout);
+
+        try bw.flush(); // don't forget to flush!
+    }
+
+    pub fn printNext(self: ID3NodeType, initial_spaces: usize, stdout: std.io.BufferedWriter(4096, std.fs.File.Writer).Writer) !void {
+        switch (self) {
+            .node => |node| {
+                // std.debug.print("Node with values: {any}\n", .{node.values.items});
+                var max_value_chars: usize = 0;
+                for (node.values.items) |val| {
+                    const temp_chars: usize = @intFromFloat(@ceil(@log10(@max(@as(f64, @floatFromInt(val)), 1.0))));
+                    if (temp_chars > max_value_chars) {
+                        max_value_chars = temp_chars;
+                    }
+                }
+                for (node.values.items, node.nodes.items, 0..) |value, next_node, idx| {
+                    // try stdout.print("- '{:>{}}' ->", .{ value, max_value_chars });
+                    // for (0..initial_spaces) |_| {
+                    //     try stdout.print(" ", .{});
+                    // }
+                    try stdout.print("{s} - {:>3} ->", .{ node.field_name, value });
+                    if (idx == 0) {
+                        try next_node.printNext(0, stdout);
+                    } else {
+                        const spaces: usize = initial_spaces + node.field_name.len + max_value_chars + 6; // 6 for the " -> "
+                        try next_node.printNext(spaces, stdout);
+                    }
+                }
+            },
+            .most_frequent => |mfv| {
+                // try stdout.print("{s: >{d}}{d} (freq {d})\n", .{ "", initial_spaces, mfv.value, mfv.empirical_probability });
+                try stdout.print("{s} (freq {d})\n", .{ @tagName(mfv.value), mfv.empirical_probability });
+            },
+            .constant_value => |cv| {
+                try stdout.print("{s} (constant)\n", .{@tagName(cv.value)});
+            },
+            .empty => {
+                try stdout.print("Failure (empty)\n", .{});
+            },
+        }
+    }
+
+    // The following predict function will traverse the ID3 tree.
+    // We return a nullable GolfFieldType("play"), which we might improve later.
+    pub fn predict(self: ID3NodeType, record: GolfConditions) ?GolfFieldType("play") {
+        switch (self) {
+            .node => |node| {
+                const lookupValue: u64 = get_value_as_int(node.field_name, record);
+                for (node.values.items, node.nodes.items) |value, next_node| {
+                    if (value == lookupValue) {
+                        // Found the matching value, return the prediction
+                        return next_node.predict(record);
+                    }
+                }
+                return null;
+            },
+            .most_frequent => |mfv| {
+                return mfv.value; // Return the most frequent value
+            },
+            .constant_value => |cv| {
+                return cv.value; // Return the constant value
+            },
+            .empty => {
+                return null; // No prediction available
+            },
+        }
+    }
 };
 
 fn all_target_values_equal(comptime target_field_name: []const u8, records: []GolfConditions) bool {
@@ -573,20 +631,30 @@ fn build_node(attribute_field_names: []const []const u8, comptime attribute_coun
         sort_records(attribute_field_names[arg_max], records);
 
         // Create a list of nodes
-        var node: ID3Node("play") = ID3Node("play").init(allocator);
+        var node: ID3Node("play") = ID3Node("play").init(allocator, best_field_name);
         var start_idx: usize = 0;
         var end_idx: usize = 0;
-        while (end_idx < records.len) : (end_idx += 1) {
+        while (start_idx < records.len) : (end_idx += 1) {
             // Find the end of the current value group
             // TODO: best_field_name isn't comptime so we might need to adjust the value extraction
             const start_value: u64 = get_value_as_int(best_field_name, records[start_idx]);
-            const end_value: u64 = get_value_as_int(best_field_name, records[end_idx]);
-            if (end_idx == records.len or (end_value != start_value)) {
+            var append_flag: bool = false;
+            if (end_idx == records.len) {
+                append_flag = true;
+            } else {
+                const end_value: u64 = get_value_as_int(best_field_name, records[end_idx]);
+                if (end_value != start_value) {
+                    append_flag = true;
+                }
+            }
+            if (append_flag) {
                 // Create a sub-node for the current value group
                 const sub_records = records[start_idx..end_idx];
                 const sub_node = try build_node(updated_attributes_slice, attribute_count, target_field_name, sub_records, allocator);
                 try node.appendValue(start_value, sub_node);
                 start_idx = end_idx; // Move to the next group
+            } else {
+                continue; // Continue to find the end of the current value group
             }
         }
 
@@ -610,7 +678,7 @@ pub fn main() !void {
     // overcast|      81     |    75    | false | Play
     // rain    |      71     |    80    | true  | Don't Play
 
-    var train = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .windy = .no, .play = .do }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .windy = .no, .play = .do }, GolfConditions{ .id = 4, .outlook = .rain, .temperature = 68, .humidity = 80, .windy = .no, .play = .do }, GolfConditions{ .id = 5, .outlook = .rain, .temperature = 65, .humidity = 70, .windy = .yes, .play = .dont }, GolfConditions{ .id = 6, .outlook = .overcast, .temperature = 64, .humidity = 65, .windy = .yes, .play = .do }, GolfConditions{ .id = 7, .outlook = .sunny, .temperature = 72, .humidity = 95, .windy = .no, .play = .dont }, GolfConditions{ .id = 8, .outlook = .sunny, .temperature = 69, .humidity = 70, .windy = .no, .play = .do }, GolfConditions{ .id = 9, .outlook = .rain, .temperature = 75, .humidity = 80, .windy = .no, .play = .do }, GolfConditions{ .id = 10, .outlook = .sunny, .temperature = 75, .humidity = 70, .windy = .yes, .play = .do }, GolfConditions{ .id = 11, .outlook = .overcast, .temperature = 72, .humidity = 90, .windy = .yes, .play = .do }, GolfConditions{ .id = 12, .outlook = .overcast, .temperature = 81, .humidity = 75, .windy = .no, .play = .do }, GolfConditions{ .id = 13, .outlook = .rain, .temperature = 71, .humidity = 80, .windy = .yes, .play = .dont } };
+    var train = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 4, .outlook = .rain, .temperature = 68, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 5, .outlook = .rain, .temperature = 65, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 6, .outlook = .overcast, .temperature = 64, .humidity = 65, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 7, .outlook = .sunny, .temperature = 72, .humidity = 95, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 8, .outlook = .sunny, .temperature = 69, .humidity = 70, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 9, .outlook = .rain, .temperature = 75, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 10, .outlook = .sunny, .temperature = 75, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 11, .outlook = .overcast, .temperature = 72, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do }, GolfConditions{ .id = 12, .outlook = .overcast, .temperature = 81, .humidity = 75, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 13, .outlook = .rain, .temperature = 71, .humidity = 80, .humidity_bucket = .gt75, .windy = .yes, .play = .dont } };
 
     // stdout is for the actual output of your application, for example if you
     // are implementing gzip, then only the compressed bytes should be sent to
@@ -683,6 +751,7 @@ pub fn main() !void {
     }
 
     const root: ID3NodeType = try build_node(&enum_fields2, enum_fields2.len, "play", &train, allocator);
+    try root.print();
     defer root.deinit(); // deinitialize the root node to free memory
 }
 
@@ -830,11 +899,11 @@ fn calculate_entropy_using_hash_map(comptime target_field_name: []const u8, reco
 }
 
 test "testing hash_map_example" {
-    var single_value_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .windy = .no, .play = .dont }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .windy = .no, .play = .dont } };
+    var single_value_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .dont } };
     const actual_val1: f64 = try calculate_entropy_using_hash_map("play", &single_value_test);
     try std.testing.expectApproxEqAbs(@as(f64, 0.0), actual_val1, 1e-12);
 
-    var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .windy = .yes, .play = .do } };
+    var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do } };
     const actual_val2: f64 = try calculate_entropy_using_hash_map("play", &max_entropy_test);
     const exp_val2: f64 = std.math.log2(@as(f64, 2.0));
     std.debug.print("Expected value: {d}, Actual value: {d}\n", .{ exp_val2, actual_val2 });
@@ -912,11 +981,11 @@ fn calculate_gain_using_hash_map0(comptime target_field_name: []const u8, compti
 }
 
 test "testing calculate_gain_using_hash_map0" {
-    var single_value_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .windy = .no, .play = .dont }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .windy = .no, .play = .dont } };
+    var single_value_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .dont } };
     const actual_val1: f64 = try calculate_gain_using_hash_map0("play", "windy", &single_value_test);
     try std.testing.expectApproxEqAbs(@as(f64, 0.0), actual_val1, 1e-12);
 
-    // var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .windy = .yes, .play = .do } };
+    // var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do } };
     // const actual_val2: f64 = try calculate_gain_using_hash_map0("play", "windy", &max_entropy_test);
     // const exp_val2: f64 = std.math.log2(@as(f64, 2.0));
     // std.debug.print("Expected value: {d}, Actual value: {d}\n", .{ exp_val2, actual_val2 });
@@ -924,13 +993,22 @@ test "testing calculate_gain_using_hash_map0" {
 }
 
 test "testing calculate_gain_using_hash_map" {
-    var recs = [_]GolfConditions{GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .no, .play = .dont }};
+    var recs = [_]GolfConditions{GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }};
     const windy_val = try calculate_gain_using_hash_map("play", "windy", &recs);
     try std.testing.expect(windy_val == @intFromEnum(Windy.no));
 }
 
 test "testing gain from tutorial" {
-    var train = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .windy = .no, .play = .do }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .windy = .no, .play = .do }, GolfConditions{ .id = 4, .outlook = .rain, .temperature = 68, .humidity = 80, .windy = .no, .play = .do }, GolfConditions{ .id = 5, .outlook = .rain, .temperature = 65, .humidity = 70, .windy = .yes, .play = .dont }, GolfConditions{ .id = 6, .outlook = .overcast, .temperature = 64, .humidity = 65, .windy = .yes, .play = .do }, GolfConditions{ .id = 7, .outlook = .sunny, .temperature = 72, .humidity = 95, .windy = .no, .play = .dont }, GolfConditions{ .id = 8, .outlook = .sunny, .temperature = 69, .humidity = 70, .windy = .no, .play = .do }, GolfConditions{ .id = 9, .outlook = .rain, .temperature = 75, .humidity = 80, .windy = .no, .play = .do }, GolfConditions{ .id = 10, .outlook = .sunny, .temperature = 75, .humidity = 70, .windy = .yes, .play = .do }, GolfConditions{ .id = 11, .outlook = .overcast, .temperature = 72, .humidity = 90, .windy = .yes, .play = .do }, GolfConditions{ .id = 12, .outlook = .overcast, .temperature = 81, .humidity = 75, .windy = .no, .play = .do }, GolfConditions{ .id = 13, .outlook = .rain, .temperature = 71, .humidity = 80, .windy = .yes, .play = .dont } };
+    var train = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 4, .outlook = .rain, .temperature = 68, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 5, .outlook = .rain, .temperature = 65, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 6, .outlook = .overcast, .temperature = 64, .humidity = 65, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 7, .outlook = .sunny, .temperature = 72, .humidity = 95, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 8, .outlook = .sunny, .temperature = 69, .humidity = 70, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 9, .outlook = .rain, .temperature = 75, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 10, .outlook = .sunny, .temperature = 75, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 11, .outlook = .overcast, .temperature = 72, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do }, GolfConditions{ .id = 12, .outlook = .overcast, .temperature = 81, .humidity = 75, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 13, .outlook = .rain, .temperature = 71, .humidity = 80, .humidity_bucket = .gt75, .windy = .yes, .play = .dont } };
+
+    for (train) |rec| {
+        if (rec.humidity > 75) {
+            try std.testing.expect(rec.humidity_bucket == HumidityBucket.gt75);
+        } else {
+            try std.testing.expect(rec.humidity_bucket == HumidityBucket.le75);
+        }
+    }
+
     const actual_entropy: f64 = try calculate_entropy_using_hash_map("play", &train);
     try std.testing.expectApproxEqAbs(@as(f64, 0.94), actual_entropy, 1e-3);
 
