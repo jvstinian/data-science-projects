@@ -1,4 +1,5 @@
 const std = @import("std");
+const id3 = @import("id3.zig");
 
 const Outlook = enum { sunny, overcast, rain };
 
@@ -516,17 +517,15 @@ const ID3NodeType = union(ID3NodeTag) {
                     }
                 }
                 for (node.values.items, node.nodes.items, 0..) |value, next_node, idx| {
-                    // try stdout.print("- '{:>{}}' ->", .{ value, max_value_chars });
-                    // for (0..initial_spaces) |_| {
-                    //     try stdout.print(" ", .{});
-                    // }
-                    try stdout.print("{s} - {:>3} ->", .{ node.field_name, value });
-                    if (idx == 0) {
-                        try next_node.printNext(0, stdout);
-                    } else {
-                        const spaces: usize = initial_spaces + node.field_name.len + max_value_chars + 6; // 6 for the " -> "
-                        try next_node.printNext(spaces, stdout);
+                    // try stdout.print("- '{:>{}}' -> ", .{ value, max_value_chars });
+                    if (idx > 0) {
+                        for (0..initial_spaces) |_| {
+                            try stdout.print(" ", .{});
+                        }
                     }
+                    try stdout.print("{s} - {:^3} -> ", .{ node.field_name, value });
+                    const spaces: usize = initial_spaces + node.field_name.len + 3 + 7; // 7 for the " -> "
+                    try next_node.printNext(spaces, stdout);
                 }
             },
             .most_frequent => |mfv| {
