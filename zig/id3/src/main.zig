@@ -13,6 +13,7 @@ const GolfConditions = golf.GolfConditions;
 const GolfFieldType = golf.GolfFieldType;
 const GolfFieldContext2 = golf.GolfFieldContext2;
 const Id3SorterStruct = id3.Id3SorterStruct;
+const Id3FieldProcessors = id3.Id3FieldProcessors;
 
 const enum_fields: [3][*:0]const u8 = .{ "outlook", "windy", "humidity" };
 const enum_fields2: [3][]const u8 = .{ "outlook", "windy", "humidity_bucket" };
@@ -412,6 +413,7 @@ fn build_node(attribute_field_names: []const []const u8, comptime attribute_coun
 
         // Sort the records
         sort_records(attribute_field_names[arg_max], records);
+        // Id3FieldProcessors(GolfConditions, attribute_field_names).init().sortRecords(attribute_field_names[arg_max], records);
 
         // Create a list of nodes
         var node: ID3Node("play") = ID3Node("play").init(allocator, best_field_name);

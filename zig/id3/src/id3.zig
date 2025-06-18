@@ -119,21 +119,36 @@ pub fn Id3SorterStruct(comptime T: type, comptime field_names: []const [*:0]cons
     });
 }
 
-// const sorting_struct: MakeSorterStruct(comptime T: type, comptime field_names: []const [*:0]const u8) type
-// fn Id3FieldProcessors(comptime T: type, comptime attribute_field_names: [][]const u8) type {
-//     return struct {
-//         pub fn sortRecords(attribute_field_name: []const u8, records: []T) void {
-//             inline for (attribute_field_names) |fld| {
-//                 if (std.mem.eql(u8, fld, attribute_field_name)) {
-//                     @field(sorting_struct, fld).sort(records);
-//                     // FieldContext2(T, fld).init().sort(records);
-//                     return;
-//                 }
-//             }
-//             unreachable;
-//         }
-//     };
-// }
+// TODO: Not sure if the following will work as needed to replace sort_records and get_value_as_int
+pub fn Id3FieldProcessors(comptime T: type, comptime attribute_field_names: [][]const u8) type {
+    return struct {
+        const Self = @This();
+
+        pub fn init() Self {
+            return Self{};
+        }
+
+        pub fn sortRecords(field_name: []const u8, records: []T) void {
+            inline for (attribute_field_names) |attr_fld| {
+                if (std.mem.eql(u8, attr_fld, field_name)) {
+                    // @field(sorting_struct, attr_fld).sort(records);
+                    Id3FieldContext(T, attr_fld).init().sort(records);
+                    return;
+                }
+            }
+            unreachable;
+        }
+        pub fn getValueAsInt(field_name: []const u8, record: T) u64 {
+            inline for (attribute_field_names) |attr_fld| {
+                if (std.mem.eql(u8, attr_fld, field_name)) {
+                    // return @field(sorting_struct, attr_fld).getValueAsInt(record);
+                    return Id3FieldContext(T, attr_fld).init().getValueAsInt(record);
+                }
+            }
+            unreachable;
+        }
+    };
+}
 
 export fn add(a: i32, b: i32) i32 {
     return a + b;
