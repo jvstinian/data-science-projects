@@ -18,79 +18,6 @@
         "type": "github"
       }
     },
-    "libprlpdemo": {
-      "inputs": {
-        "flake-utils": [
-          "flake-utils"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "dir": "reinforcement-learning-games/prlp-demo",
-        "lastModified": 1743687947,
-        "narHash": "sha256-Nk8A3IOc+kn/dMkD+gy1JgUraXNvzsf88kOeWUyCheQ=",
-        "owner": "jvstinian",
-        "repo": "data-science-projects",
-        "rev": "38f431294d3ea9019c3d0ae03548f42f686d3ee7",
-        "type": "github"
-      },
-      "original": {
-        "dir": "reinforcement-learning-games/prlp-demo",
-        "owner": "jvstinian",
-        "repo": "data-science-projects",
-        "type": "github"
-      }
-    },
-    "libzombpyg": {
-      "inputs": {
-        "flake-utils": [
-          "flake-utils"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1748660992,
-        "narHash": "sha256-6pi6DbN88STFq+6RjXiKkjMRuYGYzX50epnea0PJM78=",
-        "owner": "jvstinian",
-        "repo": "zombpyg",
-        "rev": "fb76131a506804874a3dfac324637408551352bc",
-        "type": "github"
-      },
-      "original": {
-        "owner": "jvstinian",
-        "ref": "nixos-25.05",
-        "repo": "zombpyg",
-        "type": "github"
-      }
-    },
-    "libzombsole": {
-      "inputs": {
-        "flake-utils": [
-          "flake-utils"
-        ],
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1748661820,
-        "narHash": "sha256-6LXOGRIHZa7L0y/si+0mzZZRp17ijB8rphpznO+oMFA=",
-        "owner": "jvstinian",
-        "repo": "libzombsole",
-        "rev": "dc85de5262410dfb7a35b318f10f81effb94bd32",
-        "type": "github"
-      },
-      "original": {
-        "owner": "jvstinian",
-        "ref": "nixos-25.05",
-        "repo": "libzombsole",
-        "type": "github"
-      }
-    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1749086602,
@@ -110,9 +37,6 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "libprlpdemo": "libprlpdemo",
-        "libzombpyg": "libzombpyg",
-        "libzombsole": "libzombsole",
         "nixpkgs": "nixpkgs"
       }
     },
