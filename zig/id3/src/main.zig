@@ -17,8 +17,15 @@ const Id3FieldProcessors = id3.Id3FieldProcessors;
 
 const enum_fields: [3][*:0]const u8 = .{ "outlook", "windy", "humidity" };
 const enum_fields2: [3][]const u8 = .{ "outlook", "windy", "humidity_bucket" };
-
 const enum_and_target_fields: [6][*:0]const u8 = enum_fields ++ [3][*:0]const u8{ "humidity_bucket", "temperature", "play" };
+
+// const enum_and_target_fields0 = .{ "outlook", "windy", "humidity", "humidity_bucket", "temperature", "play" };
+// const enum_and_target_fields: [6][*:0]const u8 = enum_and_target_fields0; // [_][*:0]const u8{ "outlook", "windy", "humidity", "humidity_bucket", "temperature", "play" };
+// const enum_fields2 = enum_and_target_fields0[0..3];
+// // enum_fields2[0] = std.mem.span(enum_and_target_fields0[0]);
+// // enum_fields2[1] = std.mem.span(enum_and_target_fields0[1]);
+// // enum_fields2[2] = std.mem.span(enum_and_target_fields0[2]);
+
 const sorting_struct = Id3SorterStruct(GolfConditions, &enum_and_target_fields){};
 
 fn sort_records(attribute_field_name: []const u8, records: []GolfConditions) void {
