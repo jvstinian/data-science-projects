@@ -1,42 +1,16 @@
 const std = @import("std");
 const id3 = @import("id3.zig");
+const golf = @import("golf.zig");
 
-const Outlook = enum { sunny, overcast, rain };
-
-const WhetherToPlay = enum { dont, do };
-
-const Windy = enum(u1) { no = 0, yes = 1 };
-
-const HumidityBucket = enum(u1) { le75 = 0, gt75 = 1 };
-
-const GolfConditions = struct {
-    id: u8,
-    outlook: Outlook,
-    temperature: u8,
-    humidity: u8,
-    humidity_bucket: HumidityBucket,
-    windy: Windy,
-    play: WhetherToPlay,
-
-    // fn lessThan(context: []const u8, a: GolfConditions, b: GolfConditions) bool {
-    //     const fld = context;
-    //     return @field(a, fld) < @field(b, fld);
-    // }
-    fn lessThan(context: void, a: GolfConditions, b: GolfConditions) bool {
-        _ = context;
-        return a.temperature < b.temperature;
-    }
-};
+// Golf Conditions and related types
+const Outlook = golf.Outlook;
+const WhetherToPlay = golf.WhetherToPlay;
+const Windy = golf.Windy;
+const HumidityBucket = golf.HumidityBucket;
+const GolfConditions = golf.GolfConditions;
 
 fn GolfFieldOffset(comptime field_name: []const u8) comptime_int {
-    return @offsetOf(GolfConditions, field_name);
-}
-
-test "golf field offsets" {
-    std.debug.print("Testing golf field offsets\n", .{});
-    try std.testing.expect(GolfFieldOffset("id") == 0);
-    try std.testing.expect(GolfFieldOffset("outlook") == 1);
-    try std.testing.expect(GolfFieldOffset("windy") == 5);
+    return id3.Id3FieldOffset(GolfConditions, field_name);
 }
 
 fn GolfFieldType(comptime field_name: []const u8) type {
