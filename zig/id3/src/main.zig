@@ -12,58 +12,59 @@ const GolfConditions = golf.GolfConditions;
 // const GolfFieldOffset = golf.GolfFieldOffset;
 const GolfFieldType = golf.GolfFieldType;
 const GolfFieldContext2 = golf.GolfFieldContext2;
+const Id3SorterStruct = id3.Id3SorterStruct;
 
-fn MakeSorterStruct(comptime field_names: []const [*:0]const u8) type {
-    var fields: [field_names.len]std.builtin.Type.StructField = undefined;
-    for (field_names, 0..) |field_name, i| {
-        // std.fmt.comptimePrint("Making field {s} at index {d}\n", .{ field_name, i });
-        // const fieldName: [:0]const u8 = field_name[0.. :0];
-        const fieldName: [:0]const u8 = std.mem.span(field_name);
-        const fieldType: type = GolfFieldContext2(fieldName); // Note the coercion here
-        const defaultFieldValue: fieldType = fieldType.init();
-        // if (fieldName[0] == '?') {
-        //         //     fieldType = @Type(.{ .Optional = .{ .child = fieldType } });
-        //     fieldName = fieldName[1..];
-        // }
-        fields[i] = .{
-            .name = fieldName, // need sentinel termination for the field name
-            .type = fieldType,
-            .default_value = &defaultFieldValue,
-            .is_comptime = false,
-            .alignment = 0,
-        };
-    }
-    // _ = field_names.len; // to avoid unused variable warning
-    // const fld: [:0]const u8 = "play";
-    // const fld2: []const u8 = "play";
-    // const playType: type = GolfFieldContext2(fld2);
-    // const playDefault: playType = playType.init();
-    // var fields: [1]std.builtin.Type.StructField = .{
-    //     .{
-    //         .name = fld,
-    //         .type = playType, // GolfFieldContext2("play"), // WhetherToPlay,
-    //         .default_value = &playDefault, // GolfFieldContext2("play").init(), //  WhetherToPlay.dont,
-    //         .is_comptime = false,
-    //         .alignment = 0,
-    //     },
-    // };
-
-    return @Type(.{
-        .Struct = .{
-            .layout = .auto,
-            .fields = fields[0..],
-            .decls = &[_]std.builtin.Type.Declaration{},
-            .is_tuple = false,
-        },
-    });
-}
+// fn MakeSorterStruct(comptime field_names: []const [*:0]const u8) type {
+//     var fields: [field_names.len]std.builtin.Type.StructField = undefined;
+//     for (field_names, 0..) |field_name, i| {
+//         // std.fmt.comptimePrint("Making field {s} at index {d}\n", .{ field_name, i });
+//         // const fieldName: [:0]const u8 = field_name[0.. :0];
+//         const fieldName: [:0]const u8 = std.mem.span(field_name);
+//         const fieldType: type = GolfFieldContext2(fieldName); // Note the coercion here
+//         const defaultFieldValue: fieldType = fieldType.init();
+//         // if (fieldName[0] == '?') {
+//         //         //     fieldType = @Type(.{ .Optional = .{ .child = fieldType } });
+//         //     fieldName = fieldName[1..];
+//         // }
+//         fields[i] = .{
+//             .name = fieldName, // need sentinel termination for the field name
+//             .type = fieldType,
+//             .default_value = &defaultFieldValue,
+//             .is_comptime = false,
+//             .alignment = 0,
+//         };
+//     }
+//     // _ = field_names.len; // to avoid unused variable warning
+//     // const fld: [:0]const u8 = "play";
+//     // const fld2: []const u8 = "play";
+//     // const playType: type = GolfFieldContext2(fld2);
+//     // const playDefault: playType = playType.init();
+//     // var fields: [1]std.builtin.Type.StructField = .{
+//     //     .{
+//     //         .name = fld,
+//     //         .type = playType, // GolfFieldContext2("play"), // WhetherToPlay,
+//     //         .default_value = &playDefault, // GolfFieldContext2("play").init(), //  WhetherToPlay.dont,
+//     //         .is_comptime = false,
+//     //         .alignment = 0,
+//     //     },
+//     // };
+//
+//     return @Type(.{
+//         .Struct = .{
+//             .layout = .auto,
+//             .fields = fields[0..],
+//             .decls = &[_]std.builtin.Type.Declaration{},
+//             .is_tuple = false,
+//         },
+//     });
+// }
 
 const enum_fields: [3][*:0]const u8 = .{ "outlook", "windy", "humidity" };
 const enum_fields2: [3][]const u8 = .{ "outlook", "windy", "humidity_bucket" };
 // const enum_fields: [3]*const [:0]u8 = .{ "outlook", "windy", "play" }; // does not work
 
 const enum_and_target_fields: [6][*:0]const u8 = enum_fields ++ [3][*:0]const u8{ "humidity_bucket", "temperature", "play" };
-const sorting_struct = MakeSorterStruct(&enum_and_target_fields){};
+const sorting_struct = Id3SorterStruct(GolfConditions, &enum_and_target_fields){};
 
 fn sort_records(attribute_field_name: []const u8, records: []GolfConditions) void {
     inline for (enum_fields2) |fld| {

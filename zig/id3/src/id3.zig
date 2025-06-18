@@ -92,7 +92,7 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
     };
 }
 
-fn MakeSorterStruct(comptime T: type, comptime field_names: []const [*:0]const u8) type {
+pub fn Id3SorterStruct(comptime T: type, comptime field_names: []const [*:0]const u8) type {
     var fields: [field_names.len]std.builtin.Type.StructField = undefined;
     for (field_names, 0..) |field_name, i| {
         // std.fmt.comptimePrint("Making field {s} at index {d}\n", .{ field_name, i });
