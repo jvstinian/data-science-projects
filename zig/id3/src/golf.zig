@@ -52,6 +52,14 @@ test "check GolfFieldContext2 type" {
     try comptime std.testing.expect(@TypeOf(playDefault) == playType);
 }
 
+test "check less than in golf context from field name" {
+    const WindyContext2 = GolfFieldContext2("windy");
+    const windy_context2 = WindyContext2.init();
+    const gc1 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont };
+    const gc2 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .yes, .play = .dont };
+    try std.testing.expect(windy_context2.lessThan(gc1, gc2));
+}
+
 export fn multiply(a: i32, b: i32) i32 {
     return a * b;
 }

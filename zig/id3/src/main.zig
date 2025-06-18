@@ -47,15 +47,6 @@ fn get_value_as_int(attribute_field_name: []const u8, record: GolfConditions) u6
 // }
 //
 
-test "golf context from field name" {
-    std.debug.print("Testing golf context construction using field name\n", .{});
-    const WindyContext2 = GolfFieldContext2("windy");
-    const windy_context2 = WindyContext2.init();
-    const gc1 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont };
-    const gc2 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .yes, .play = .dont };
-    try std.testing.expect(windy_context2.lessThan(gc1, gc2));
-}
-
 fn calculate_entropy(comptime target_field_name: []const u8, records: []GolfConditions) f64 {
     const FC = GolfFieldContext2(target_field_name);
     const target_field_context = FC.init();
