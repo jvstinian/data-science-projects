@@ -25,7 +25,6 @@ fn GolfFieldOffset(comptime field_name: []const u8) comptime_int {
 }
 
 test "golf field offsets" {
-    std.debug.print("Testing golf field offsets\n", .{});
     try std.testing.expect(GolfFieldOffset("id") == 0);
     try std.testing.expect(GolfFieldOffset("outlook") == 1);
     try std.testing.expect(GolfFieldOffset("windy") == 5);
@@ -36,7 +35,6 @@ pub fn GolfFieldType(comptime field_name: []const u8) type {
 }
 
 test "golf field types from name" {
-    std.debug.print("Testing golf field types from name\n", .{});
     try std.testing.expect(GolfFieldType("id") == u8);
     try std.testing.expect(GolfFieldType("outlook") == Outlook);
     try std.testing.expect(GolfFieldType("humidity") == u8);
