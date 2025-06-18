@@ -31,6 +31,18 @@ test "golf field offsets" {
     try std.testing.expect(GolfFieldOffset("windy") == 5);
 }
 
+pub fn GolfFieldType(comptime field_name: []const u8) type {
+    return id3.Id3FieldType(GolfConditions, field_name);
+}
+
+test "golf field types from name" {
+    std.debug.print("Testing golf field types from name\n", .{});
+    try std.testing.expect(GolfFieldType("id") == u8);
+    try std.testing.expect(GolfFieldType("outlook") == Outlook);
+    try std.testing.expect(GolfFieldType("humidity") == u8);
+    try std.testing.expect(GolfFieldType("windy") == Windy);
+}
+
 export fn multiply(a: i32, b: i32) i32 {
     return a * b;
 }

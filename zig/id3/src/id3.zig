@@ -5,7 +5,7 @@ pub fn Id3FieldOffset(comptime T: type, comptime field_name: []const u8) comptim
     return @offsetOf(T, field_name);
 }
 
-fn Id3FieldType(comptime T: type, comptime field_name: []const u8) type {
+pub fn Id3FieldType(comptime T: type, comptime field_name: []const u8) type {
     const fields = @typeInfo(T).Struct.fields;
     inline for (fields) |fld| {
         if (std.mem.eql(u8, fld.name, field_name)) {

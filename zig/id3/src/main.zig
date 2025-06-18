@@ -9,27 +9,30 @@ const Windy = golf.Windy;
 const HumidityBucket = golf.HumidityBucket;
 const GolfConditions = golf.GolfConditions;
 
-fn GolfFieldOffset(comptime field_name: []const u8) comptime_int {
-    return id3.Id3FieldOffset(GolfConditions, field_name);
-}
+// const GolfFieldOffset = golf.GolfFieldOffset;
+const GolfFieldType = golf.GolfFieldType;
 
-fn GolfFieldType(comptime field_name: []const u8) type {
-    const fields = @typeInfo(GolfConditions).Struct.fields;
-    inline for (fields) |fld| {
-        if (std.mem.eql(u8, fld.name, field_name)) {
-            return fld.type;
-        }
-    }
-    unreachable;
-}
+// fn GolfFieldOffset(comptime field_name: []const u8) comptime_int {
+//     return id3.Id3FieldOffset(GolfConditions, field_name);
+// }
 
-test "golf field types from name" {
-    std.debug.print("Testing golf field types from name\n", .{});
-    try std.testing.expect(GolfFieldType("id") == u8);
-    try std.testing.expect(GolfFieldType("outlook") == Outlook);
-    try std.testing.expect(GolfFieldType("humidity") == u8);
-    try std.testing.expect(GolfFieldType("windy") == Windy);
-}
+// fn GolfFieldType(comptime field_name: []const u8) type {
+//     const fields = @typeInfo(GolfConditions).Struct.fields;
+//     inline for (fields) |fld| {
+//         if (std.mem.eql(u8, fld.name, field_name)) {
+//             return fld.type;
+//         }
+//     }
+//     unreachable;
+// }
+//
+// test "golf field types from name" {
+//     std.debug.print("Testing golf field types from name\n", .{});
+//     try std.testing.expect(GolfFieldType("id") == u8);
+//     try std.testing.expect(GolfFieldType("outlook") == Outlook);
+//     try std.testing.expect(GolfFieldType("humidity") == u8);
+//     try std.testing.expect(GolfFieldType("windy") == Windy);
+// }
 
 fn GolfFieldContext(comptime T: type, comptime field_name: []const u8) type {
     return struct {
