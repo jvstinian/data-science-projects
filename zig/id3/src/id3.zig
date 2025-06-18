@@ -15,7 +15,7 @@ pub fn Id3FieldType(comptime T: type, comptime field_name: []const u8) type {
     unreachable;
 }
 
-fn FieldContext2(comptime T: type, comptime field_name: []const u8) type {
+pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
     return struct {
         const Self = @This();
 
@@ -98,7 +98,7 @@ fn MakeSorterStruct(comptime T: type, comptime field_names: []const [*:0]const u
         // std.fmt.comptimePrint("Making field {s} at index {d}\n", .{ field_name, i });
         // const fieldName: [:0]const u8 = field_name[0.. :0];
         const fieldName: [:0]const u8 = std.mem.span(field_name);
-        const fieldType: type = FieldContext2(T, fieldName); // Note the coercion here
+        const fieldType: type = Id3FieldContext(T, fieldName); // Note the coercion here
         const defaultFieldValue: fieldType = fieldType.init();
         fields[i] = .{
             .name = fieldName, // need sentinel termination for the field name

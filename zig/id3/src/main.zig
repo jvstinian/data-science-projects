@@ -11,6 +11,7 @@ const GolfConditions = golf.GolfConditions;
 
 // const GolfFieldOffset = golf.GolfFieldOffset;
 const GolfFieldType = golf.GolfFieldType;
+const GolfFieldContext2 = golf.GolfFieldContext2;
 
 // fn GolfFieldOffset(comptime field_name: []const u8) comptime_int {
 //     return id3.Id3FieldOffset(GolfConditions, field_name);
@@ -58,92 +59,92 @@ fn GolfFieldContext(comptime T: type, comptime field_name: []const u8) type {
     };
 }
 
-fn GolfFieldContext2(comptime field_name: []const u8) type {
-    return struct {
-        const Self = @This();
-
-        field_name: []const u8,
-        offset: usize,
-        // offset: u8 = @offsetOf(GolfConditions, field_name),
-
-        pub const offset2: usize = @offsetOf(GolfConditions, field_name);
-
-        pub fn lessThan(self: Self, a: GolfConditions, b: GolfConditions) bool {
-            const T2: type = GolfFieldType(field_name);
-            // std.testing.expect(T == T2);
-            const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&a) + self.offset);
-            const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + self.offset);
-            // const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + .offset2);
-            // return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
-            switch (@typeInfo(T2)) {
-                .Enum => {
-                    return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
-                },
-                .Int => {
-                    return a_fld_ptr.* < b_fld_ptr.*;
-                },
-                else => {
-                    return false;
-                },
-            }
-        }
-
-        // TODO: This probably doesn't work in this form
-        // fn compareFn(self: Self, context: GolfConditions, item: GolfConditions) std.math.Order {
-        //     const T2: type = GolfFieldType(field_name);
-        //     const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&context) + self.offset);
-        //     const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&item) + self.offset);
-        //     switch (@typeInfo(T2)) {
-        //         .Enum => {
-        //             return std.math.order(@intFromEnum(a_fld_ptr.*), @intFromEnum(b_fld_ptr.*));
-        //         },
-        //         .Int => {
-        //             return std.math.order(a_fld_ptr.*, b_fld_ptr.*);
-        //         },
-        //         else => {
-        //             return false;
-        //         },
-        //     }
-        // }
-
-        pub fn getValueAsInt(self: Self, a: GolfConditions) u64 {
-            const T: type = GolfFieldType(field_name);
-            const a_fld_ptr: *T = @ptrFromInt(@intFromPtr(&a) + self.offset);
-            switch (@typeInfo(T)) {
-                .Enum => {
-                    return @intFromEnum(a_fld_ptr.*);
-                },
-                .Int => {
-                    return @as(u64, a_fld_ptr.*);
-                },
-                else => {
-                    return 0;
-                },
-            }
-        }
-
-        pub fn init() Self {
-            return Self{ .field_name = field_name, .offset = @offsetOf(GolfConditions, field_name) };
-        }
-
-        // This seems to work
-        pub fn sort(self: Self, train: []GolfConditions) void {
-            std.sort.insertion(GolfConditions, train, self, Self.lessThan);
-        }
-
-        // TODO: This probably doesn't work in this form
-        // pub fn upperBound(self: Self, items: []GolfConditions) void {
-        //     return std.sort.upperBound(GolfConditions, items, self, Self.lessThan);
-        // }
-    };
-}
-
-test "check GolfFieldContext2 type" {
-    const fld: []const u8 = "play";
-    const playType: type = GolfFieldContext2(fld);
-    const playDefault: playType = playType.init();
-    try comptime std.testing.expect(@TypeOf(playDefault) == playType);
-}
+// fn GolfFieldContext2(comptime field_name: []const u8) type {
+//     return struct {
+//         const Self = @This();
+//
+//         field_name: []const u8,
+//         offset: usize,
+//         // offset: u8 = @offsetOf(GolfConditions, field_name),
+//
+//         pub const offset2: usize = @offsetOf(GolfConditions, field_name);
+//
+//         pub fn lessThan(self: Self, a: GolfConditions, b: GolfConditions) bool {
+//             const T2: type = GolfFieldType(field_name);
+//             // std.testing.expect(T == T2);
+//             const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&a) + self.offset);
+//             const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + self.offset);
+//             // const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + .offset2);
+//             // return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
+//             switch (@typeInfo(T2)) {
+//                 .Enum => {
+//                     return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
+//                 },
+//                 .Int => {
+//                     return a_fld_ptr.* < b_fld_ptr.*;
+//                 },
+//                 else => {
+//                     return false;
+//                 },
+//             }
+//         }
+//
+//         // TODO: This probably doesn't work in this form
+//         // fn compareFn(self: Self, context: GolfConditions, item: GolfConditions) std.math.Order {
+//         //     const T2: type = GolfFieldType(field_name);
+//         //     const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&context) + self.offset);
+//         //     const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&item) + self.offset);
+//         //     switch (@typeInfo(T2)) {
+//         //         .Enum => {
+//         //             return std.math.order(@intFromEnum(a_fld_ptr.*), @intFromEnum(b_fld_ptr.*));
+//         //         },
+//         //         .Int => {
+//         //             return std.math.order(a_fld_ptr.*, b_fld_ptr.*);
+//         //         },
+//         //         else => {
+//         //             return false;
+//         //         },
+//         //     }
+//         // }
+//
+//         pub fn getValueAsInt(self: Self, a: GolfConditions) u64 {
+//             const T: type = GolfFieldType(field_name);
+//             const a_fld_ptr: *T = @ptrFromInt(@intFromPtr(&a) + self.offset);
+//             switch (@typeInfo(T)) {
+//                 .Enum => {
+//                     return @intFromEnum(a_fld_ptr.*);
+//                 },
+//                 .Int => {
+//                     return @as(u64, a_fld_ptr.*);
+//                 },
+//                 else => {
+//                     return 0;
+//                 },
+//             }
+//         }
+//
+//         pub fn init() Self {
+//             return Self{ .field_name = field_name, .offset = @offsetOf(GolfConditions, field_name) };
+//         }
+//
+//         // This seems to work
+//         pub fn sort(self: Self, train: []GolfConditions) void {
+//             std.sort.insertion(GolfConditions, train, self, Self.lessThan);
+//         }
+//
+//         // TODO: This probably doesn't work in this form
+//         // pub fn upperBound(self: Self, items: []GolfConditions) void {
+//         //     return std.sort.upperBound(GolfConditions, items, self, Self.lessThan);
+//         // }
+//     };
+// }
+//
+// test "check GolfFieldContext2 type" {
+//     const fld: []const u8 = "play";
+//     const playType: type = GolfFieldContext2(fld);
+//     const playDefault: playType = playType.init();
+//     try comptime std.testing.expect(@TypeOf(playDefault) == playType);
+// }
 
 // fn MakeSorterStruct(comptime field_names: []*const [:0]const u8) type
 fn MakeSorterStruct(comptime field_names: []const [*:0]const u8) type {

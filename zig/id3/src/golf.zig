@@ -43,6 +43,17 @@ test "golf field types from name" {
     try std.testing.expect(GolfFieldType("windy") == Windy);
 }
 
+pub fn GolfFieldContext2(comptime field_name: []const u8) type {
+    return id3.Id3FieldContext(GolfConditions, field_name);
+}
+
+test "check GolfFieldContext2 type" {
+    const fld: []const u8 = "play";
+    const playType: type = GolfFieldContext2(fld);
+    const playDefault: playType = playType.init();
+    try comptime std.testing.expect(@TypeOf(playDefault) == playType);
+}
+
 export fn multiply(a: i32, b: i32) i32 {
     return a * b;
 }
