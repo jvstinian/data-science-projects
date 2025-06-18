@@ -14,54 +14,8 @@ const GolfFieldType = golf.GolfFieldType;
 const GolfFieldContext2 = golf.GolfFieldContext2;
 const Id3SorterStruct = id3.Id3SorterStruct;
 
-// fn MakeSorterStruct(comptime field_names: []const [*:0]const u8) type {
-//     var fields: [field_names.len]std.builtin.Type.StructField = undefined;
-//     for (field_names, 0..) |field_name, i| {
-//         // std.fmt.comptimePrint("Making field {s} at index {d}\n", .{ field_name, i });
-//         // const fieldName: [:0]const u8 = field_name[0.. :0];
-//         const fieldName: [:0]const u8 = std.mem.span(field_name);
-//         const fieldType: type = GolfFieldContext2(fieldName); // Note the coercion here
-//         const defaultFieldValue: fieldType = fieldType.init();
-//         // if (fieldName[0] == '?') {
-//         //         //     fieldType = @Type(.{ .Optional = .{ .child = fieldType } });
-//         //     fieldName = fieldName[1..];
-//         // }
-//         fields[i] = .{
-//             .name = fieldName, // need sentinel termination for the field name
-//             .type = fieldType,
-//             .default_value = &defaultFieldValue,
-//             .is_comptime = false,
-//             .alignment = 0,
-//         };
-//     }
-//     // _ = field_names.len; // to avoid unused variable warning
-//     // const fld: [:0]const u8 = "play";
-//     // const fld2: []const u8 = "play";
-//     // const playType: type = GolfFieldContext2(fld2);
-//     // const playDefault: playType = playType.init();
-//     // var fields: [1]std.builtin.Type.StructField = .{
-//     //     .{
-//     //         .name = fld,
-//     //         .type = playType, // GolfFieldContext2("play"), // WhetherToPlay,
-//     //         .default_value = &playDefault, // GolfFieldContext2("play").init(), //  WhetherToPlay.dont,
-//     //         .is_comptime = false,
-//     //         .alignment = 0,
-//     //     },
-//     // };
-//
-//     return @Type(.{
-//         .Struct = .{
-//             .layout = .auto,
-//             .fields = fields[0..],
-//             .decls = &[_]std.builtin.Type.Declaration{},
-//             .is_tuple = false,
-//         },
-//     });
-// }
-
 const enum_fields: [3][*:0]const u8 = .{ "outlook", "windy", "humidity" };
 const enum_fields2: [3][]const u8 = .{ "outlook", "windy", "humidity_bucket" };
-// const enum_fields: [3]*const [:0]u8 = .{ "outlook", "windy", "play" }; // does not work
 
 const enum_and_target_fields: [6][*:0]const u8 = enum_fields ++ [3][*:0]const u8{ "humidity_bucket", "temperature", "play" };
 const sorting_struct = Id3SorterStruct(GolfConditions, &enum_and_target_fields){};
@@ -95,16 +49,10 @@ fn get_value_as_int(attribute_field_name: []const u8, record: GolfConditions) u6
 
 test "golf context from field name" {
     std.debug.print("Testing golf context construction using field name\n", .{});
-    // const WindyContext = GolfFieldContext(Windy, "windy");
-    // const windy_context = WindyContext.init(); // TODO: Remove
     const WindyContext2 = GolfFieldContext2("windy");
     const windy_context2 = WindyContext2.init();
-    // try std.testing.expect(windy_context.offset == windy_context2.offset);
     const gc1 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont };
     const gc2 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .yes, .play = .dont };
-    // try std.testing.expect(WindyContext.lessThan(gc1, gc2));
-    // try std.testing.expect(windy_context.lessThan(gc1, gc2));
-    // try std.testing.expect(WindyContext2.lessThan(gc1, gc2));
     try std.testing.expect(windy_context2.lessThan(gc1, gc2));
 }
 
@@ -536,16 +484,6 @@ pub fn main() !void {
     for (train) |rec| {
         try stdout.print("{d}: {d}\n", .{ rec.id, rec.temperature });
     }
-
-    // TODO: Remove
-    // const WindyContext = GolfFieldContext(Windy, "windy");
-    // const windy_context = WindyContext.init();
-    // try stdout.print("Windy offset using declaration: {d}\n", .{WindyContext.offset2});
-    // try stdout.print("Windy offset using member variable: {d}\n", .{windy_context.offset});
-    // std.sort.insertion(GolfConditions, &train, windy_context, WindyContext.lessThan);
-    // for (train) |rec| {
-    //     try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.windy) });
-    // }
 
     try stdout.print("Now using GolfContext2\n", .{});
     const WindyContext2 = GolfFieldContext2("windy");
