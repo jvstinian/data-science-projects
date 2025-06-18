@@ -23,14 +23,6 @@ const GolfFieldContext2 = golf.GolfFieldContext2;
 //     unreachable;
 // }
 //
-// test "golf field types from name" {
-//     std.debug.print("Testing golf field types from name\n", .{});
-//     try std.testing.expect(GolfFieldType("id") == u8);
-//     try std.testing.expect(GolfFieldType("outlook") == Outlook);
-//     try std.testing.expect(GolfFieldType("humidity") == u8);
-//     try std.testing.expect(GolfFieldType("windy") == Windy);
-// }
-
 // fn GolfFieldContext(comptime T: type, comptime field_name: []const u8) type {
 //     return struct {
 //         const Self = @This();
@@ -134,15 +126,7 @@ const GolfFieldContext2 = golf.GolfFieldContext2;
 //         // }
 //     };
 // }
-//
-// test "check GolfFieldContext2 type" {
-//     const fld: []const u8 = "play";
-//     const playType: type = GolfFieldContext2(fld);
-//     const playDefault: playType = playType.init();
-//     try comptime std.testing.expect(@TypeOf(playDefault) == playType);
-// }
 
-// fn MakeSorterStruct(comptime field_names: []*const [:0]const u8) type
 fn MakeSorterStruct(comptime field_names: []const [*:0]const u8) type {
     var fields: [field_names.len]std.builtin.Type.StructField = undefined;
     for (field_names, 0..) |field_name, i| {
