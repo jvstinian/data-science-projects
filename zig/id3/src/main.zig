@@ -13,10 +13,6 @@ const GolfConditions = golf.GolfConditions;
 const GolfFieldType = golf.GolfFieldType;
 const GolfFieldContext2 = golf.GolfFieldContext2;
 
-// fn GolfFieldOffset(comptime field_name: []const u8) comptime_int {
-//     return id3.Id3FieldOffset(GolfConditions, field_name);
-// }
-
 // fn GolfFieldType(comptime field_name: []const u8) type {
 //     const fields = @typeInfo(GolfConditions).Struct.fields;
 //     inline for (fields) |fld| {
@@ -35,29 +31,29 @@ const GolfFieldContext2 = golf.GolfFieldContext2;
 //     try std.testing.expect(GolfFieldType("windy") == Windy);
 // }
 
-fn GolfFieldContext(comptime T: type, comptime field_name: []const u8) type {
-    return struct {
-        const Self = @This();
-
-        field_name: []const u8,
-        offset: usize,
-        // offset: u8 = @offsetOf(GolfConditions, field_name),
-
-        pub const offset2: usize = @offsetOf(GolfConditions, field_name);
-
-        pub fn lessThan(self: Self, a: GolfConditions, b: GolfConditions) bool {
-            // const T2: type = GolfFieldType(field_name);
-            // std.testing.expect(T == T2);
-            const a_fld_ptr: *T = @ptrFromInt(@intFromPtr(&a) + self.offset);
-            const b_fld_ptr: *T = @ptrFromInt(@intFromPtr(&b) + self.offset);
-            return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
-        }
-
-        pub fn init() Self {
-            return Self{ .field_name = field_name, .offset = @offsetOf(GolfConditions, field_name) };
-        }
-    };
-}
+// fn GolfFieldContext(comptime T: type, comptime field_name: []const u8) type {
+//     return struct {
+//         const Self = @This();
+//
+//         field_name: []const u8,
+//         offset: usize,
+//         // offset: u8 = @offsetOf(GolfConditions, field_name),
+//
+//         pub const offset2: usize = @offsetOf(GolfConditions, field_name);
+//
+//         pub fn lessThan(self: Self, a: GolfConditions, b: GolfConditions) bool {
+//             // const T2: type = GolfFieldType(field_name);
+//             // std.testing.expect(T == T2);
+//             const a_fld_ptr: *T = @ptrFromInt(@intFromPtr(&a) + self.offset);
+//             const b_fld_ptr: *T = @ptrFromInt(@intFromPtr(&b) + self.offset);
+//             return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
+//         }
+//
+//         pub fn init() Self {
+//             return Self{ .field_name = field_name, .offset = @offsetOf(GolfConditions, field_name) };
+//         }
+//     };
+// }
 
 // fn GolfFieldContext2(comptime field_name: []const u8) type {
 //     return struct {
@@ -228,15 +224,15 @@ fn get_value_as_int(attribute_field_name: []const u8, record: GolfConditions) u6
 
 test "golf context from field name" {
     std.debug.print("Testing golf context construction using field name\n", .{});
-    const WindyContext = GolfFieldContext(Windy, "windy");
-    const windy_context = WindyContext.init();
+    // const WindyContext = GolfFieldContext(Windy, "windy");
+    // const windy_context = WindyContext.init(); // TODO: Remove
     const WindyContext2 = GolfFieldContext2("windy");
     const windy_context2 = WindyContext2.init();
-    try std.testing.expect(windy_context.offset == windy_context2.offset);
+    // try std.testing.expect(windy_context.offset == windy_context2.offset);
     const gc1 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont };
     const gc2 = GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .yes, .play = .dont };
     // try std.testing.expect(WindyContext.lessThan(gc1, gc2));
-    try std.testing.expect(windy_context.lessThan(gc1, gc2));
+    // try std.testing.expect(windy_context.lessThan(gc1, gc2));
     // try std.testing.expect(WindyContext2.lessThan(gc1, gc2));
     try std.testing.expect(windy_context2.lessThan(gc1, gc2));
 }
@@ -670,14 +666,15 @@ pub fn main() !void {
         try stdout.print("{d}: {d}\n", .{ rec.id, rec.temperature });
     }
 
-    const WindyContext = GolfFieldContext(Windy, "windy");
-    const windy_context = WindyContext.init();
-    try stdout.print("Windy offset using declaration: {d}\n", .{WindyContext.offset2});
-    try stdout.print("Windy offset using member variable: {d}\n", .{windy_context.offset});
-    std.sort.insertion(GolfConditions, &train, windy_context, WindyContext.lessThan);
-    for (train) |rec| {
-        try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.windy) });
-    }
+    // TODO: Remove
+    // const WindyContext = GolfFieldContext(Windy, "windy");
+    // const windy_context = WindyContext.init();
+    // try stdout.print("Windy offset using declaration: {d}\n", .{WindyContext.offset2});
+    // try stdout.print("Windy offset using member variable: {d}\n", .{windy_context.offset});
+    // std.sort.insertion(GolfConditions, &train, windy_context, WindyContext.lessThan);
+    // for (train) |rec| {
+    //     try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.windy) });
+    // }
 
     try stdout.print("Now using GolfContext2\n", .{});
     const WindyContext2 = GolfFieldContext2("windy");
