@@ -32,10 +32,10 @@
           dev-python-packages = ps: with ps; [
               numpy pandas statsmodels matplotlib
               # opencv4
-              scikit-learn
+              scikit-learn scikit-image
               tensorflowWithCuda keras
               torch torchvision
-              gymnasium
+              gymnasium pygame
               jupyter ipython
           ];
           dev-python = pkgs.python3.withPackages dev-python-packages;
