@@ -454,27 +454,6 @@ pub fn main() !void {
         try stdout.print("{d}: {d}\n", .{ rec.id, rec.temperature });
     }
 
-    try stdout.print("Now using GolfContext2\n", .{});
-    const WindyContext2 = GolfFieldContext2("windy");
-    const windy_context2 = WindyContext2.init();
-    const WhetherToPlay2 = GolfFieldContext2("play");
-    const wtp2 = WhetherToPlay2.init();
-    try stdout.print("Now using GolfContext2: {s}\n", .{windy_context2.field_name});
-    std.sort.insertion(GolfConditions, &train, windy_context2, WindyContext2.lessThan);
-    for (train) |rec| {
-        try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.windy) });
-    }
-    try stdout.print("Now using GolfContext2: {s}\n", .{wtp2.field_name});
-    std.sort.insertion(GolfConditions, &train, wtp2, WhetherToPlay2.lessThan);
-    for (train) |rec| {
-        try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.play) });
-    }
-    try stdout.print("Trying new sort method on GolfContext2 with field {s}\n", .{windy_context2.field_name});
-    // WindyContext2.sort(windy_context2, &train);
-    windy_context2.sort(&train);
-    for (train) |rec| {
-        try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.windy) });
-    }
     try stdout.print("Now using the stuct sort methods\n", .{});
     try stdout.print("Trying the struct sort methods with field {s}\n", .{"play"});
     sorting_struct.play.sort(&train);

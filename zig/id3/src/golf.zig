@@ -20,6 +20,8 @@ pub const GolfConditions = struct {
     play: WhetherToPlay,
 };
 
+pub const golfRecords = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 4, .outlook = .rain, .temperature = 68, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 5, .outlook = .rain, .temperature = 65, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 6, .outlook = .overcast, .temperature = 64, .humidity = 65, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 7, .outlook = .sunny, .temperature = 72, .humidity = 95, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 8, .outlook = .sunny, .temperature = 69, .humidity = 70, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 9, .outlook = .rain, .temperature = 75, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 10, .outlook = .sunny, .temperature = 75, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 11, .outlook = .overcast, .temperature = 72, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do }, GolfConditions{ .id = 12, .outlook = .overcast, .temperature = 81, .humidity = 75, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 13, .outlook = .rain, .temperature = 71, .humidity = 80, .humidity_bucket = .gt75, .windy = .yes, .play = .dont } };
+
 test "outlook values" {
     try std.testing.expect(@typeInfo(Outlook).Enum.fields.len == 3);
     try std.testing.expect(std.mem.eql(u8, @typeInfo(Outlook).Enum.fields[1].name, "overcast"));
@@ -182,7 +184,9 @@ test "testing gain from tutorial" {
     const attribute_field_names: [3][]const u8 = .{ "outlook", "humidity_bucket", "windy" };
     const calculate_gain_using_hash_map = id3.ID3NodeType(GolfConditions, &attribute_field_names, "play").calculateGainForFieldUsingHashMap;
 
-    var train = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 4, .outlook = .rain, .temperature = 68, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 5, .outlook = .rain, .temperature = 65, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 6, .outlook = .overcast, .temperature = 64, .humidity = 65, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 7, .outlook = .sunny, .temperature = 72, .humidity = 95, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 8, .outlook = .sunny, .temperature = 69, .humidity = 70, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 9, .outlook = .rain, .temperature = 75, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 10, .outlook = .sunny, .temperature = 75, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 11, .outlook = .overcast, .temperature = 72, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do }, GolfConditions{ .id = 12, .outlook = .overcast, .temperature = 81, .humidity = 75, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 13, .outlook = .rain, .temperature = 71, .humidity = 80, .humidity_bucket = .gt75, .windy = .yes, .play = .dont } };
+    // var train = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 4, .outlook = .rain, .temperature = 68, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 5, .outlook = .rain, .temperature = 65, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 6, .outlook = .overcast, .temperature = 64, .humidity = 65, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 7, .outlook = .sunny, .temperature = 72, .humidity = 95, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 8, .outlook = .sunny, .temperature = 69, .humidity = 70, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 9, .outlook = .rain, .temperature = 75, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 10, .outlook = .sunny, .temperature = 75, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 11, .outlook = .overcast, .temperature = 72, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do }, GolfConditions{ .id = 12, .outlook = .overcast, .temperature = 81, .humidity = 75, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 13, .outlook = .rain, .temperature = 71, .humidity = 80, .humidity_bucket = .gt75, .windy = .yes, .play = .dont } };
+    var train: [golfRecords.len]GolfConditions = undefined;
+    @memcpy(&train, &golfRecords);
 
     for (train) |rec| {
         if (rec.humidity > 75) {
@@ -206,6 +210,52 @@ test "testing gain from tutorial" {
 
     const actual_gain_windy2: f64 = try calculate_gain_using_hash_map("windy", &train);
     try std.testing.expectApproxEqAbs(@as(f64, 0.048), actual_gain_windy2, 1e-3);
+}
+
+test "testing sort of windy field using context" {
+    var train: [golfRecords.len]GolfConditions = undefined;
+    @memcpy(&train, &golfRecords);
+
+    const WindyContext2 = GolfFieldContext2("windy");
+    const windy_context2 = WindyContext2.init();
+    std.sort.insertion(GolfConditions, &train, windy_context2, WindyContext2.lessThan);
+
+    try std.testing.expect(std.mem.eql(u8, windy_context2.field_name, "windy"));
+
+    var idx: usize = 1;
+    while (idx < train.len) : (idx += 1) {
+        try std.testing.expect(windy_context2.getValueAsInt(train[idx - 1]) <= windy_context2.getValueAsInt(train[idx]));
+    }
+}
+
+test "testing sort method of context for windy field" {
+    var train: [golfRecords.len]GolfConditions = undefined;
+    @memcpy(&train, &golfRecords);
+
+    const WindyContext2 = GolfFieldContext2("windy");
+    const windy_context2 = WindyContext2.init();
+    windy_context2.sort(&train);
+
+    var idx: usize = 1;
+    while (idx < train.len) : (idx += 1) {
+        try std.testing.expect(windy_context2.getValueAsInt(train[idx - 1]) <= windy_context2.getValueAsInt(train[idx]));
+    }
+}
+
+test "testing sort of play field using context" {
+    var train: [golfRecords.len]GolfConditions = undefined;
+    @memcpy(&train, &golfRecords);
+
+    const WhetherToPlayContext = GolfFieldContext2("play");
+    const wtp = WhetherToPlayContext.init();
+    std.sort.insertion(GolfConditions, &train, wtp, WhetherToPlayContext.lessThan);
+
+    try std.testing.expect(std.mem.eql(u8, wtp.field_name, "play"));
+
+    var idx: usize = 1;
+    while (idx < train.len) : (idx += 1) {
+        try std.testing.expect(wtp.getValueAsInt(train[idx - 1]) <= wtp.getValueAsInt(train[idx]));
+    }
 }
 
 export fn multiply(a: i32, b: i32) i32 {
