@@ -142,13 +142,13 @@ test "testing field matching function" {
 }
 
 // TODO: Not sure if the following will work as needed to replace sort_records and get_value_as_int
-pub fn Id3FieldProcessors(comptime T: type, comptime attribute_field_names: [][]const u8) type {
+pub fn Id3FieldProcessors(comptime T: type, comptime attribute_field_names: []const []const u8) type {
     return struct {
-        const Self = @This();
+        // const Self = @This();
 
-        pub fn init() Self {
-            return Self{};
-        }
+        // pub fn init() Self {
+        //     return Self{};
+        // }
 
         pub fn sortRecords(field_name: []const u8, records: []T) void {
             inline for (attribute_field_names) |attr_fld| {
@@ -428,30 +428,34 @@ pub fn ConstantValueLeaf(comptime T: type, comptime target_field_name: []const u
 //     };
 // }
 
-const ID3Node = struct {
-    const Self = @This();
+pub fn ID3Node(comptime T: type, comptime attribute_field_names: []const []const u8, comptime target_field_name: []const u8) type {
+    return struct {
+        const Self = @This();
 
-    field_name: []const u8,
-    values: std.ArrayList(u64), // This will hold the values of the attribute field
-    nodes: std.ArrayList(ID3NodeType), // This will hold the child nodes
+        const TreeType = ID3NodeType(T, attribute_field_names, target_field_name);
 
-    pub fn init(gpa: std.mem.Allocator, attribute_field_name: []const u8) Self {
-        return Self{ .field_name = attribute_field_name, .values = std.ArrayList(u64).init(gpa), .nodes = std.ArrayList(ID3NodeType).init(gpa) };
-    }
+        field_name: []const u8,
+        values: std.ArrayList(u64), // This will hold the values of the attribute field
+        nodes: std.ArrayList(TreeType), // This will hold the child nodes
 
-    pub fn deinit(self: Self) void {
-        self.values.deinit();
-        for (self.nodes.items) |node| {
-            node.deinit();
+        pub fn init(gpa: std.mem.Allocator, attribute_field_name: []const u8) Self {
+            return Self{ .field_name = attribute_field_name, .values = std.ArrayList(u64).init(gpa), .nodes = std.ArrayList(TreeType).init(gpa) };
         }
-        self.nodes.deinit();
-    }
 
-    pub fn appendValue(self: *Self, value: u64, node: ID3NodeType) std.mem.Allocator.Error!void {
-        try self.values.append(value);
-        try self.nodes.append(node);
-    }
-};
+        pub fn deinit(self: Self) void {
+            self.values.deinit();
+            for (self.nodes.items) |node| {
+                node.deinit();
+            }
+            self.nodes.deinit();
+        }
+
+        pub fn appendValue(self: *Self, value: u64, node: TreeType) std.mem.Allocator.Error!void {
+            try self.values.append(value);
+            try self.nodes.append(node);
+        }
+    };
+}
 
 // TODO: Might make sense to improve the following definition of MEM_SIZE and GAIN_MEM_SIZE
 const KEY_SIZE = 8;
@@ -465,7 +469,7 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
     return union(ID3NodeTag) {
         const Self = @This();
 
-        node: ID3Node(target_field_name),
+        node: ID3Node(T, attribute_field_names, target_field_name),
         most_frequent: MostFrequentValueLeaf(T, target_field_name),
         constant_value: ConstantValueLeaf(T, target_field_name),
         empty: void,
@@ -609,22 +613,22 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
 
         const attribute_count: usize = attribute_field_names.len;
 
-        fn buildNode(remaining_field_names: []const []const u8, records: []T, allocator: std.mem.Allocator) std.mem.Allocator.Error!ID3NodeType {
+        pub fn buildNode(remaining_field_names: []const []const u8, records: []T, allocator: std.mem.Allocator) std.mem.Allocator.Error!Self {
             std.debug.print("Entering build_node\n", .{});
             if (records.len == 0) {
                 // If S is empty, return a single node with value Failure;
                 std.debug.print("In build_node, constructing empty leaf\n", .{});
-                return ID3NodeType{ .empty = {} };
-            } else if (allTargetValuesEqual(target_field_name, records)) {
+                return Self{ .empty = {} };
+            } else if (allTargetValuesEqual(records)) {
                 // If S consists of records all with the same value for
                 // the categorical attribute,
                 // return a single node with that value;
                 std.debug.print("In build_node, constructing constant value leaf\n", .{});
-                return ID3NodeType{ .constant_value = ConstantValueLeaf(target_field_name).init(@field(records[0], target_field_name)) };
+                return Self{ .constant_value = ConstantValueLeaf(T, target_field_name).init(@field(records[0], target_field_name)) };
             } else if (remaining_field_names.len == 0) {
                 const mfv: MostFrequentValueLeaf(T, target_field_name) = try calculateMostFrequentValue(records);
                 std.debug.print("In build_node, constructing most frequent value leaf\n", .{});
-                return ID3NodeType{ .most_frequent = mfv };
+                return Self{ .most_frequent = mfv };
             } else {
                 var max_gain: f64 = undefined;
                 var arg_max: usize = undefined;
@@ -655,26 +659,29 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
                 const updated_attributes_slice: []const []const u8 = updated_attributes[0..(remaining_field_names.len - 1)];
 
                 // Sort the records
-                // sort_records(remaining_field_names[arg_max], records); // TODO: Replaced with the following
-                const field_processors: Id3FieldProcessors(T, attribute_field_names) = Id3FieldProcessors(T, attribute_field_names).init();
-                // Id3FieldProcessors(T, remaining_field_names).init().sortRecords(remaining_field_names[arg_max], records);
-                field_processors.sortRecords(remaining_field_names[arg_max], records);
+                //// sort_records(remaining_field_names[arg_max], records); // TODO: Replaced with the following
+                // const field_processors: Id3FieldProcessors(T, attribute_field_names) = Id3FieldProcessors(T, attribute_field_names).init();
+                // field_processors.sortRecords(remaining_field_names[arg_max], records);
+                Id3FieldProcessors(T, attribute_field_names).sortRecords(remaining_field_names[arg_max], records);
 
                 // Create a list of nodes
-                var node: ID3Node("play") = ID3Node("play").init(allocator, best_field_name);
+                var node: ID3Node(T, attribute_field_names, target_field_name) = ID3Node(T, attribute_field_names, target_field_name).init(allocator, best_field_name);
+                // var node = ID3Node(T, attribute_field_names, target_field_name).init(allocator, best_field_name); // TODO: This works
                 var start_idx: usize = 0;
                 var end_idx: usize = 0;
                 while (start_idx < records.len) : (end_idx += 1) {
                     // Find the end of the current value group
                     // TODO: best_field_name isn't comptime so we might need to adjust the value extraction
                     // const start_value: u64 = get_value_as_int(best_field_name, records[start_idx]); // TODO: Replaced with the following
-                    const start_value: u64 = field_processors.getValueAsInt(best_field_name, records[start_idx]);
+                    // const start_value: u64 = field_processors.getValueAsInt(best_field_name, records[start_idx]);
+                    const start_value: u64 = Id3FieldProcessors(T, attribute_field_names).getValueAsInt(best_field_name, records[start_idx]);
                     var append_flag: bool = false;
                     if (end_idx == records.len) {
                         append_flag = true;
                     } else {
                         // const end_value: u64 = get_value_as_int(best_field_name, records[end_idx]); // TODO: Replaced with the following
-                        const end_value: u64 = field_processors.getValueAsInt(best_field_name, records[end_idx]);
+                        // const end_value: u64 = field_processors.getValueAsInt(best_field_name, records[end_idx]);
+                        const end_value: u64 = Id3FieldProcessors(T, attribute_field_names).getValueAsInt(best_field_name, records[end_idx]);
                         if (end_value != start_value) {
                             append_flag = true;
                         }
@@ -682,7 +689,7 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
                     if (append_flag) {
                         // Create a sub-node for the current value group
                         const sub_records = records[start_idx..end_idx];
-                        const sub_node = try buildNode(updated_attributes_slice, attribute_count, target_field_name, sub_records, allocator);
+                        const sub_node = try buildNode(updated_attributes_slice, sub_records, allocator);
                         try node.appendValue(start_value, sub_node);
                         start_idx = end_idx; // Move to the next group
                     } else {
@@ -690,7 +697,7 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
                     }
                 }
 
-                return ID3NodeType{ .node = node };
+                return Self{ .node = node };
             }
         }
 
