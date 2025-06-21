@@ -14,6 +14,8 @@ const GolfFieldType = golf.GolfFieldType;
 const GolfFieldContext2 = golf.GolfFieldContext2;
 const Id3SorterStruct = id3.Id3SorterStruct;
 const Id3FieldProcessors = id3.Id3FieldProcessors;
+const AltId3FieldProcessors = id3.AltId3FieldProcessors;
+const Id3Entropy = id3.Id3Entropy;
 
 const enum_fields: [3][*:0]const u8 = .{ "outlook", "windy", "humidity" };
 const enum_fields2: [3][]const u8 = .{ "outlook", "windy", "humidity_bucket" };
@@ -26,7 +28,18 @@ const enum_and_target_fields: [6][*:0]const u8 = enum_fields ++ [3][*:0]const u8
 // // enum_fields2[1] = std.mem.span(enum_and_target_fields0[1]);
 // // enum_fields2[2] = std.mem.span(enum_and_target_fields0[2]);
 
+const enum_and_target_fields1: [6][:0]const u8 = .{ "outlook", "windy", "humidity", "humidity_bucket", "temperature", "play" };
+
+test "Testing comparison of string with sentinel to one without sentinel" {
+    const sentinel: [:0]const u8 = "play";
+    const without_sentinel: []const u8 = "play";
+    try std.testing.expect(std.mem.eql(u8, sentinel, without_sentinel));
+
+    try std.testing.expect(std.mem.eql(u8, enum_and_target_fields1[5], without_sentinel));
+}
+
 const sorting_struct = Id3SorterStruct(GolfConditions, &enum_and_target_fields){};
+const sorting_processor = AltId3FieldProcessors(GolfConditions, &enum_and_target_fields).init();
 
 fn sort_records(attribute_field_name: []const u8, records: []GolfConditions) void {
     inline for (enum_fields2) |fld| {
@@ -55,46 +68,46 @@ fn get_value_as_int(attribute_field_name: []const u8, record: GolfConditions) u6
 // }
 //
 
-fn calculate_entropy(comptime target_field_name: []const u8, records: []GolfConditions) f64 {
-    const FC = GolfFieldContext2(target_field_name);
-    const target_field_context = FC.init();
-    target_field_context.sort(records);
-
-    const T = GolfFieldType(target_field_name);
-    const N = @typeInfo(T).Enum.fields.len;
-    var counts: [N]usize = undefined;
-
-    if (records.len > 0) {
-        counts[0] = 1; // first record always counts
-    }
-    var idx: usize = 1;
-    var val_idx: usize = 0;
-    while (idx < records.len) : (idx += 1) {
-        if (@field(records[idx], target_field_name) != @field(records[idx - 1], target_field_name)) {
-            val_idx += 1;
-            counts[val_idx] = 1;
-        } else {
-            counts[val_idx] += 1;
-        }
-    }
-
-    const val_len = val_idx + 1;
-    const counts_slice: []usize = counts[0..val_len];
-    var total_count: usize = 0;
-    for (counts_slice) |count| {
-        total_count += count;
-    }
-
-    var entropy: f64 = 0.0;
-    for (counts_slice) |count| {
-        if (count > 0) {
-            const p: f64 = @as(f64, @floatFromInt(count)) / @as(f64, @floatFromInt(total_count));
-            entropy -= p * std.math.log2(p);
-        }
-    }
-
-    return entropy;
-}
+// fn calculate_entropy(comptime target_field_name: []const u8, records: []GolfConditions) f64 {
+//     const FC = GolfFieldContext2(target_field_name);
+//     const target_field_context = FC.init();
+//     target_field_context.sort(records);
+//
+//     const T = GolfFieldType(target_field_name);
+//     const N = @typeInfo(T).Enum.fields.len;
+//     var counts: [N]usize = undefined;
+//
+//     if (records.len > 0) {
+//         counts[0] = 1; // first record always counts
+//     }
+//     var idx: usize = 1;
+//     var val_idx: usize = 0;
+//     while (idx < records.len) : (idx += 1) {
+//         if (@field(records[idx], target_field_name) != @field(records[idx - 1], target_field_name)) {
+//             val_idx += 1;
+//             counts[val_idx] = 1;
+//         } else {
+//             counts[val_idx] += 1;
+//         }
+//     }
+//
+//     const val_len = val_idx + 1;
+//     const counts_slice: []usize = counts[0..val_len];
+//     var total_count: usize = 0;
+//     for (counts_slice) |count| {
+//         total_count += count;
+//     }
+//
+//     var entropy: f64 = 0.0;
+//     for (counts_slice) |count| {
+//         if (count > 0) {
+//             const p: f64 = @as(f64, @floatFromInt(count)) / @as(f64, @floatFromInt(total_count));
+//             entropy -= p * std.math.log2(p);
+//         }
+//     }
+//
+//     return entropy;
+// }
 
 // TODO: Probably have to consider implementing compareFn and upperBound in a similar way to what was done for sort.
 // REFERENCES: https://ziglang.org/documentation/master/std/#std.sort.upperBound
@@ -124,17 +137,18 @@ fn calculate_entropy(comptime target_field_name: []const u8, records: []GolfCond
 //     // }
 // }
 
-test "testing entropy" {
-    var single_value_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .dont } };
-    const actual_val1: f64 = calculate_entropy("play", &single_value_test);
-    try std.testing.expectApproxEqAbs(@as(f64, 0.0), actual_val1, 1e-12);
-
-    var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do } };
-    const actual_val2: f64 = calculate_entropy("play", &max_entropy_test);
-    const exp_val2: f64 = std.math.log2(@as(f64, 2.0));
-    std.debug.print("Expected value: {d}, Actual value: {d}\n", .{ exp_val2, actual_val2 });
-    try std.testing.expectApproxEqAbs(exp_val2, actual_val2, 1e-12);
-}
+// TODO: Remove when ready
+// test "testing entropy" {
+//     var single_value_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .dont } };
+//     const actual_val1: f64 = calculate_entropy("play", &single_value_test);
+//     try std.testing.expectApproxEqAbs(@as(f64, 0.0), actual_val1, 1e-12);
+//
+//     var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do } };
+//     const actual_val2: f64 = calculate_entropy("play", &max_entropy_test);
+//     const exp_val2: f64 = std.math.log2(@as(f64, 2.0));
+//     std.debug.print("Expected value: {d}, Actual value: {d}\n", .{ exp_val2, actual_val2 });
+//     try std.testing.expectApproxEqAbs(exp_val2, actual_val2, 1e-12);
+// }
 
 // function ID3 (R: a set of non-categorical attributes,
 // 		 C: the categorical attribute,
@@ -234,12 +248,12 @@ fn calculate_most_frequent_value(comptime target_field_name: []const u8, records
     );
 }
 
-test "constant value node" {
-    const ConstantValueLeafType = ConstantValueLeaf("play");
-    const cvf = ConstantValueLeafType.init(WhetherToPlay.dont);
-    try std.testing.expect(cvf.value == WhetherToPlay.dont);
-    try std.testing.expect(@TypeOf(cvf.value) == WhetherToPlay);
-}
+// test "constant value node" {
+//     const ConstantValueLeafType = ConstantValueLeaf("play");
+//     const cvf = ConstantValueLeafType.init(WhetherToPlay.dont);
+//     try std.testing.expect(cvf.value == WhetherToPlay.dont);
+//     try std.testing.expect(@TypeOf(cvf.value) == WhetherToPlay);
+// }
 
 fn ID3Node(comptime target_field_name: []const u8) type {
     return struct {
@@ -509,6 +523,8 @@ pub fn main() !void {
     try stdout.print("Now using the stuct sort methods\n", .{});
     try stdout.print("Trying the struct sort methods with field {s}\n", .{"play"});
     sorting_struct.play.sort(&train);
+    try stdout.print("Trying the sort processor method ith field {s}\n", .{"play"});
+    sorting_processor.sortRecords("play", &train);
     for (train) |rec| {
         try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.play) });
     }
@@ -536,89 +552,6 @@ pub fn main() !void {
     const root: ID3NodeType = try build_node(&enum_fields2, enum_fields2.len, "play", &train, allocator);
     try root.print();
     defer root.deinit(); // deinitialize the root node to free memory
-}
-
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
-
-// test "bool inequality" {
-//     std.testing.expect(false < true);
-// }
-
-test "outlook values" {
-    try std.testing.expect(@typeInfo(Outlook).Enum.fields.len == 3);
-    try std.testing.expect(std.mem.eql(u8, @typeInfo(Outlook).Enum.fields[1].name, "overcast"));
-}
-
-test "windy values" {
-    try std.testing.expect(@typeInfo(Windy).Enum.fields.len == 2);
-    try std.testing.expect(std.mem.eql(u8, @typeInfo(Windy).Enum.fields[1].name, "yes"));
-}
-
-test "inline for for non-categorical variables" {
-    const noncat_fields: [2][]const u8 = .{ "outlook", "temperature" };
-    inline for (noncat_fields) |fld| {
-        std.debug.print("Looking at field {s}\n", .{fld});
-        if (std.mem.eql(u8, fld, "outlook")) {
-            const T2 = GolfFieldType(fld);
-            try std.testing.expect(T2 == Outlook);
-        } else if (std.mem.eql(u8, fld, "temperature")) {
-            const T2 = GolfFieldType(fld);
-            try std.testing.expect(T2 == u8);
-        } else {
-            try std.testing.expect(false);
-        }
-    }
-}
-
-test "checking temperature type" {
-    const fld: []const u8 = "temperature";
-    const T2 = GolfFieldType(fld);
-    try std.testing.expect(T2 == u8);
-    try std.testing.expect(@typeInfo(T2).Int.signedness == .unsigned);
-    try std.testing.expect(@typeInfo(T2).Int.bits == 8);
-}
-
-test "checking types of features are acceptable" {
-    const noncat_fields: [4][]const u8 = .{ "outlook", "temperature", "windy", "play" };
-    inline for (noncat_fields) |fld| {
-        std.debug.print("Looking at field {s}\n", .{fld});
-        const T = GolfFieldType(fld);
-        switch (@typeInfo(T)) {
-            .Enum => {
-                try std.testing.expect(true);
-            },
-            .Int => {
-                try std.testing.expect(true);
-            },
-            else => {
-                try std.testing.expect(false);
-            },
-        }
-    }
-}
-
-fn field_name_match_function(comptime field_names: []const [*:0]const u8, current_field: []const u8) bool {
-    inline for (field_names) |fld| {
-        const adj_fld: [:0]const u8 = std.mem.span(fld);
-        if (std.mem.eql(u8, adj_fld, current_field)) {
-            std.debug.print("Found field {s}\n", .{fld});
-            // return current_field;
-            return true;
-        }
-    }
-    // unreachable;
-    return false;
-}
-
-test "testing field matching function" {
-    const noncat_fields: [4][*:0]const u8 = .{ "outlook", "temperature", "windy", "play" };
-    try std.testing.expect(field_name_match_function(&noncat_fields, "windy"));
-    // try std.testing.expect(field_name_match_function(&noncat_fields, "windy0"));
 }
 
 const KEY_SIZE = 8;
@@ -681,17 +614,18 @@ fn calculate_entropy_using_hash_map(comptime target_field_name: []const u8, reco
     return entropy;
 }
 
-test "testing hash_map_example" {
-    var single_value_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .dont } };
-    const actual_val1: f64 = try calculate_entropy_using_hash_map("play", &single_value_test);
-    try std.testing.expectApproxEqAbs(@as(f64, 0.0), actual_val1, 1e-12);
-
-    var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do } };
-    const actual_val2: f64 = try calculate_entropy_using_hash_map("play", &max_entropy_test);
-    const exp_val2: f64 = std.math.log2(@as(f64, 2.0));
-    std.debug.print("Expected value: {d}, Actual value: {d}\n", .{ exp_val2, actual_val2 });
-    try std.testing.expectApproxEqAbs(exp_val2, actual_val2, 1e-12);
-}
+// TODO: The following has been moved and adapted in golf.zig, so this can be removed.
+// test "testing hash_map_example" {
+//     var single_value_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .dont } };
+//     const actual_val1: f64 = try calculate_entropy_using_hash_map("play", &single_value_test);
+//     try std.testing.expectApproxEqAbs(@as(f64, 0.0), actual_val1, 1e-12);
+//
+//     var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do } };
+//     const actual_val2: f64 = try calculate_entropy_using_hash_map("play", &max_entropy_test);
+//     const exp_val2: f64 = std.math.log2(@as(f64, 2.0));
+//     std.debug.print("Expected value: {d}, Actual value: {d}\n", .{ exp_val2, actual_val2 });
+//     try std.testing.expectApproxEqAbs(exp_val2, actual_val2, 1e-12);
+// }
 
 fn calculate_gain_using_hash_map(comptime target_field_name: []const u8, attribute_field_name: []const u8, records: []GolfConditions) std.mem.Allocator.Error!f64 {
     // _ = target_field_name; // to avoid unused variable warning
@@ -763,41 +697,43 @@ fn calculate_gain_using_hash_map0(comptime target_field_name: []const u8, compti
     return entropy - condinfo;
 }
 
-test "testing calculate_gain_using_hash_map0" {
-    var single_value_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .dont } };
-    const actual_val1: f64 = try calculate_gain_using_hash_map0("play", "windy", &single_value_test);
-    try std.testing.expectApproxEqAbs(@as(f64, 0.0), actual_val1, 1e-12);
+// TODO: The following has been moved and adapted in golf.zig, so this can be removed.
+// test "testing calculate_gain_using_hash_map0" {
+//     var single_value_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .dont } };
+//     const actual_val1: f64 = try calculate_gain_using_hash_map0("play", "windy", &single_value_test);
+//     try std.testing.expectApproxEqAbs(@as(f64, 0.0), actual_val1, 1e-12);
+//
+//     // var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do } };
+//     // const actual_val2: f64 = try calculate_gain_using_hash_map0("play", "windy", &max_entropy_test);
+//     // const exp_val2: f64 = std.math.log2(@as(f64, 2.0));
+//     // std.debug.print("Expected value: {d}, Actual value: {d}\n", .{ exp_val2, actual_val2 });
+//     // try std.testing.expectApproxEqAbs(exp_val2, actual_val2, 1e-12);
+// }
+//
+// test "testing calculate_gain_using_hash_map" {
+//     var recs = [_]GolfConditions{GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }};
+//     const windy_val = try calculate_gain_using_hash_map("play", "windy", &recs);
+//     try std.testing.expect(windy_val == @intFromEnum(Windy.no));
+// }
 
-    // var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do } };
-    // const actual_val2: f64 = try calculate_gain_using_hash_map0("play", "windy", &max_entropy_test);
-    // const exp_val2: f64 = std.math.log2(@as(f64, 2.0));
-    // std.debug.print("Expected value: {d}, Actual value: {d}\n", .{ exp_val2, actual_val2 });
-    // try std.testing.expectApproxEqAbs(exp_val2, actual_val2, 1e-12);
-}
-
-test "testing calculate_gain_using_hash_map" {
-    var recs = [_]GolfConditions{GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }};
-    const windy_val = try calculate_gain_using_hash_map("play", "windy", &recs);
-    try std.testing.expect(windy_val == @intFromEnum(Windy.no));
-}
-
-test "testing gain from tutorial" {
-    var train = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 4, .outlook = .rain, .temperature = 68, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 5, .outlook = .rain, .temperature = 65, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 6, .outlook = .overcast, .temperature = 64, .humidity = 65, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 7, .outlook = .sunny, .temperature = 72, .humidity = 95, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 8, .outlook = .sunny, .temperature = 69, .humidity = 70, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 9, .outlook = .rain, .temperature = 75, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 10, .outlook = .sunny, .temperature = 75, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 11, .outlook = .overcast, .temperature = 72, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do }, GolfConditions{ .id = 12, .outlook = .overcast, .temperature = 81, .humidity = 75, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 13, .outlook = .rain, .temperature = 71, .humidity = 80, .humidity_bucket = .gt75, .windy = .yes, .play = .dont } };
-
-    for (train) |rec| {
-        if (rec.humidity > 75) {
-            try std.testing.expect(rec.humidity_bucket == HumidityBucket.gt75);
-        } else {
-            try std.testing.expect(rec.humidity_bucket == HumidityBucket.le75);
-        }
-    }
-
-    const actual_entropy: f64 = try calculate_entropy_using_hash_map("play", &train);
-    try std.testing.expectApproxEqAbs(@as(f64, 0.94), actual_entropy, 1e-3);
-
-    const actual_gain_outlook: f64 = try calculate_gain_using_hash_map0("play", "outlook", &train);
-    try std.testing.expectApproxEqAbs(@as(f64, 0.246), actual_gain_outlook, 1e-3);
-
-    const actual_gain_windy: f64 = try calculate_gain_using_hash_map0("play", "windy", &train);
-    try std.testing.expectApproxEqAbs(@as(f64, 0.048), actual_gain_windy, 1e-3);
-}
+// TODO: The following has been moved and adapted in golf.zig, so this can be removed.
+// test "testing gain from tutorial" {
+//     var train = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 4, .outlook = .rain, .temperature = 68, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 5, .outlook = .rain, .temperature = 65, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 6, .outlook = .overcast, .temperature = 64, .humidity = 65, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 7, .outlook = .sunny, .temperature = 72, .humidity = 95, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 8, .outlook = .sunny, .temperature = 69, .humidity = 70, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 9, .outlook = .rain, .temperature = 75, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 10, .outlook = .sunny, .temperature = 75, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 11, .outlook = .overcast, .temperature = 72, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do }, GolfConditions{ .id = 12, .outlook = .overcast, .temperature = 81, .humidity = 75, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 13, .outlook = .rain, .temperature = 71, .humidity = 80, .humidity_bucket = .gt75, .windy = .yes, .play = .dont } };
+//
+//     for (train) |rec| {
+//         if (rec.humidity > 75) {
+//             try std.testing.expect(rec.humidity_bucket == HumidityBucket.gt75);
+//         } else {
+//             try std.testing.expect(rec.humidity_bucket == HumidityBucket.le75);
+//         }
+//     }
+//
+//     const actual_entropy: f64 = try calculate_entropy_using_hash_map("play", &train);
+//     try std.testing.expectApproxEqAbs(@as(f64, 0.94), actual_entropy, 1e-3);
+//
+//     const actual_gain_outlook: f64 = try calculate_gain_using_hash_map0("play", "outlook", &train);
+//     try std.testing.expectApproxEqAbs(@as(f64, 0.246), actual_gain_outlook, 1e-3);
+//
+//     const actual_gain_windy: f64 = try calculate_gain_using_hash_map0("play", "windy", &train);
+//     try std.testing.expectApproxEqAbs(@as(f64, 0.048), actual_gain_windy, 1e-3);
+// }
