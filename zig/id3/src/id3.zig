@@ -76,6 +76,24 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
             }
         }
 
+        pub fn writeValueAsStringToBuffer(out_buf: []u8, options: std.fmt.FormatOptions, int_value: u64) usize {
+            const FIELD_TYPE: type = Id3FieldType(T, field_name);
+            switch (@typeInfo(FIELD_TYPE)) {
+                .Enum => {
+                    const enum_value: FIELD_TYPE = @enumFromInt(int_value);
+                    return formatTextBuf(out_buf, @tagName(enum_value), options);
+                },
+                .Int => {
+                    const field_value: FIELD_TYPE = @truncate(int_value);
+                    return std.fmt.formatIntBuf(out_buf, field_value, 10, std.fmt.Case.lower, options);
+                },
+                else => {
+                    // No formatting, resulting length is 0
+                    return 0;
+                },
+            }
+        }
+
         pub fn getPossibleValueCount() usize {
             const FIELD_TYPE: type = Id3FieldType(T, field_name);
             switch (@typeInfo(FIELD_TYPE)) {
@@ -107,7 +125,7 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
                 .Int => {
                     const max_int: FIELD_TYPE = std.math.maxInt(FIELD_TYPE);
                     var ret: comptime_int = @intFromFloat(@ceil(@log10(@max(@as(f64, @floatFromInt(max_int)), 1.0))));
-                    if (@typeInfo(FIELD_TYPE).Int.signed) {
+                    if (@typeInfo(FIELD_TYPE).Int.signedness) {
                         ret += 1; // For the sign
                     }
                     return ret;
@@ -219,6 +237,14 @@ pub fn Id3FieldProcessors(comptime T: type, comptime attribute_field_names: []co
                 if (std.mem.eql(u8, attr_fld, field_name)) {
                     // return @field(sorting_struct, attr_fld).getValueAsInt(record);
                     return Id3FieldContext(T, attr_fld).init().getValueAsInt(record);
+                }
+            }
+            unreachable;
+        }
+        pub fn writeValueAsStringToBuffer(field_name: []const u8, out_buf: []u8, options: std.fmt.FormatOptions, int_value: u64) usize {
+            inline for (attribute_field_names) |attr_fld| {
+                if (std.mem.eql(u8, attr_fld, field_name)) {
+                    return Id3FieldContext(T, attr_fld).writeValueAsStringToBuffer(out_buf, options, int_value);
                 }
             }
             unreachable;
@@ -575,6 +601,17 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
             }
         }
 
+        fn maxAttributeFieldValueLength() comptime_int {
+            comptime var ret = 0;
+            inline for (attribute_field_names) |attr_fld| {
+                const max_field_len = Id3FieldContext(T, attr_fld).getMaxValueStringLength();
+                if (max_field_len > ret) {
+                    ret = max_field_len;
+                }
+            }
+            return ret;
+        }
+
         pub fn print(self: Self) !void {
             const stdout_file = std.io.getStdOut().writer();
             var bw = std.io.bufferedWriter(stdout_file);
@@ -590,6 +627,7 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
             switch (self) {
                 .node => |node| {
                     // std.debug.print("Node with values: {any}\n", .{node.values.items});
+                    const BUFFER_LENGTH = Self.maxAttributeFieldValueLength();
                     const FP: type = Id3FieldProcessors(T, attribute_field_names);
                     var required_value_chars: usize = FP.getMaxValueStringLength(node.field_name);
                     // var max_value_chars: usize = 0;
@@ -627,15 +665,21 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
                         }
                         // if (FP.isNotEnumType(node.field_name)) {
                         //     // For integer types, we print the value right-aligned
-                        //     const test_value = 3;
-                        //     try stdout.print("{s} - {:>{d} -> ", .{ node.field_name, value, test_value });
+                        //     try stdout.print("{s} - {:^3} -> ", .{ node.field_name, value });
+                        //     // const test_value = 3;
+                        //     // try stdout.print("{s} - {:>{d} -> ", .{ node.field_name, value, test_value });
                         // } else {
                         //     // For enum types, we print the value centered
-                        //     try stdout.print("{s} - {s:^10} -> ", .{ node.field_name, @tagName(@enumFromInt(value)) });
+                        //     var out_buf: [100]u8 = undefined; // TODO: Settle on alternative length
+                        //     const buflen = FP.writeValueAsStringToBuffer(node.field_name, &out_buf, .{ .width = required_value_chars, .fill = ' ', .alignment = .center }, value);
+                        //     try stdout.print("{s} - {s} -> ", .{ node.field_name, out_buf[0..buflen] });
                         // }
-                        try stdout.print("{s} - {:^3} -> ", .{ node.field_name, value });
+                        var out_buf: [BUFFER_LENGTH]u8 = undefined; // TODO: Settle on alternative length
+                        const buflen = FP.writeValueAsStringToBuffer(node.field_name, &out_buf, .{ .width = required_value_chars, .fill = ' ', .alignment = .center }, value);
+                        try stdout.print("{s} - {s} -> ", .{ node.field_name, out_buf[0..buflen] });
+                        // try stdout.print("{s} - {:^3} -> ", .{ node.field_name, value });
                         // try stdout.print(fmt_slice, .{ node.field_name, value });
-                        const spaces: usize = initial_spaces + node.field_name.len + 3 + 7; // 7 for the " -> "
+                        const spaces: usize = initial_spaces + node.field_name.len + required_value_chars + 7; // 7 for the " -> "
                         try next_node.printNext(spaces, stdout);
                     }
                 },
