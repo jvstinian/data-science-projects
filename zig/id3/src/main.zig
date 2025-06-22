@@ -485,8 +485,14 @@ pub fn main() !void {
 
     // const root: ID3NodeType = try build_node(&enum_fields2, enum_fields2.len, "play", &train, allocator);
     const root: id3.ID3NodeType(GolfConditions, &enum_fields2, "play") = try id3.ID3NodeType(GolfConditions, &enum_fields2, "play").buildNode(&enum_fields2, &train, allocator);
-    try root.print();
     defer root.deinit(); // deinitialize the root node to free memory
+    try root.print();
+
+    // Building a tree using humidity to test the use of a non-enum field
+    const enum_fields9: [3][]const u8 = .{ "outlook", "windy", "humidity" };
+    const root2: id3.ID3NodeType(GolfConditions, &enum_fields9, "play") = try id3.ID3NodeType(GolfConditions, &enum_fields9, "play").buildNode(&enum_fields9, &train, allocator);
+    try root2.print();
+    defer root2.deinit(); // deinitialize the root node to free memory
 }
 
 // const KEY_SIZE = 8;
