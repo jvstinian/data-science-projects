@@ -91,6 +91,45 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
             }
         }
 
+        pub fn getMaxValueStringLength() comptime_int {
+            const FIELD_TYPE: type = Id3FieldType(T, field_name);
+            switch (@typeInfo(FIELD_TYPE)) {
+                .Enum => {
+                    var ret: comptime_int = 0;
+                    for (@typeInfo(FIELD_TYPE).Enum.fields) |fld| {
+                        const fld_len: usize = fld.name.len;
+                        if (fld_len > ret) {
+                            ret = fld_len;
+                        }
+                    }
+                    return ret;
+                },
+                .Int => {
+                    const max_int: FIELD_TYPE = std.math.maxInt(FIELD_TYPE);
+                    var ret: comptime_int = @intFromFloat(@ceil(@log10(@max(@as(f64, @floatFromInt(max_int)), 1.0))));
+                    if (@typeInfo(FIELD_TYPE).Int.signed) {
+                        ret += 1; // For the sign
+                    }
+                    return ret;
+                },
+                else => {
+                    return 1; // Shouldn't happen, but return 1 for safety
+                },
+            }
+        }
+
+        pub fn isNotEnumType() bool {
+            const FIELD_TYPE: type = Id3FieldType(T, field_name);
+            switch (@typeInfo(FIELD_TYPE)) {
+                .Enum => {
+                    return false;
+                },
+                else => { // Include .Int
+                    return true;
+                },
+            }
+        }
+
         pub fn init() Self {
             return Self{ .field_name = field_name, .offset = @offsetOf(T, field_name) };
         }
@@ -180,6 +219,22 @@ pub fn Id3FieldProcessors(comptime T: type, comptime attribute_field_names: []co
                 if (std.mem.eql(u8, attr_fld, field_name)) {
                     // return @field(sorting_struct, attr_fld).getValueAsInt(record);
                     return Id3FieldContext(T, attr_fld).init().getValueAsInt(record);
+                }
+            }
+            unreachable;
+        }
+        pub fn getMaxValueStringLength(field_name: []const u8) usize {
+            inline for (attribute_field_names) |attr_fld| {
+                if (std.mem.eql(u8, attr_fld, field_name)) {
+                    return Id3FieldContext(T, attr_fld).getMaxValueStringLength();
+                }
+            }
+            unreachable;
+        }
+        pub fn isNotEnumType(field_name: []const u8) bool {
+            inline for (attribute_field_names) |attr_fld| {
+                if (std.mem.eql(u8, attr_fld, field_name)) {
+                    return Id3FieldContext(T, attr_fld).isNotEnumType();
                 }
             }
             unreachable;
@@ -535,21 +590,51 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
             switch (self) {
                 .node => |node| {
                     // std.debug.print("Node with values: {any}\n", .{node.values.items});
-                    var max_value_chars: usize = 0;
-                    for (node.values.items) |val| {
-                        const temp_chars: usize = @intFromFloat(@ceil(@log10(@max(@as(f64, @floatFromInt(val)), 1.0))));
-                        if (temp_chars > max_value_chars) {
-                            max_value_chars = temp_chars;
+                    const FP: type = Id3FieldProcessors(T, attribute_field_names);
+                    var required_value_chars: usize = FP.getMaxValueStringLength(node.field_name);
+                    // var max_value_chars: usize = 0;
+                    // For integer (not Enum) types we determine the number of characters needed to print the maximum value
+                    // seen in the slice of record values for the node.
+                    if (FP.isNotEnumType(node.field_name)) {
+                        var max_value_chars: usize = 0;
+                        for (node.values.items) |val| {
+                            const temp_chars: usize = @intFromFloat(@ceil(@log10(@max(@as(f64, @floatFromInt(val)), 1.0))));
+                            if (temp_chars > max_value_chars) {
+                                max_value_chars = temp_chars;
+                            }
+                        }
+                        if (max_value_chars < required_value_chars) {
+                            required_value_chars = max_value_chars;
                         }
                     }
+                    // Max 8-byte integer value value: 18,446,744,073,709,551,615
+                    // We defined a buffer large enough to hold the string
+                    // "{s} - {: ^N} -> ", where N is the number of characters needed to print the maximum value.
+                    // The buffer is taken to be up to 35 characters long,
+                    // which allows for the 15 known characters (everything except for N),
+                    // and up to 20 characters which is the number of characters
+                    // needed to print the maximum value of usize.
+                    // var fmt_buf: [35]u8 = undefined;
+                    // const fmt_slice: []u8 = std.fmt.bufPrint(&fmt_buf, "{{s}} - {{: ^{d}}}", .{required_value_chars});
+
                     for (node.values.items, node.nodes.items, 0..) |value, next_node, idx| {
                         // try stdout.print("- '{:>{}}' -> ", .{ value, max_value_chars });
                         if (idx > 0) {
-                            for (0..initial_spaces) |_| {
-                                try stdout.print(" ", .{});
-                            }
+                            // for (0..initial_spaces) |_| {
+                            //     try stdout.print(" ", .{});
+                            // }
+                            try stdout.writeByteNTimes(' ', initial_spaces);
                         }
+                        // if (FP.isNotEnumType(node.field_name)) {
+                        //     // For integer types, we print the value right-aligned
+                        //     const test_value = 3;
+                        //     try stdout.print("{s} - {:>{d} -> ", .{ node.field_name, value, test_value });
+                        // } else {
+                        //     // For enum types, we print the value centered
+                        //     try stdout.print("{s} - {s:^10} -> ", .{ node.field_name, @tagName(@enumFromInt(value)) });
+                        // }
                         try stdout.print("{s} - {:^3} -> ", .{ node.field_name, value });
+                        // try stdout.print(fmt_slice, .{ node.field_name, value });
                         const spaces: usize = initial_spaces + node.field_name.len + 3 + 7; // 7 for the " -> "
                         try next_node.printNext(spaces, stdout);
                     }
@@ -768,6 +853,31 @@ test "testing curly brace escape in format string" {
     const result: []const u8 = try std.fmt.bufPrint(&buf, fmt_str, .{4});
     std.debug.print("Formatted string: {s}\n", .{result});
     try std.testing.expectEqualStrings("{: >4}", result);
+}
+
+test "testing formatIntBuf" {
+    var buf: [20]u8 = undefined;
+    const resultlen: usize = std.fmt.formatIntBuf(&buf, 42, 10, std.fmt.Case.lower, .{ .width = 5, .fill = ' ', .alignment = .center });
+    // _ = resultlen; // to avoid unused variable warning
+    std.debug.print("Formatted integer: {s}\n", .{buf[0..resultlen]});
+    try std.testing.expectEqualStrings(" 42  ", buf[0..resultlen]);
+}
+
+pub fn formatTextBuf(out_buf: []u8, bytes: []const u8, options: std.fmt.FormatOptions) usize {
+    var fbs = std.io.fixedBufferStream(out_buf);
+    // Not clear to me why the format string argument `fmt` is required here.
+    // Looking through the std.fmt.formatText function, it seems that it is not used,
+    // except for the `commptime checkTextFmt(fmt);` call.
+    // Also, looking at the checkTextFmt function, it looks like a single character is expected.
+    std.fmt.formatText(bytes, "s", options, fbs.writer()) catch unreachable;
+    return fbs.pos;
+}
+
+test "testing formatTextBuf" {
+    var buf: [20]u8 = undefined;
+    const resultlen: usize = formatTextBuf(&buf, "Hello", .{ .width = 10, .fill = ' ', .alignment = .center });
+    std.debug.print("Formatted text: {s}\n", .{buf[0..resultlen]});
+    try std.testing.expectEqualStrings("  Hello   ", buf[0..resultlen]);
 }
 
 export fn add(a: i32, b: i32) i32 {
