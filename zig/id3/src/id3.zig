@@ -76,6 +76,21 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
             }
         }
 
+        pub fn getPossibleValueCount() usize {
+            const FIELD_TYPE: type = Id3FieldType(T, field_name);
+            switch (@typeInfo(FIELD_TYPE)) {
+                .Enum => {
+                    return @typeInfo(FIELD_TYPE).Enum.fields.len;
+                },
+                .Int => {
+                    return std.math.pow(usize, 2, @typeInfo(FIELD_TYPE).Int.bits);
+                },
+                else => {
+                    return 1; // Shouldn't happen, but return 1 for safety
+                },
+            }
+        }
+
         pub fn init() Self {
             return Self{ .field_name = field_name, .offset = @offsetOf(T, field_name) };
         }
@@ -248,6 +263,7 @@ pub fn Id3Entropy(comptime T: type, comptime target_field_name: []const u8) type
             return entropy;
         }
         pub fn calculateEntropyUsingHashMap(records: []T) std.mem.Allocator.Error!f64 {
+            const MEM_SIZE = calculateMemorySizeForEntropy(T, target_field_name);
             var buffer: [MEM_SIZE]u8 = undefined;
             var fba = std.heap.FixedBufferAllocator.init(&buffer);
             const allocator = fba.allocator();
@@ -306,6 +322,7 @@ fn calculateEntropyFromHashMap(total_count: usize, hm: std.hash_map.AutoHashMap(
 pub fn Id3Gain(comptime T: type, comptime attribute_field_name: []const u8, comptime target_field_name: []const u8) type {
     return struct {
         pub fn calculateGainUsingHashMap(records: []T) std.mem.Allocator.Error!f64 {
+            const GAIN_MEM_SIZE = calculateMemorySizeForGain(T, &.{attribute_field_name}, target_field_name);
             var buffer: [GAIN_MEM_SIZE]u8 = undefined;
             var fba = std.heap.FixedBufferAllocator.init(&buffer);
             const allocator = fba.allocator();
@@ -458,11 +475,30 @@ pub fn ID3Node(comptime T: type, comptime attribute_field_names: []const []const
 }
 
 // TODO: Might make sense to improve the following definition of MEM_SIZE and GAIN_MEM_SIZE
-const KEY_SIZE = 8;
-const VAL_SIZE = 8;
+const KEY_SIZE = @sizeOf(u64);
+const VAL_SIZE = @sizeOf(usize);
 const EXTRA_SIZE = 100;
-const MEM_SIZE = std.math.pow(usize, 2, 8) * (KEY_SIZE + VAL_SIZE) + EXTRA_SIZE;
-const GAIN_MEM_SIZE = std.math.pow(usize, 2, 8) * (KEY_SIZE + MEM_SIZE) + EXTRA_SIZE;
+const EXTRA_MULTIPLIER = 2;
+// const MEM_SIZE = std.math.pow(usize, 2, 8) * (KEY_SIZE + VAL_SIZE) + EXTRA_SIZE;
+// const GAIN_MEM_SIZE = std.math.pow(usize, 2, 8) * (KEY_SIZE + MEM_SIZE) + EXTRA_SIZE;
+
+pub fn calculateMemorySizeForEntropy(comptime T: type, comptime target_field_name: []const u8) comptime_int {
+    const max_field_values: usize = Id3FieldContext(T, target_field_name).getPossibleValueCount();
+    return max_field_values * EXTRA_MULTIPLIER * (KEY_SIZE + VAL_SIZE) + EXTRA_SIZE;
+}
+
+pub fn calculateMemorySizeForGain(comptime T: type, comptime attribute_field_names: []const []const u8, comptime target_field_name: []const u8) comptime_int {
+    const MEM_SIZE = calculateMemorySizeForEntropy(T, target_field_name);
+    var max_field_values: usize = 0;
+    inline for (attribute_field_names) |fld| {
+        const field_values: usize = Id3FieldContext(T, fld).getPossibleValueCount();
+
+        if (field_values > max_field_values) {
+            max_field_values = field_values;
+        }
+    }
+    return max_field_values * EXTRA_MULTIPLIER * (KEY_SIZE + MEM_SIZE) + EXTRA_SIZE;
+}
 
 // const ID3NodeType =
 pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []const u8, comptime target_field_name: []const u8) type {
@@ -533,6 +569,7 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
 
         // TODO: Need to extend the return type to include the empirical probability of the most frequent value
         pub fn calculateMostFrequentValue(records: []T) std.mem.Allocator.Error!MostFrequentValueLeaf(T, target_field_name) {
+            const MEM_SIZE = calculateMemorySizeForEntropy(T, target_field_name);
             var buffer: [MEM_SIZE]u8 = undefined;
             var fba = std.heap.FixedBufferAllocator.init(&buffer);
             const allocator = fba.allocator();
@@ -723,6 +760,14 @@ test "simple array list test" {
     defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
     try list.append(42);
     try std.testing.expectEqual(@as(i32, 42), list.pop());
+}
+
+test "testing curly brace escape in format string" {
+    var buf: [10]u8 = undefined;
+    const fmt_str: []const u8 = "{{: >{d}}}";
+    const result: []const u8 = try std.fmt.bufPrint(&buf, fmt_str, .{4});
+    std.debug.print("Formatted string: {s}\n", .{result});
+    try std.testing.expectEqualStrings("{: >4}", result);
 }
 
 export fn add(a: i32, b: i32) i32 {

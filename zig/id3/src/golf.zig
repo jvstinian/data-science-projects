@@ -258,6 +258,39 @@ test "testing sort of play field using context" {
     }
 }
 
+test "check type sizes used for entropy calculations including humidity" {
+    // try std.testing.expect(KEY_SIZE == 8);
+    // try std.testing.expect(VAL_SIZE == 8);
+    // const attribute_field_names: [3][]const u8 = .{ "outlook", "humidity_bucket", "windy" };
+    const KEY_SIZE = @sizeOf(u64);
+    const VAL_SIZE = @sizeOf(usize);
+    const EXTRA_SIZE = 100;
+    const EXTRA_MULTIPLIER = 2;
+    const EXPECTED_MEM_SIZE = 2 * EXTRA_MULTIPLIER * (KEY_SIZE + VAL_SIZE) + EXTRA_SIZE;
+    // Humidity is of type u8, so it can assume 256 values
+    const EXPECTED_GAIN_SIZE = std.math.pow(usize, 2, 8) * EXTRA_MULTIPLIER * (KEY_SIZE + EXPECTED_MEM_SIZE) + EXTRA_SIZE;
+    const ACTUAL_MEM_SIZE: usize = id3.calculateMemorySizeForEntropy(GolfConditions, "play");
+    try std.testing.expect(ACTUAL_MEM_SIZE == EXPECTED_MEM_SIZE);
+    const ACTUAL_GAIN_SIZE: usize = id3.calculateMemorySizeForGain(GolfConditions, &[_][]const u8{ "outlook", "windy", "humidity" }, "play");
+    std.debug.print("Expected gain size: {d}, Actual gain size: {d}\n", .{ EXPECTED_GAIN_SIZE, ACTUAL_GAIN_SIZE }); // TODO: Remove
+    try std.testing.expect(ACTUAL_GAIN_SIZE == EXPECTED_GAIN_SIZE);
+}
+
+test "check type sizes used for entropy calculations with humidity_bucket" {
+    const KEY_SIZE = @sizeOf(u64);
+    const VAL_SIZE = @sizeOf(usize);
+    const EXTRA_SIZE = 100;
+    const EXTRA_MULTIPLIER = 2;
+    const EXPECTED_MEM_SIZE = 2 * EXTRA_MULTIPLIER * (KEY_SIZE + VAL_SIZE) + EXTRA_SIZE;
+    // Among the three fields, the field that can assume the most values is "outlook", which can assume 3 values.
+    const EXPECTED_GAIN_SIZE = 3 * EXTRA_MULTIPLIER * (KEY_SIZE + EXPECTED_MEM_SIZE) + EXTRA_SIZE;
+    const ACTUAL_MEM_SIZE: usize = id3.calculateMemorySizeForEntropy(GolfConditions, "play");
+    try std.testing.expect(ACTUAL_MEM_SIZE == EXPECTED_MEM_SIZE);
+    const ACTUAL_GAIN_SIZE: usize = id3.calculateMemorySizeForGain(GolfConditions, &[_][]const u8{ "outlook", "windy", "humidity_bucket" }, "play");
+    std.debug.print("Expected gain size: {d}, Actual gain size: {d}\n", .{ EXPECTED_GAIN_SIZE, ACTUAL_GAIN_SIZE }); // TODO: Remove
+    try std.testing.expect(ACTUAL_GAIN_SIZE == EXPECTED_GAIN_SIZE);
+}
+
 export fn multiply(a: i32, b: i32) i32 {
     return a * b;
 }
