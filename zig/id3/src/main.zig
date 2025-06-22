@@ -38,8 +38,8 @@ test "Testing comparison of string with sentinel to one without sentinel" {
     try std.testing.expect(std.mem.eql(u8, enum_and_target_fields1[5], without_sentinel));
 }
 
-const sorting_struct = Id3SorterStruct(GolfConditions, &enum_and_target_fields){};
-const sorting_processor = AltId3FieldProcessors(GolfConditions, &enum_and_target_fields).init();
+// const sorting_struct = Id3SorterStruct(GolfConditions, &enum_and_target_fields){};
+// const sorting_processor = AltId3FieldProcessors(GolfConditions, &enum_and_target_fields).init();
 
 // fn sort_records(attribute_field_name: []const u8, records: []GolfConditions) void {
 //     inline for (enum_fields2) |fld| {
@@ -444,36 +444,11 @@ pub fn main() !void {
     // stdout is for the actual output of your application, for example if you
     // are implementing gzip, then only the compressed bytes should be sent to
     // stdout, not any debugging messages.
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    // const stdout_file = std.io.getStdOut().writer();
+    // var bw = std.io.bufferedWriter(stdout_file);
+    // const stdout = bw.writer();
 
-    // const fld: []const u8 = "temperature";
-    // std.sort.insertion(GolfConditions, &train, {}, GolfConditions.lessThan); // This does work, just wanted to test the GolfFieldContext
-    for (train) |rec| {
-        try stdout.print("{d}: {d}\n", .{ rec.id, rec.temperature });
-    }
-
-    try stdout.print("Now using the stuct sort methods\n", .{});
-    try stdout.print("Trying the struct sort methods with field {s}\n", .{"play"});
-    sorting_struct.play.sort(&train);
-    try stdout.print("Trying the sort processor method ith field {s}\n", .{"play"});
-    sorting_processor.sortRecords("play", &train);
-    for (train) |rec| {
-        try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.play) });
-    }
-    try stdout.print("Trying the struct sort methods with field {s}\n", .{"windy"});
-    sorting_struct.windy.sort(&train);
-    for (train) |rec| {
-        try stdout.print("{d}: {s}\n", .{ rec.id, @tagName(rec.windy) });
-    }
-    try stdout.print("Trying the struct sort methods with field {s}\n", .{"temperature"});
-    sorting_struct.temperature.sort(&train);
-    for (train) |rec| {
-        try stdout.print("{d}: {d}\n", .{ rec.id, rec.temperature });
-    }
-
-    try bw.flush(); // don't forget to flush!
+    // try bw.flush(); // don't forget to flush!
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();

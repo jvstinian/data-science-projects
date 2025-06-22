@@ -199,7 +199,6 @@ fn field_name_match_function(comptime field_names: []const [*:0]const u8, curren
         const adj_fld: [:0]const u8 = std.mem.span(fld);
         if (std.mem.eql(u8, adj_fld, current_field)) {
             std.debug.print("Found field {s}\n", .{fld});
-            // return current_field;
             return true;
         }
     }
@@ -385,15 +384,15 @@ pub fn Id3Entropy(comptime T: type, comptime target_field_name: []const u8) type
 }
 
 fn calculateEntropyFromHashMap(total_count: usize, hm: std.hash_map.AutoHashMap(u64, usize)) f64 {
-    std.debug.print("In entropy calculation, total count is {d}\n", .{total_count});
+    // std.debug.print("In entropy calculation, total count is {d}\n", .{total_count}); // TODO
     var entropy: f64 = 0.0;
     var iterator = hm.iterator();
     while (iterator.next()) |entry| {
         const count: u64 = entry.value_ptr.*;
-        std.debug.print("In entropy calculation, key {d} has count {d}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+        // std.debug.print("In entropy calculation, key {d} has count {d}\n", .{ entry.key_ptr.*, entry.value_ptr.* }); // TODO
         if (count > 0) {
             const p: f64 = @as(f64, @floatFromInt(count)) / @as(f64, @floatFromInt(total_count));
-            std.debug.print("In entropy calculation, key {d} has probability {d} ({d} / {d})\n", .{ entry.key_ptr.*, p, @as(f64, @floatFromInt(count)), @as(f64, @floatFromInt(total_count)) });
+            // std.debug.print("In entropy calculation, key {d} has probability {d} ({d} / {d})\n", .{ entry.key_ptr.*, p, @as(f64, @floatFromInt(count)), @as(f64, @floatFromInt(total_count)) }); // TODO
             entropy -= p * std.math.log2(p);
         }
     }
@@ -442,7 +441,7 @@ pub fn Id3Gain(comptime T: type, comptime attribute_field_name: []const u8, comp
 
             const entropy: f64 = try Id3Entropy(T, target_field_name).calculateEntropyUsingHashMap(records);
             const total_count: usize = records.len;
-            std.debug.print("In gain calculation, total count is {d}\n", .{total_count});
+            // std.debug.print("In gain calculation, total count is {d}\n", .{total_count}); // TODO
             var condinfo: f64 = 0.0;
             var iterator = hm.iterator();
             while (iterator.next()) |entry| {
@@ -780,20 +779,20 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
         const attribute_count: usize = attribute_field_names.len;
 
         pub fn buildNode(remaining_field_names: []const []const u8, records: []T, allocator: std.mem.Allocator) std.mem.Allocator.Error!Self {
-            std.debug.print("Entering build_node\n", .{});
+            // std.debug.print("Entering build_node\n", .{}); // TODO
             if (records.len == 0) {
                 // If S is empty, return a single node with value Failure;
-                std.debug.print("In build_node, constructing empty leaf\n", .{});
+                // std.debug.print("In build_node, constructing empty leaf\n", .{}); // TODO
                 return Self{ .empty = {} };
             } else if (allTargetValuesEqual(records)) {
                 // If S consists of records all with the same value for
                 // the categorical attribute,
                 // return a single node with that value;
-                std.debug.print("In build_node, constructing constant value leaf\n", .{});
+                // std.debug.print("In build_node, constructing constant value leaf\n", .{}); // TODO
                 return Self{ .constant_value = ConstantValueLeaf(T, target_field_name).init(@field(records[0], target_field_name)) };
             } else if (remaining_field_names.len == 0) {
                 const mfv: MostFrequentValueLeaf(T, target_field_name) = try calculateMostFrequentValue(records);
-                std.debug.print("In build_node, constructing most frequent value leaf\n", .{});
+                // std.debug.print("In build_node, constructing most frequent value leaf\n", .{}); // TODO
                 return Self{ .most_frequent = mfv };
             } else {
                 var max_gain: f64 = undefined;
@@ -870,7 +869,6 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
         pub fn calculateGainForFieldUsingHashMap(attribute_field_name: []const u8, records: []T) std.mem.Allocator.Error!f64 {
             inline for (attribute_field_names) |fld| {
                 // const adj_fld: [:0]const u8 = std.mem.span(fld);
-                // std.debug.print("In calculate_gain_using_hash_map, checking to see if field {s} matches {s}\n", .{ attribute_field_name, fld });
                 std.debug.print("In calculateGainForFieldUsingHashMap, checking to see if field matches {s}\n", .{fld});
                 if (std.mem.eql(u8, fld, attribute_field_name)) {
                     std.debug.print("In calculate_gain_using_hash_map, Found field {s}\n", .{fld});
@@ -895,7 +893,7 @@ test "testing curly brace escape in format string" {
     var buf: [10]u8 = undefined;
     const fmt_str: []const u8 = "{{: >{d}}}";
     const result: []const u8 = try std.fmt.bufPrint(&buf, fmt_str, .{4});
-    std.debug.print("Formatted string: {s}\n", .{result});
+    // std.debug.print("Formatted string: {s}\n", .{result});
     try std.testing.expectEqualStrings("{: >4}", result);
 }
 

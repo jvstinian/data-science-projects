@@ -258,6 +258,46 @@ test "testing sort of play field using context" {
     }
 }
 
+test "testing sorting of play field using sorting structure" {
+    var train: [golfRecords.len]GolfConditions = undefined;
+    @memcpy(&train, &golfRecords);
+
+    const golf_fields: [5][*:0]const u8 = .{ "outlook", "windy", "temperature", "humidity_bucket", "play" };
+    const sorting_struct = id3.Id3SorterStruct(GolfConditions, &golf_fields){};
+    sorting_struct.play.sort(&train);
+
+    var idx: usize = 1;
+    while (idx < train.len) : (idx += 1) {
+        try std.testing.expect(sorting_struct.play.getValueAsInt(train[idx - 1]) <= sorting_struct.play.getValueAsInt(train[idx]));
+    }
+
+    sorting_struct.windy.sort(&train);
+    idx = 1;
+    while (idx < train.len) : (idx += 1) {
+        try std.testing.expect(sorting_struct.windy.getValueAsInt(train[idx - 1]) <= sorting_struct.windy.getValueAsInt(train[idx]));
+    }
+
+    sorting_struct.temperature.sort(&train);
+    idx = 1;
+    while (idx < train.len) : (idx += 1) {
+        try std.testing.expect(sorting_struct.temperature.getValueAsInt(train[idx - 1]) <= sorting_struct.temperature.getValueAsInt(train[idx]));
+    }
+}
+
+test "testing sorting of play field using sorting processor" {
+    var train: [golfRecords.len]GolfConditions = undefined;
+    @memcpy(&train, &golfRecords);
+
+    const golf_fields: [4][*:0]const u8 = .{ "outlook", "windy", "humidity_bucket", "play" };
+    const sorting_processor = id3.AltId3FieldProcessors(GolfConditions, &golf_fields).init();
+    sorting_processor.sortRecords("play", &train);
+
+    var idx: usize = 1;
+    while (idx < train.len) : (idx += 1) {
+        try std.testing.expect(sorting_processor.getValueAsInt("play", train[idx - 1]) <= sorting_processor.getValueAsInt("play", train[idx]));
+    }
+}
+
 test "check type sizes used for entropy calculations including humidity" {
     // try std.testing.expect(KEY_SIZE == 8);
     // try std.testing.expect(VAL_SIZE == 8);
