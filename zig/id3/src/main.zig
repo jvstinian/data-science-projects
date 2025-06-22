@@ -3,6 +3,7 @@ const id3 = @import("id3.zig");
 const golf = @import("golf.zig");
 
 // Golf Conditions and related types
+// TODO: Which of the following are still needed?
 const Outlook = golf.Outlook;
 const WhetherToPlay = golf.WhetherToPlay;
 const Windy = golf.Windy;
@@ -10,6 +11,7 @@ const HumidityBucket = golf.HumidityBucket;
 const GolfConditions = golf.GolfConditions;
 
 // const GolfFieldOffset = golf.GolfFieldOffset;
+// TODO: Which of the following are still needed?
 const GolfFieldType = golf.GolfFieldType;
 const GolfFieldContext2 = golf.GolfFieldContext2;
 const Id3SorterStruct = id3.Id3SorterStruct;
@@ -17,6 +19,7 @@ const Id3FieldProcessors = id3.Id3FieldProcessors;
 const AltId3FieldProcessors = id3.AltId3FieldProcessors;
 const Id3Entropy = id3.Id3Entropy;
 
+// TODO: Which of the following are still needed?
 const enum_fields: [3][*:0]const u8 = .{ "outlook", "windy", "humidity" };
 const enum_fields2: [3][]const u8 = .{ "outlook", "windy", "humidity_bucket" };
 const enum_and_target_fields: [6][*:0]const u8 = enum_fields ++ [3][*:0]const u8{ "humidity_bucket", "temperature", "play" };
@@ -424,22 +427,8 @@ test "Testing comparison of string with sentinel to one without sentinel" {
 // }
 
 pub fn main() !void {
-    // sunny   |      85     |    85    | false | Don't Play
-    // sunny   |      80     |    90    | true  | Don't Play
-    // overcast|      83     |    78    | false | Play
-    // rain    |      70     |    96    | false | Play
-    // rain    |      68     |    80    | false | Play
-    // rain    |      65     |    70    | true  | Don't Play
-    // overcast|      64     |    65    | true  | Play
-    // sunny   |      72     |    95    | false | Don't Play
-    // sunny   |      69     |    70    | false | Play
-    // rain    |      75     |    80    | false | Play
-    // sunny   |      75     |    70    | true  | Play
-    // overcast|      72     |    90    | true  | Play
-    // overcast|      81     |    75    | false | Play
-    // rain    |      71     |    80    | true  | Don't Play
-
-    var train = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 4, .outlook = .rain, .temperature = 68, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 5, .outlook = .rain, .temperature = 65, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 6, .outlook = .overcast, .temperature = 64, .humidity = 65, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 7, .outlook = .sunny, .temperature = 72, .humidity = 95, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 8, .outlook = .sunny, .temperature = 69, .humidity = 70, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 9, .outlook = .rain, .temperature = 75, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 10, .outlook = .sunny, .temperature = 75, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 11, .outlook = .overcast, .temperature = 72, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do }, GolfConditions{ .id = 12, .outlook = .overcast, .temperature = 81, .humidity = 75, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 13, .outlook = .rain, .temperature = 71, .humidity = 80, .humidity_bucket = .gt75, .windy = .yes, .play = .dont } };
+    var train = golf.golfRecords;
+    // var train = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 4, .outlook = .rain, .temperature = 68, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 5, .outlook = .rain, .temperature = 65, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 6, .outlook = .overcast, .temperature = 64, .humidity = 65, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 7, .outlook = .sunny, .temperature = 72, .humidity = 95, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 8, .outlook = .sunny, .temperature = 69, .humidity = 70, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 9, .outlook = .rain, .temperature = 75, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 10, .outlook = .sunny, .temperature = 75, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 11, .outlook = .overcast, .temperature = 72, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do }, GolfConditions{ .id = 12, .outlook = .overcast, .temperature = 81, .humidity = 75, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 13, .outlook = .rain, .temperature = 71, .humidity = 80, .humidity_bucket = .gt75, .windy = .yes, .play = .dont } };
 
     // stdout is for the actual output of your application, for example if you
     // are implementing gzip, then only the compressed bytes should be sent to
