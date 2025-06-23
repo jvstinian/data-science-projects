@@ -160,7 +160,6 @@ test "testing calculation of entropy using hash map" {
     var max_entropy_test = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do } };
     const actual_val2: f64 = try calculate_entropy_using_hash_map(&max_entropy_test);
     const exp_val2: f64 = std.math.log2(@as(f64, 2.0));
-    std.debug.print("Expected value: {d}, Actual value: {d}\n", .{ exp_val2, actual_val2 });
     try std.testing.expectApproxEqAbs(exp_val2, actual_val2, 1e-12);
 }
 
