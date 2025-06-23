@@ -375,7 +375,6 @@ fn calculateEntropyFromHashMap(total_count: usize, hm: std.hash_map.AutoHashMap(
         const count: u64 = entry.value_ptr.*;
         if (count > 0) {
             const p: f64 = @as(f64, @floatFromInt(count)) / @as(f64, @floatFromInt(total_count));
-            // std.debug.print("In entropy calculation, key {d} has probability {d} ({d} / {d})\n", .{ entry.key_ptr.*, p, @as(f64, @floatFromInt(count)), @as(f64, @floatFromInt(total_count)) }); // TODO
             entropy -= p * std.math.log2(p);
         }
     }
@@ -413,7 +412,6 @@ pub fn Id3Gain(comptime T: type, comptime attribute_field_name: []const u8, comp
             defer {
                 var valiterator = hm.valueIterator();
                 while (valiterator.next()) |val| {
-                    // std.debug.print("In gain calculation, calling deinit on value of hash map\n", .{}); // TODO: Remove
                     val.*.deinit();
                 }
             }
@@ -515,15 +513,6 @@ pub fn calculateMemorySizeForEntropy(comptime T: type, comptime target_field_nam
 
 pub fn calculateMemorySizeForGain(comptime T: type, comptime attribute_field_names: []const []const u8, comptime target_field_name: []const u8) comptime_int {
     const MEM_SIZE = calculateMemorySizeForEntropy(T, target_field_name);
-    // TODO: Remove the following in favor of the method getMaximumPossibleValueCountOverFields in Id3FieldProcessors
-    // var max_field_values: usize = 0;
-    // inline for (attribute_field_names) |fld| {
-    //     const field_values: usize = Id3FieldContext(T, fld).getPossibleValueCount();
-
-    //     if (field_values > max_field_values) {
-    //         max_field_values = field_values;
-    //     }
-    // }
     const max_field_values: usize = Id3FieldProcessors(T, attribute_field_names).getMaximumPossibleValueCountOverFields();
     return max_field_values * EXTRA_MULTIPLIER * (KEY_SIZE + MEM_SIZE) + EXTRA_SIZE;
 }
@@ -701,23 +690,19 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
         pub fn buildNode(remaining_field_names: []const []const u8, records: []T, allocator: std.mem.Allocator) std.mem.Allocator.Error!Self {
             if (records.len == 0) {
                 // If S is empty, return a single node with value Failure;
-                // std.debug.print("In build_node, constructing empty leaf\n", .{}); // TODO
                 return Self{ .empty = {} };
             } else if (allTargetValuesEqual(records)) {
                 // If S consists of records all with the same value for
                 // the categorical attribute,
                 // return a single node with that value;
-                // std.debug.print("In build_node, constructing constant value leaf\n", .{}); // TODO
                 return Self{ .constant_value = ConstantValueLeaf(T, target_field_name).init(@field(records[0], target_field_name)) };
             } else if (remaining_field_names.len == 0) {
                 const mfv: MostFrequentValueLeaf(T, target_field_name) = try calculateMostFrequentValue(records);
-                // std.debug.print("In build_node, constructing most frequent value leaf\n", .{}); // TODO
                 return Self{ .most_frequent = mfv };
             } else {
                 var max_gain: f64 = undefined;
                 var arg_max: usize = undefined;
                 for (remaining_field_names, 0..) |attr, i| {
-                    std.debug.print("In build_node, attr is {s}\n", .{attr}); // TODO
                     const gain: f64 = try calculateGainForFieldUsingHashMap(attr, records);
                     if ((i == 0) or (gain > max_gain)) {
                         max_gain = gain;
@@ -725,7 +710,6 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
                     }
                 }
                 const best_field_name: []const u8 = remaining_field_names[arg_max];
-                std.debug.print("In build_node, best attribute is {s}\n", .{best_field_name}); // TODO
 
                 var updated_attributes: [attribute_count][]const u8 = undefined;
                 for (remaining_field_names, 0..) |attr, idx| {
