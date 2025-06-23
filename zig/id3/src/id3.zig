@@ -835,6 +835,11 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
                 var start_idx: usize = 0;
                 var end_idx: usize = 0;
                 while (start_idx < records.len) : (end_idx += 1) {
+                    // NOTE: We essentially implement upperBound logic here.  It might be worth considering implementing
+                    //       compareFn and upperBound in a similar way to what was done for sortRecords, though this would require
+                    //       a somewhat different formulation to what was done in Id3FieldContext (and Id3FieldProcessors).
+                    // REFERENCES: https://ziglang.org/documentation/master/std/#std.sort.upperBound
+
                     // Find the end of the current value group
                     // TODO: best_field_name isn't comptime so we might need to adjust the value extraction
                     // const start_value: u64 = get_value_as_int(best_field_name, records[start_idx]); // TODO: Replaced with the following
