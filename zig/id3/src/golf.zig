@@ -273,7 +273,7 @@ test "testing sort of play field using context" {
     }
 }
 
-test "testing sorting of play field using sorting structure" {
+test "testing sorting of fields using sorting structure" {
     var train: [golfRecords.len]GolfConditions = undefined;
     @memcpy(&train, &golfRecords);
 
