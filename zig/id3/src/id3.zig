@@ -138,29 +138,6 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
         pub fn sort(self: Self, train: []T) void {
             std.sort.insertion(T, train, self, Self.lessThan);
         }
-
-        // TODO: This probably doesn't work in this form
-        // fn compareFn(self: Self, context: GolfConditions, item: GolfConditions) std.math.Order {
-        //     const T2: type = GolfFieldType(field_name);
-        //     const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&context) + self.offset);
-        //     const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&item) + self.offset);
-        //     switch (@typeInfo(T2)) {
-        //         .Enum => {
-        //             return std.math.order(@intFromEnum(a_fld_ptr.*), @intFromEnum(b_fld_ptr.*));
-        //         },
-        //         .Int => {
-        //             return std.math.order(a_fld_ptr.*, b_fld_ptr.*);
-        //         },
-        //         else => {
-        //             return false;
-        //         },
-        //     }
-        // }
-
-        // TODO: This probably doesn't work in this form
-        // pub fn upperBound(self: Self, items: []T) void {
-        //     return std.sort.upperBound(T, items, self, Self.lessThan);
-        // }
     };
 }
 
