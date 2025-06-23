@@ -495,7 +495,6 @@ pub fn calculateMemorySizeForGain(comptime T: type, comptime attribute_field_nam
     return max_field_values * EXTRA_MULTIPLIER * (KEY_SIZE + MEM_SIZE) + EXTRA_SIZE;
 }
 
-// TODO: Perhaps rename the following ID3TreeType
 pub fn ID3TreeType(comptime T: type, comptime attribute_field_names: []const []const u8, comptime target_field_name: []const u8) type {
     return union(ID3NodeTag) {
         const Self = @This();
