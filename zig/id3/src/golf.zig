@@ -170,7 +170,7 @@ test "testing gain from tutorial" {
     const calculate_gain_using_hash_map0_outlook = id3.Id3Gain(GolfConditions, "outlook", "play").calculateGainUsingHashMap;
 
     const attribute_field_names: [3][]const u8 = .{ "outlook", "humidity_bucket", "windy" };
-    const calculate_gain_using_hash_map = id3.ID3NodeType(GolfConditions, &attribute_field_names, "play").calculateGainForFieldUsingHashMap;
+    const calculate_gain_using_hash_map = id3.ID3TreeType(GolfConditions, &attribute_field_names, "play").calculateGainForFieldUsingHashMap;
 
     var train: [golfRecords.len]GolfConditions = undefined;
     @memcpy(&train, &golfRecords);
