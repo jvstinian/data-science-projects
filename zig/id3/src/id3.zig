@@ -197,7 +197,6 @@ fn field_name_match_function(comptime field_names: []const [*:0]const u8, curren
     inline for (field_names) |fld| {
         const adj_fld: [:0]const u8 = std.mem.span(fld);
         if (std.mem.eql(u8, adj_fld, current_field)) {
-            std.debug.print("Found field {s}\n", .{fld});
             return true;
         }
     }
