@@ -279,8 +279,7 @@ pub fn AltId3FieldProcessors(comptime T: type, comptime attribute_field_names: [
 
 pub fn Id3Entropy(comptime T: type, comptime target_field_name: []const u8) type {
     return struct {
-        // TODO: Use camel case
-        pub fn calculate_entropy(records: []T) f64 {
+        pub fn calculateEntropy(records: []T) f64 {
             const FC = Id3FieldContext(T, target_field_name);
             const target_field_context = FC.init();
             target_field_context.sort(records);

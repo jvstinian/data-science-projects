@@ -88,7 +88,7 @@ test "check less than in golf context from field name" {
 }
 
 fn calculate_entropy(comptime target_field_name: []const u8, records: []GolfConditions) f64 {
-    return id3.Id3Entropy(GolfConditions, target_field_name).calculate_entropy(records);
+    return id3.Id3Entropy(GolfConditions, target_field_name).calculateEntropy(records);
 }
 
 test "testing entropy" {
