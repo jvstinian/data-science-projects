@@ -116,27 +116,27 @@ test "Testing comparison of string with sentinel to one without sentinel" {
 // REFERENCES: https://ziglang.org/documentation/master/std/#std.sort.upperBound
 //
 // function ID3 (R: a set of non-categorical attributes,
-// 		 C: the categorical attribute,
-// 		 S: a training set) returns a decision tree;
+//               C: the categorical attribute,
+//               S: a training set) returns a decision tree;
 //    begin
-// 	If S is empty, return a single node with value Failure;
-// 	If S consists of records all with the same value for
-// 	   the categorical attribute,
-// 	   return a single node with that value;
-// 	If R is empty, then return a single node with as value
-// 	   the most frequent of the values of the categorical attribute
-// 	   that are found in records of S; [note that then there
-// 	   will be errors, that is, records that will be improperly
-// 	   classified];
-// 	Let D be the attribute with largest Gain(D,S)
-// 	   among attributes in R;
-// 	Let {dj| j=1,2, .., m} be the values of attribute D;
-// 	Let {Sj| j=1,2, .., m} be the subsets of S consisting
-// 	   respectively of records with value dj for attribute D;
-// 	Return a tree with root labeled D and arcs labeled
-// 	   d1, d2, .., dm going respectively to the trees
+//      If S is empty, return a single node with value Failure;
+//      If S consists of records all with the same value for
+//         the categorical attribute,
+//         return a single node with that value;
+//      If R is empty, then return a single node with as value
+//         the most frequent of the values of the categorical attribute
+//         that are found in records of S; [note that then there
+//         will be errors, that is, records that will be improperly
+//         classified];
+//      Let D be the attribute with largest Gain(D,S)
+//         among attributes in R;
+//      Let {dj| j=1,2, .., m} be the values of attribute D;
+//      Let {Sj| j=1,2, .., m} be the subsets of S consisting
+//         respectively of records with value dj for attribute D;
+//      Return a tree with root labeled D and arcs labeled
+//         d1, d2, .., dm going respectively to the trees
 //
-// 	     ID3(R-{D}, C, S1), ID3(R-{D}, C, S2), .., ID3(R-{D}, C, Sm);
+//           ID3(R-{D}, C, S1), ID3(R-{D}, C, S2), .., ID3(R-{D}, C, Sm);
 //    end ID3;
 
 // const ID3NodeTag = enum {
