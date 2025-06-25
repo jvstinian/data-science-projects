@@ -6,7 +6,7 @@ pub fn Id3FieldOffset(comptime T: type, comptime field_name: []const u8) comptim
 }
 
 pub fn Id3FieldType(comptime T: type, comptime field_name: []const u8) type {
-    const fields = @typeInfo(T).Struct.fields;
+    const fields = @typeInfo(T).@"struct".fields;
     inline for (fields) |fld| {
         if (std.mem.eql(u8, fld.name, field_name)) {
             return fld.type;
@@ -30,10 +30,10 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
             const b_fld_ptr: *FIELD_TYPE = @ptrFromInt(@intFromPtr(&b) + self.offset);
             // const b_fld_ptr: *FIELD_TYPE = @ptrFromInt(@intFromPtr(&b) + .offset2);
             switch (@typeInfo(FIELD_TYPE)) {
-                .Enum => {
+                .@"enum" => {
                     return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
                 },
-                .Int => {
+                .int => {
                     return a_fld_ptr.* < b_fld_ptr.*;
                 },
                 else => {
@@ -46,10 +46,10 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
             const T2: type = Id3FieldType(T, field_name);
             const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&a) + self.offset);
             switch (@typeInfo(T2)) {
-                .Enum => {
+                .@"enum" => {
                     return @intFromEnum(a_fld_ptr.*);
                 },
-                .Int => {
+                .int => {
                     return @as(u64, a_fld_ptr.*);
                 },
                 else => {
@@ -61,11 +61,11 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
         pub fn writeValueAsStringToBuffer(out_buf: []u8, options: std.fmt.FormatOptions, int_value: u64) usize {
             const FIELD_TYPE: type = Id3FieldType(T, field_name);
             switch (@typeInfo(FIELD_TYPE)) {
-                .Enum => {
+                .@"enum" => {
                     const enum_value: FIELD_TYPE = @enumFromInt(int_value);
                     return formatTextBuf(out_buf, @tagName(enum_value), options);
                 },
-                .Int => {
+                .int => {
                     const field_value: FIELD_TYPE = @truncate(int_value);
                     return std.fmt.formatIntBuf(out_buf, field_value, 10, std.fmt.Case.lower, options);
                 },
@@ -79,11 +79,11 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
         pub fn getPossibleValueCount() usize {
             const FIELD_TYPE: type = Id3FieldType(T, field_name);
             switch (@typeInfo(FIELD_TYPE)) {
-                .Enum => {
-                    return @typeInfo(FIELD_TYPE).Enum.fields.len;
+                .@"enum" => {
+                    return @typeInfo(FIELD_TYPE).@"enum".fields.len;
                 },
-                .Int => {
-                    return std.math.pow(usize, 2, @typeInfo(FIELD_TYPE).Int.bits);
+                .int => {
+                    return std.math.pow(usize, 2, @typeInfo(FIELD_TYPE).int.bits);
                 },
                 else => {
                     return 1; // Shouldn't happen, but return 1 for safety
@@ -94,9 +94,9 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
         pub fn getMaxValueStringLength() comptime_int {
             const FIELD_TYPE: type = Id3FieldType(T, field_name);
             switch (@typeInfo(FIELD_TYPE)) {
-                .Enum => {
+                .@"enum" => {
                     var ret: comptime_int = 0;
-                    for (@typeInfo(FIELD_TYPE).Enum.fields) |fld| {
+                    for (@typeInfo(FIELD_TYPE).@"enum".fields) |fld| {
                         const fld_len: usize = fld.name.len;
                         if (fld_len > ret) {
                             ret = fld_len;
@@ -104,10 +104,10 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
                     }
                     return ret;
                 },
-                .Int => {
+                .int => {
                     const max_int: FIELD_TYPE = std.math.maxInt(FIELD_TYPE);
                     var ret: comptime_int = @intFromFloat(@ceil(@log10(@max(@as(f64, @floatFromInt(max_int)), 1.0))));
-                    if (@typeInfo(FIELD_TYPE).Int.signedness) {
+                    if (@typeInfo(FIELD_TYPE).int.signedness == .signed) {
                         ret += 1; // For the sign
                     }
                     return ret;
@@ -121,10 +121,10 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
         pub fn isNotEnumType() bool {
             const FIELD_TYPE: type = Id3FieldType(T, field_name);
             switch (@typeInfo(FIELD_TYPE)) {
-                .Enum => {
+                .@"enum" => {
                     return false;
                 },
-                else => { // Include .Int
+                else => { // Include .int
                     return true;
                 },
             }
@@ -150,14 +150,14 @@ pub fn Id3SorterStruct(comptime T: type, comptime field_names: []const [*:0]cons
         fields[i] = .{
             .name = fieldName, // need sentinel termination for the field name
             .type = fieldType,
-            .default_value = &defaultFieldValue,
+            .default_value_ptr = &defaultFieldValue,
             .is_comptime = false,
             .alignment = 0,
         };
     }
 
     return @Type(.{
-        .Struct = .{
+        .@"struct" = .{
             .layout = .auto,
             .fields = fields[0..],
             .decls = &[_]std.builtin.Type.Declaration{},
@@ -262,7 +262,7 @@ pub fn Id3Entropy(comptime T: type, comptime target_field_name: []const u8) type
             target_field_context.sort(records);
 
             const FIELD_TYPE = Id3FieldType(T, target_field_name);
-            const N = @typeInfo(FIELD_TYPE).Enum.fields.len;
+            const N = @typeInfo(FIELD_TYPE).@"enum".fields.len;
             var counts: [N]usize = undefined;
 
             if (records.len > 0) {
