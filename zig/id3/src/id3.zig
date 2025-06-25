@@ -25,11 +25,11 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
         pub const offset2: usize = @offsetOf(T, field_name);
 
         pub fn lessThan(self: Self, a: T, b: T) bool {
-            const T2: type = Id3FieldType(T, field_name); // TODO: Rename T2
-            const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&a) + self.offset);
-            const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + self.offset);
-            // const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + .offset2);
-            switch (@typeInfo(T2)) {
+            const FIELD_TYPE: type = Id3FieldType(T, field_name);
+            const a_fld_ptr: *FIELD_TYPE = @ptrFromInt(@intFromPtr(&a) + self.offset);
+            const b_fld_ptr: *FIELD_TYPE = @ptrFromInt(@intFromPtr(&b) + self.offset);
+            // const b_fld_ptr: *FIELD_TYPE = @ptrFromInt(@intFromPtr(&b) + .offset2);
+            switch (@typeInfo(FIELD_TYPE)) {
                 .@"enum" => {
                     return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
                 },
@@ -41,24 +41,6 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
                 },
             }
         }
-
-        // TODO: This probably doesn't work in this form
-        // fn compareFn(self: Self, context: GolfConditions, item: GolfConditions) std.math.Order {
-        //     const T2: type = GolfFieldType(field_name);
-        //     const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&context) + self.offset);
-        //     const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&item) + self.offset);
-        //     switch (@typeInfo(T2)) {
-        //         .@"enum" => {
-        //             return std.math.order(@intFromEnum(a_fld_ptr.*), @intFromEnum(b_fld_ptr.*));
-        //         },
-        //         .int => {
-        //             return std.math.order(a_fld_ptr.*, b_fld_ptr.*);
-        //         },
-        //         else => {
-        //             return false;
-        //         },
-        //     }
-        // }
 
         pub fn getValueAsInt(self: Self, a: T) u64 {
             const T2: type = Id3FieldType(T, field_name);
@@ -156,19 +138,12 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
         pub fn sort(self: Self, train: []T) void {
             std.sort.insertion(T, train, self, Self.lessThan);
         }
-
-        // TODO: This probably doesn't work in this form
-        // pub fn upperBound(self: Self, items: []T) void {
-        //     return std.sort.upperBound(T, items, self, Self.lessThan);
-        // }
     };
 }
 
 pub fn Id3SorterStruct(comptime T: type, comptime field_names: []const [*:0]const u8) type {
     var fields: [field_names.len]std.builtin.Type.StructField = undefined;
     for (field_names, 0..) |field_name, i| {
-        // std.fmt.comptimePrint("Making field {s} at index {d}\n", .{ field_name, i });
-        // const fieldName: [:0]const u8 = field_name[0.. :0];
         const fieldName: [:0]const u8 = std.mem.span(field_name);
         const fieldType: type = Id3FieldContext(T, fieldName); // Note the coercion here
         const defaultFieldValue: fieldType = fieldType.init();
@@ -191,40 +166,11 @@ pub fn Id3SorterStruct(comptime T: type, comptime field_names: []const [*:0]cons
     });
 }
 
-// We introduce a simple function for matching a run time field name against a comptime array of field names.
-// This function is only used in the test that immediately follows below.
-// TODO: When ready, remove this function and the test.
-fn field_name_match_function(comptime field_names: []const [*:0]const u8, current_field: []const u8) bool {
-    inline for (field_names) |fld| {
-        const adj_fld: [:0]const u8 = std.mem.span(fld);
-        if (std.mem.eql(u8, adj_fld, current_field)) {
-            std.debug.print("Found field {s}\n", .{fld});
-            return true;
-        }
-    }
-    // unreachable;
-    return false;
-}
-
-test "testing field matching function" {
-    const noncat_fields: [4][*:0]const u8 = .{ "outlook", "temperature", "windy", "play" };
-    try std.testing.expect(field_name_match_function(&noncat_fields, "windy"));
-    // try std.testing.expect(field_name_match_function(&noncat_fields, "windy0"));
-}
-
-// TODO: Not sure if the following will work as needed to replace sort_records and get_value_as_int
 pub fn Id3FieldProcessors(comptime T: type, comptime attribute_field_names: []const []const u8) type {
     return struct {
-        // const Self = @This();
-
-        // pub fn init() Self {
-        //     return Self{};
-        // }
-
         pub fn sortRecords(field_name: []const u8, records: []T) void {
             inline for (attribute_field_names) |attr_fld| {
                 if (std.mem.eql(u8, attr_fld, field_name)) {
-                    // @field(sorting_struct, attr_fld).sort(records);
                     Id3FieldContext(T, attr_fld).init().sort(records);
                     return;
                 }
@@ -234,7 +180,6 @@ pub fn Id3FieldProcessors(comptime T: type, comptime attribute_field_names: []co
         pub fn getValueAsInt(field_name: []const u8, record: T) u64 {
             inline for (attribute_field_names) |attr_fld| {
                 if (std.mem.eql(u8, attr_fld, field_name)) {
-                    // return @field(sorting_struct, attr_fld).getValueAsInt(record);
                     return Id3FieldContext(T, attr_fld).init().getValueAsInt(record);
                 }
             }
@@ -264,6 +209,17 @@ pub fn Id3FieldProcessors(comptime T: type, comptime attribute_field_names: []co
             }
             unreachable;
         }
+        pub fn getMaximumPossibleValueCountOverFields() comptime_int {
+            comptime var max_field_values = 0;
+            inline for (attribute_field_names) |fld| {
+                const field_values: usize = Id3FieldContext(T, fld).getPossibleValueCount();
+
+                if (field_values > max_field_values) {
+                    max_field_values = field_values;
+                }
+            }
+            return max_field_values;
+        }
     };
 }
 
@@ -282,7 +238,6 @@ pub fn AltId3FieldProcessors(comptime T: type, comptime attribute_field_names: [
             inline for (attribute_field_names) |attr_fld| {
                 if (std.mem.eql(u8, std.mem.span(attr_fld), field_name)) {
                     @field(self.sorting_struct, std.mem.span(attr_fld)).sort(records);
-                    // Id3FieldContext(T, attr_fld).init().sort(records);
                     return;
                 }
             }
@@ -292,7 +247,6 @@ pub fn AltId3FieldProcessors(comptime T: type, comptime attribute_field_names: [
             inline for (attribute_field_names) |attr_fld| {
                 if (std.mem.eql(u8, std.mem.span(attr_fld), field_name)) {
                     return @field(self.sorting_struct, std.mem.span(attr_fld)).getValueAsInt(record);
-                    // return Id3FieldContext(T, attr_fld).init().getValueAsInt(record);
                 }
             }
             unreachable;
@@ -302,7 +256,7 @@ pub fn AltId3FieldProcessors(comptime T: type, comptime attribute_field_names: [
 
 pub fn Id3Entropy(comptime T: type, comptime target_field_name: []const u8) type {
     return struct {
-        pub fn calculate_entropy(records: []T) f64 {
+        pub fn calculateEntropy(records: []T) f64 {
             const FC = Id3FieldContext(T, target_field_name);
             const target_field_context = FC.init();
             target_field_context.sort(records);
@@ -347,8 +301,6 @@ pub fn Id3Entropy(comptime T: type, comptime target_field_name: []const u8) type
             var buffer: [MEM_SIZE]u8 = undefined;
             var fba = std.heap.FixedBufferAllocator.init(&buffer);
             const allocator = fba.allocator();
-            // const memory = try allocator.alloc(u8, 100);
-            // defer allocator.free(memory);
 
             var hm = std.hash_map.AutoHashMap(u64, usize).init(allocator);
             defer hm.deinit();
@@ -365,18 +317,6 @@ pub fn Id3Entropy(comptime T: type, comptime target_field_name: []const u8) type
 
             const total_count: usize = records.len;
             const entropy: f64 = calculateEntropyFromHashMap(total_count, hm);
-            // std.debug.print("In entropy calculation, total count is {d}\n", .{total_count});
-            // var entropy: f64 = 0.0;
-            // var iterator = hm.iterator();
-            // while (iterator.next()) |entry| {
-            //     const count: u64 = entry.value_ptr.*;
-            //     std.debug.print("In entropy calculation, key {d} has count {d}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
-            //     if (count > 0) {
-            //         const p: f64 = @as(f64, @floatFromInt(count)) / @as(f64, @floatFromInt(total_count));
-            //         std.debug.print("In entropy calculation, key {d} has probability {d} ({d} / {d})\n", .{ entry.key_ptr.*, p, @as(f64, @floatFromInt(count)), @as(f64, @floatFromInt(total_count)) });
-            //         entropy -= p * std.math.log2(p);
-            //     }
-            // }
 
             return entropy;
         }
@@ -384,15 +324,12 @@ pub fn Id3Entropy(comptime T: type, comptime target_field_name: []const u8) type
 }
 
 fn calculateEntropyFromHashMap(total_count: usize, hm: std.hash_map.AutoHashMap(u64, usize)) f64 {
-    // std.debug.print("In entropy calculation, total count is {d}\n", .{total_count}); // TODO
     var entropy: f64 = 0.0;
     var iterator = hm.iterator();
     while (iterator.next()) |entry| {
         const count: u64 = entry.value_ptr.*;
-        // std.debug.print("In entropy calculation, key {d} has count {d}\n", .{ entry.key_ptr.*, entry.value_ptr.* }); // TODO
         if (count > 0) {
             const p: f64 = @as(f64, @floatFromInt(count)) / @as(f64, @floatFromInt(total_count));
-            // std.debug.print("In entropy calculation, key {d} has probability {d} ({d} / {d})\n", .{ entry.key_ptr.*, p, @as(f64, @floatFromInt(count)), @as(f64, @floatFromInt(total_count)) }); // TODO
             entropy -= p * std.math.log2(p);
         }
     }
@@ -406,16 +343,12 @@ pub fn Id3Gain(comptime T: type, comptime attribute_field_name: []const u8, comp
             var buffer: [GAIN_MEM_SIZE]u8 = undefined;
             var fba = std.heap.FixedBufferAllocator.init(&buffer);
             const allocator = fba.allocator();
-            // const memory = try allocator.alloc(u8, 100);
-            // defer allocator.free(memory);
 
             const HMT = std.hash_map.AutoHashMap(u64, usize);
             var hm = std.hash_map.AutoHashMap(u64, HMT).init(allocator);
             defer hm.deinit();
 
             for (records) |record| {
-                // const k: u64 = @intFromEnum(@field(record, attribute_field_name));
-                // const k: u64 = @field(sorting_struct, attribute_field_name).getValueAsInt(record); // TODO: This approach needs improvement
                 const k: u64 = Id3FieldContext(T, attribute_field_name).init().getValueAsInt(record);
                 const gpresult: std.hash_map.AutoHashMap(u64, HMT).GetOrPutResult = try hm.getOrPut(k);
                 const resk: u64 = @intFromEnum(@field(record, target_field_name));
@@ -434,14 +367,12 @@ pub fn Id3Gain(comptime T: type, comptime attribute_field_name: []const u8, comp
             defer {
                 var valiterator = hm.valueIterator();
                 while (valiterator.next()) |val| {
-                    std.debug.print("In gain calculation, calling deinit on value of hash map\n", .{});
                     val.*.deinit();
                 }
             }
 
             const entropy: f64 = try Id3Entropy(T, target_field_name).calculateEntropyUsingHashMap(records);
             const total_count: usize = records.len;
-            // std.debug.print("In gain calculation, total count is {d}\n", .{total_count}); // TODO
             var condinfo: f64 = 0.0;
             var iterator = hm.iterator();
             while (iterator.next()) |entry| {
@@ -496,40 +427,11 @@ pub fn ConstantValueLeaf(comptime T: type, comptime target_field_name: []const u
     };
 }
 
-// fn ID3Node(comptime T: type, comptime target_field_name: []const u8) type {
-//     return struct {
-//         const Self = @This();
-//
-//         field_name: []const u8,
-//         values: std.ArrayList(u64), // This will hold the values of the attribute field
-//         nodes: std.ArrayList(ID3NodeType), // This will hold the child nodes
-//
-//         pub fn init(gpa: std.mem.Allocator, attribute_field_name: []const u8) Self {
-//             // TODO: Is target_field_name needed here?
-//             _ = target_field_name; // to avoid unused variable warning
-//             return Self{ .field_name = attribute_field_name, .values = std.ArrayList(u64).init(gpa), .nodes = std.ArrayList(ID3NodeType).init(gpa) };
-//         }
-//
-//         pub fn deinit(self: Self) void {
-//             self.values.deinit();
-//             for (self.nodes.items) |node| {
-//                 node.deinit();
-//             }
-//             self.nodes.deinit();
-//         }
-//
-//         pub fn appendValue(self: *Self, value: u64, node: ID3NodeType) std.mem.Allocator.Error!void {
-//             try self.values.append(value);
-//             try self.nodes.append(node);
-//         }
-//     };
-// }
-
 pub fn ID3Node(comptime T: type, comptime attribute_field_names: []const []const u8, comptime target_field_name: []const u8) type {
     return struct {
         const Self = @This();
 
-        const TreeType = ID3NodeType(T, attribute_field_names, target_field_name);
+        const TreeType = ID3TreeType(T, attribute_field_names, target_field_name);
 
         field_name: []const u8,
         values: std.ArrayList(u64), // This will hold the values of the attribute field
@@ -554,13 +456,10 @@ pub fn ID3Node(comptime T: type, comptime attribute_field_names: []const []const
     };
 }
 
-// TODO: Might make sense to improve the following definition of MEM_SIZE and GAIN_MEM_SIZE
 const KEY_SIZE = @sizeOf(u64);
 const VAL_SIZE = @sizeOf(usize);
 const EXTRA_SIZE = 100;
 const EXTRA_MULTIPLIER = 2;
-// const MEM_SIZE = std.math.pow(usize, 2, 8) * (KEY_SIZE + VAL_SIZE) + EXTRA_SIZE;
-// const GAIN_MEM_SIZE = std.math.pow(usize, 2, 8) * (KEY_SIZE + MEM_SIZE) + EXTRA_SIZE;
 
 pub fn calculateMemorySizeForEntropy(comptime T: type, comptime target_field_name: []const u8) comptime_int {
     const max_field_values: usize = Id3FieldContext(T, target_field_name).getPossibleValueCount();
@@ -569,19 +468,11 @@ pub fn calculateMemorySizeForEntropy(comptime T: type, comptime target_field_nam
 
 pub fn calculateMemorySizeForGain(comptime T: type, comptime attribute_field_names: []const []const u8, comptime target_field_name: []const u8) comptime_int {
     const MEM_SIZE = calculateMemorySizeForEntropy(T, target_field_name);
-    var max_field_values: usize = 0;
-    inline for (attribute_field_names) |fld| {
-        const field_values: usize = Id3FieldContext(T, fld).getPossibleValueCount();
-
-        if (field_values > max_field_values) {
-            max_field_values = field_values;
-        }
-    }
+    const max_field_values: usize = Id3FieldProcessors(T, attribute_field_names).getMaximumPossibleValueCountOverFields();
     return max_field_values * EXTRA_MULTIPLIER * (KEY_SIZE + MEM_SIZE) + EXTRA_SIZE;
 }
 
-// const ID3NodeType =
-pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []const u8, comptime target_field_name: []const u8) type {
+pub fn ID3TreeType(comptime T: type, comptime attribute_field_names: []const []const u8, comptime target_field_name: []const u8) type {
     return union(ID3NodeTag) {
         const Self = @This();
 
@@ -590,7 +481,6 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
         constant_value: ConstantValueLeaf(T, target_field_name),
         empty: void,
 
-        // TODO: Use a pointer in the following instead?
         pub fn deinit(self: Self) void {
             switch (self) {
                 .node => |node| node.deinit(),
@@ -616,21 +506,18 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
             var bw = std.io.bufferedWriter(stdout_file);
             const stdout = bw.writer();
 
-            // try ID3NodeType.printNext(self, 0, stdout); // TODO: Remove
             try self.printNext(0, stdout);
 
-            try bw.flush(); // don't forget to flush!
+            try bw.flush();
         }
 
         pub fn printNext(self: Self, initial_spaces: usize, stdout: std.io.BufferedWriter(4096, std.fs.File.Writer).Writer) !void {
             switch (self) {
                 .node => |node| {
-                    // std.debug.print("Node with values: {any}\n", .{node.values.items});
                     const BUFFER_LENGTH = Self.maxAttributeFieldValueLength();
                     const FP: type = Id3FieldProcessors(T, attribute_field_names);
                     var required_value_chars: usize = FP.getMaxValueStringLength(node.field_name);
-                    // var max_value_chars: usize = 0;
-                    // For integer (not Enum) types we determine the number of characters needed to print the maximum value
+                    // For integer (not Enum) types we determine the maximum number of characters needed to print the values
                     // seen in the slice of record values for the node.
                     if (FP.isNotEnumType(node.field_name)) {
                         var max_value_chars: usize = 0;
@@ -644,46 +531,26 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
                             required_value_chars = max_value_chars;
                         }
                     }
-                    // Max 8-byte integer value value: 18,446,744,073,709,551,615
-                    // We defined a buffer large enough to hold the string
-                    // "{s} - {: ^N} -> ", where N is the number of characters needed to print the maximum value.
-                    // The buffer is taken to be up to 35 characters long,
-                    // which allows for the 15 known characters (everything except for N),
-                    // and up to 20 characters which is the number of characters
-                    // needed to print the maximum value of usize.
-                    // var fmt_buf: [35]u8 = undefined;
-                    // const fmt_slice: []u8 = std.fmt.bufPrint(&fmt_buf, "{{s}} - {{: ^{d}}}", .{required_value_chars});
+                    // Note: Max 8-byte integer value is 18,446,744,073,709,551,615
 
                     for (node.values.items, node.nodes.items, 0..) |value, next_node, idx| {
-                        // try stdout.print("- '{:>{}}' -> ", .{ value, max_value_chars });
                         if (idx > 0) {
-                            // for (0..initial_spaces) |_| {
-                            //     try stdout.print(" ", .{});
-                            // }
                             try stdout.writeByteNTimes(' ', initial_spaces);
                         }
-                        // if (FP.isNotEnumType(node.field_name)) {
-                        //     // For integer types, we print the value right-aligned
-                        //     try stdout.print("{s} - {:^3} -> ", .{ node.field_name, value });
-                        //     // const test_value = 3;
-                        //     // try stdout.print("{s} - {:>{d} -> ", .{ node.field_name, value, test_value });
-                        // } else {
-                        //     // For enum types, we print the value centered
-                        //     var out_buf: [100]u8 = undefined; // TODO: Settle on alternative length
-                        //     const buflen = FP.writeValueAsStringToBuffer(node.field_name, &out_buf, .{ .width = required_value_chars, .fill = ' ', .alignment = .center }, value);
-                        //     try stdout.print("{s} - {s} -> ", .{ node.field_name, out_buf[0..buflen] });
-                        // }
-                        var out_buf: [BUFFER_LENGTH]u8 = undefined; // TODO: Settle on alternative length
+                        // Since node.field_name is not a comptime value, and hence the
+                        // values max_value_chars and required_value_chars are not comptime,
+                        // we cannot print using the comptime format string, i.e. we cannot use
+                        // try stdout.print("{s} - {:^N} -> ", .{ node.field_name, value });
+                        // where N is max_value_chars or required_value_chars (for instance).
+                        // Instead, we format the string in a slice and then pass that to print.
+                        var out_buf: [BUFFER_LENGTH]u8 = undefined;
                         const buflen = FP.writeValueAsStringToBuffer(node.field_name, &out_buf, .{ .width = required_value_chars, .fill = ' ', .alignment = .center }, value);
                         try stdout.print("{s} - {s} -> ", .{ node.field_name, out_buf[0..buflen] });
-                        // try stdout.print("{s} - {:^3} -> ", .{ node.field_name, value });
-                        // try stdout.print(fmt_slice, .{ node.field_name, value });
                         const spaces: usize = initial_spaces + node.field_name.len + required_value_chars + 7; // 7 for the " -> "
                         try next_node.printNext(spaces, stdout);
                     }
                 },
                 .most_frequent => |mfv| {
-                    // try stdout.print("{s: >{d}}{d} (freq {d})\n", .{ "", initial_spaces, mfv.value, mfv.empirical_probability });
                     try stdout.print("{s} (freq {d})\n", .{ @tagName(mfv.value), mfv.empirical_probability });
                 },
                 .constant_value => |cv| {
@@ -695,7 +562,6 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
             }
         }
 
-        // TODO: Need to extend the return type to include the empirical probability of the most frequent value
         pub fn calculateMostFrequentValue(records: []T) std.mem.Allocator.Error!MostFrequentValueLeaf(T, target_field_name) {
             const MEM_SIZE = calculateMemorySizeForEntropy(T, target_field_name);
             var buffer: [MEM_SIZE]u8 = undefined;
@@ -727,7 +593,6 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
                 }
             }
             const freq: f64 = @as(f64, @floatFromInt(max_count)) / @as(f64, @floatFromInt(total_count));
-            // return freq;
             return MostFrequentValueLeaf(T, target_field_name).init(
                 @enumFromInt(most_frequent_value),
                 freq,
@@ -736,12 +601,10 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
 
         const TargetFieldType: type = Id3FieldType(T, target_field_name);
 
-        // The following predict function will traverse the ID3 tree.
-        // We return a nullable GolfFieldType("play"), which we might improve later.
+        // The following predict function traverses the ID3 tree.
         pub fn predict(self: Self, record: T) ?TargetFieldType {
             switch (self) {
                 .node => |node| {
-                    // const lookupValue: u64 = get_value_as_int(node.field_name, record); // TODO: This was changed
                     const lookupValue: u64 = Id3FieldProcessors(T, attribute_field_names).getValueAsInt(node.field_name, record);
                     for (node.values.items, node.nodes.items) |value, next_node| {
                         if (value == lookupValue) {
@@ -765,7 +628,7 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
 
         fn allTargetValuesEqual(records: []T) bool {
             if (records.len == 0) {
-                return false; // No records to compare
+                return false; // No records to compare.  Could also return true here, though this case should result in an empty node.
             }
             const first_value: Self.TargetFieldType = @field(records[0], target_field_name);
             for (records[1..]) |record| {
@@ -779,26 +642,21 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
         const attribute_count: usize = attribute_field_names.len;
 
         pub fn buildNode(remaining_field_names: []const []const u8, records: []T, allocator: std.mem.Allocator) std.mem.Allocator.Error!Self {
-            // std.debug.print("Entering build_node\n", .{}); // TODO
             if (records.len == 0) {
                 // If S is empty, return a single node with value Failure;
-                // std.debug.print("In build_node, constructing empty leaf\n", .{}); // TODO
                 return Self{ .empty = {} };
             } else if (allTargetValuesEqual(records)) {
                 // If S consists of records all with the same value for
                 // the categorical attribute,
                 // return a single node with that value;
-                // std.debug.print("In build_node, constructing constant value leaf\n", .{}); // TODO
                 return Self{ .constant_value = ConstantValueLeaf(T, target_field_name).init(@field(records[0], target_field_name)) };
             } else if (remaining_field_names.len == 0) {
                 const mfv: MostFrequentValueLeaf(T, target_field_name) = try calculateMostFrequentValue(records);
-                // std.debug.print("In build_node, constructing most frequent value leaf\n", .{}); // TODO
                 return Self{ .most_frequent = mfv };
             } else {
                 var max_gain: f64 = undefined;
                 var arg_max: usize = undefined;
                 for (remaining_field_names, 0..) |attr, i| {
-                    std.debug.print("In build_node, attr is {s}\n", .{attr});
                     const gain: f64 = try calculateGainForFieldUsingHashMap(attr, records);
                     if ((i == 0) or (gain > max_gain)) {
                         max_gain = gain;
@@ -806,7 +664,6 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
                     }
                 }
                 const best_field_name: []const u8 = remaining_field_names[arg_max];
-                std.debug.print("In build_node, best attribute is {s}\n", .{best_field_name});
 
                 var updated_attributes: [attribute_count][]const u8 = undefined;
                 for (remaining_field_names, 0..) |attr, idx| {
@@ -824,28 +681,24 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
                 const updated_attributes_slice: []const []const u8 = updated_attributes[0..(remaining_field_names.len - 1)];
 
                 // Sort the records
-                //// sort_records(remaining_field_names[arg_max], records); // TODO: Replaced with the following
-                // const field_processors: Id3FieldProcessors(T, attribute_field_names) = Id3FieldProcessors(T, attribute_field_names).init();
-                // field_processors.sortRecords(remaining_field_names[arg_max], records);
                 Id3FieldProcessors(T, attribute_field_names).sortRecords(remaining_field_names[arg_max], records);
 
                 // Create a list of nodes
                 var node: ID3Node(T, attribute_field_names, target_field_name) = ID3Node(T, attribute_field_names, target_field_name).init(allocator, best_field_name);
-                // var node = ID3Node(T, attribute_field_names, target_field_name).init(allocator, best_field_name); // TODO: This works
                 var start_idx: usize = 0;
                 var end_idx: usize = 0;
                 while (start_idx < records.len) : (end_idx += 1) {
+                    // NOTE: We essentially implement upperBound logic here.  It might be worth considering implementing
+                    //       compareFn and upperBound in a similar way to what was done for sortRecords, though this would require
+                    //       a somewhat different formulation to what was done in Id3FieldContext (and Id3FieldProcessors).
+                    // REFERENCES: https://ziglang.org/documentation/master/std/#std.sort.upperBound
+
                     // Find the end of the current value group
-                    // TODO: best_field_name isn't comptime so we might need to adjust the value extraction
-                    // const start_value: u64 = get_value_as_int(best_field_name, records[start_idx]); // TODO: Replaced with the following
-                    // const start_value: u64 = field_processors.getValueAsInt(best_field_name, records[start_idx]);
                     const start_value: u64 = Id3FieldProcessors(T, attribute_field_names).getValueAsInt(best_field_name, records[start_idx]);
                     var append_flag: bool = false;
                     if (end_idx == records.len) {
                         append_flag = true;
                     } else {
-                        // const end_value: u64 = get_value_as_int(best_field_name, records[end_idx]); // TODO: Replaced with the following
-                        // const end_value: u64 = field_processors.getValueAsInt(best_field_name, records[end_idx]);
                         const end_value: u64 = Id3FieldProcessors(T, attribute_field_names).getValueAsInt(best_field_name, records[end_idx]);
                         if (end_value != start_value) {
                             append_flag = true;
@@ -868,12 +721,7 @@ pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []c
 
         pub fn calculateGainForFieldUsingHashMap(attribute_field_name: []const u8, records: []T) std.mem.Allocator.Error!f64 {
             inline for (attribute_field_names) |fld| {
-                // const adj_fld: [:0]const u8 = std.mem.span(fld);
-                std.debug.print("In calculateGainForFieldUsingHashMap, checking to see if field matches {s}\n", .{fld});
                 if (std.mem.eql(u8, fld, attribute_field_name)) {
-                    std.debug.print("In calculate_gain_using_hash_map, Found field {s}\n", .{fld});
-                    // return @field(sorting_struct, fld).getValueAsInt(records[0]);
-                    // return calculate_gain_using_hash_map0(target_field_name, fld, records); // TODO: This was the original
                     return Id3Gain(T, fld, target_field_name).calculateGainUsingHashMap(records);
                 }
             }
@@ -893,15 +741,12 @@ test "testing curly brace escape in format string" {
     var buf: [10]u8 = undefined;
     const fmt_str: []const u8 = "{{: >{d}}}";
     const result: []const u8 = try std.fmt.bufPrint(&buf, fmt_str, .{4});
-    // std.debug.print("Formatted string: {s}\n", .{result});
     try std.testing.expectEqualStrings("{: >4}", result);
 }
 
 test "testing formatIntBuf" {
     var buf: [20]u8 = undefined;
     const resultlen: usize = std.fmt.formatIntBuf(&buf, 42, 10, std.fmt.Case.lower, .{ .width = 5, .fill = ' ', .alignment = .center });
-    // _ = resultlen; // to avoid unused variable warning
-    std.debug.print("Formatted integer: {s}\n", .{buf[0..resultlen]});
     try std.testing.expectEqualStrings(" 42  ", buf[0..resultlen]);
 }
 
@@ -918,14 +763,5 @@ pub fn formatTextBuf(out_buf: []u8, bytes: []const u8, options: std.fmt.FormatOp
 test "testing formatTextBuf" {
     var buf: [20]u8 = undefined;
     const resultlen: usize = formatTextBuf(&buf, "Hello", .{ .width = 10, .fill = ' ', .alignment = .center });
-    std.debug.print("Formatted text: {s}\n", .{buf[0..resultlen]});
     try std.testing.expectEqualStrings("  Hello   ", buf[0..resultlen]);
-}
-
-export fn add(a: i32, b: i32) i32 {
-    return a + b;
-}
-
-test "basic add functionality" {
-    try testing.expect(add(3, 7) == 10);
 }
