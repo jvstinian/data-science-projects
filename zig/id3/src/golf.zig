@@ -88,7 +88,7 @@ test "check less than in golf context from field name" {
 }
 
 fn calculate_entropy(comptime target_field_name: []const u8, records: []GolfConditions) f64 {
-    return id3.Id3Entropy(GolfConditions, target_field_name).calculate_entropy(records);
+    return id3.Id3Entropy(GolfConditions, target_field_name).calculateEntropy(records);
 }
 
 test "testing entropy" {
@@ -170,7 +170,7 @@ test "testing gain from tutorial" {
     const calculate_gain_using_hash_map0_outlook = id3.Id3Gain(GolfConditions, "outlook", "play").calculateGainUsingHashMap;
 
     const attribute_field_names: [3][]const u8 = .{ "outlook", "humidity_bucket", "windy" };
-    const calculate_gain_using_hash_map = id3.ID3NodeType(GolfConditions, &attribute_field_names, "play").calculateGainForFieldUsingHashMap;
+    const calculate_gain_using_hash_map = id3.ID3TreeType(GolfConditions, &attribute_field_names, "play").calculateGainForFieldUsingHashMap;
 
     var train: [golfRecords.len]GolfConditions = undefined;
     @memcpy(&train, &golfRecords);

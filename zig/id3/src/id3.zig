@@ -279,8 +279,7 @@ pub fn AltId3FieldProcessors(comptime T: type, comptime attribute_field_names: [
 
 pub fn Id3Entropy(comptime T: type, comptime target_field_name: []const u8) type {
     return struct {
-        // TODO: Use camel case
-        pub fn calculate_entropy(records: []T) f64 {
+        pub fn calculateEntropy(records: []T) f64 {
             const FC = Id3FieldContext(T, target_field_name);
             const target_field_context = FC.init();
             target_field_context.sort(records);
@@ -455,7 +454,7 @@ pub fn ID3Node(comptime T: type, comptime attribute_field_names: []const []const
     return struct {
         const Self = @This();
 
-        const TreeType = ID3NodeType(T, attribute_field_names, target_field_name);
+        const TreeType = ID3TreeType(T, attribute_field_names, target_field_name);
 
         field_name: []const u8,
         values: std.ArrayList(u64), // This will hold the values of the attribute field
@@ -496,8 +495,7 @@ pub fn calculateMemorySizeForGain(comptime T: type, comptime attribute_field_nam
     return max_field_values * EXTRA_MULTIPLIER * (KEY_SIZE + MEM_SIZE) + EXTRA_SIZE;
 }
 
-// TODO: Perhaps rename the following ID3TreeType
-pub fn ID3NodeType(comptime T: type, comptime attribute_field_names: []const []const u8, comptime target_field_name: []const u8) type {
+pub fn ID3TreeType(comptime T: type, comptime attribute_field_names: []const []const u8, comptime target_field_name: []const u8) type {
     return union(ID3NodeTag) {
         const Self = @This();
 
