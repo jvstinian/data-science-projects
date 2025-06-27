@@ -25,11 +25,11 @@ pub fn Id3FieldContext(comptime T: type, comptime field_name: []const u8) type {
         pub const offset2: usize = @offsetOf(T, field_name);
 
         pub fn lessThan(self: Self, a: T, b: T) bool {
-            const T2: type = Id3FieldType(T, field_name); // TODO: Rename T2
-            const a_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&a) + self.offset);
-            const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + self.offset);
-            // const b_fld_ptr: *T2 = @ptrFromInt(@intFromPtr(&b) + .offset2);
-            switch (@typeInfo(T2)) {
+            const FIELD_TYPE: type = Id3FieldType(T, field_name);
+            const a_fld_ptr: *FIELD_TYPE = @ptrFromInt(@intFromPtr(&a) + self.offset);
+            const b_fld_ptr: *FIELD_TYPE = @ptrFromInt(@intFromPtr(&b) + self.offset);
+            // const b_fld_ptr: *FIELD_TYPE = @ptrFromInt(@intFromPtr(&b) + .offset2);
+            switch (@typeInfo(FIELD_TYPE)) {
                 .Enum => {
                     return @intFromEnum(a_fld_ptr.*) < @intFromEnum(b_fld_ptr.*);
                 },
@@ -187,26 +187,6 @@ pub fn Id3SorterStruct(comptime T: type, comptime field_names: []const [*:0]cons
             .is_tuple = false,
         },
     });
-}
-
-// We introduce a simple function for matching a run time field name against a comptime array of field names.
-// This function is only used in the test that immediately follows below.
-// TODO: When ready, remove this function and the test.
-// TODO: Remove in subsequent commit.
-fn field_name_match_function(comptime field_names: []const [*:0]const u8, current_field: []const u8) bool {
-    inline for (field_names) |fld| {
-        const adj_fld: [:0]const u8 = std.mem.span(fld);
-        if (std.mem.eql(u8, adj_fld, current_field)) {
-            return true;
-        }
-    }
-    // unreachable;
-    return false;
-}
-
-test "testing field matching function" {
-    const noncat_fields: [4][*:0]const u8 = .{ "outlook", "temperature", "windy", "play" };
-    try std.testing.expect(field_name_match_function(&noncat_fields, "windy"));
 }
 
 pub fn Id3FieldProcessors(comptime T: type, comptime attribute_field_names: []const []const u8) type {
