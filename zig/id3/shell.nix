@@ -9,7 +9,4 @@ let
 in 
 pkgs.mkShell {
   packages = [ pkgs.zig pkgs.zls myNeovim ];
-  # shellHook = ''
-  #   export DEBUG=1
-  # '';
 }
