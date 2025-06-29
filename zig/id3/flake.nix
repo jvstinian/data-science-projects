@@ -13,7 +13,7 @@
               neovim = prev.neovim.override {
                   configure = {
                       packages.myVimPackage = with prev.pkgs.vimPlugins; {
-                          start = [ 
+                          start = [
                               {
                                   plugin = nvim-lspconfig;
                                   type = "lua";
