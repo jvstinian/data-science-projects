@@ -38,13 +38,13 @@ pub const GolfConditions = struct {
 pub const golfRecords = [_]GolfConditions{ GolfConditions{ .id = 0, .outlook = .sunny, .temperature = 85, .humidity = 85, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 1, .outlook = .sunny, .temperature = 80, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 2, .outlook = .overcast, .temperature = 83, .humidity = 78, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 3, .outlook = .rain, .temperature = 70, .humidity = 96, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 4, .outlook = .rain, .temperature = 68, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 5, .outlook = .rain, .temperature = 65, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .dont }, GolfConditions{ .id = 6, .outlook = .overcast, .temperature = 64, .humidity = 65, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 7, .outlook = .sunny, .temperature = 72, .humidity = 95, .humidity_bucket = .gt75, .windy = .no, .play = .dont }, GolfConditions{ .id = 8, .outlook = .sunny, .temperature = 69, .humidity = 70, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 9, .outlook = .rain, .temperature = 75, .humidity = 80, .humidity_bucket = .gt75, .windy = .no, .play = .do }, GolfConditions{ .id = 10, .outlook = .sunny, .temperature = 75, .humidity = 70, .humidity_bucket = .le75, .windy = .yes, .play = .do }, GolfConditions{ .id = 11, .outlook = .overcast, .temperature = 72, .humidity = 90, .humidity_bucket = .gt75, .windy = .yes, .play = .do }, GolfConditions{ .id = 12, .outlook = .overcast, .temperature = 81, .humidity = 75, .humidity_bucket = .le75, .windy = .no, .play = .do }, GolfConditions{ .id = 13, .outlook = .rain, .temperature = 71, .humidity = 80, .humidity_bucket = .gt75, .windy = .yes, .play = .dont } };
 
 test "outlook values" {
-    try std.testing.expect(@typeInfo(Outlook).Enum.fields.len == 3);
-    try std.testing.expect(std.mem.eql(u8, @typeInfo(Outlook).Enum.fields[1].name, "overcast"));
+    try std.testing.expect(@typeInfo(Outlook).@"enum".fields.len == 3);
+    try std.testing.expect(std.mem.eql(u8, @typeInfo(Outlook).@"enum".fields[1].name, "overcast"));
 }
 
 test "windy values" {
-    try std.testing.expect(@typeInfo(Windy).Enum.fields.len == 2);
-    try std.testing.expect(std.mem.eql(u8, @typeInfo(Windy).Enum.fields[1].name, "yes"));
+    try std.testing.expect(@typeInfo(Windy).@"enum".fields.len == 2);
+    try std.testing.expect(std.mem.eql(u8, @typeInfo(Windy).@"enum".fields[1].name, "yes"));
 }
 
 fn GolfFieldOffset(comptime field_name: []const u8) comptime_int {
@@ -128,8 +128,8 @@ test "checking temperature type" {
     const fld: []const u8 = "temperature";
     const T2 = GolfFieldType(fld);
     try std.testing.expect(T2 == u8);
-    try std.testing.expect(@typeInfo(T2).Int.signedness == .unsigned);
-    try std.testing.expect(@typeInfo(T2).Int.bits == 8);
+    try std.testing.expect(@typeInfo(T2).int.signedness == .unsigned);
+    try std.testing.expect(@typeInfo(T2).int.bits == 8);
 }
 
 test "checking types of features are acceptable" {
@@ -137,10 +137,10 @@ test "checking types of features are acceptable" {
     inline for (noncat_fields) |fld| {
         const T = GolfFieldType(fld);
         switch (@typeInfo(T)) {
-            .Enum => {
+            .@"enum" => {
                 try std.testing.expect(true);
             },
-            .Int => {
+            .int => {
                 try std.testing.expect(true);
             },
             else => {
