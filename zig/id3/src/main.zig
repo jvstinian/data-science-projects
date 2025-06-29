@@ -24,7 +24,7 @@ pub fn main() !void {
     try stdout.print("Running ID3 algorithm on golf data set using fields outlook, windy, and humidity_bucket\n", .{});
     try bw.flush();
 
-    const root: id3.ID3NodeType(GolfConditions, &attribute_fields, "play") = try id3.ID3NodeType(GolfConditions, &attribute_fields, "play").buildNode(&attribute_fields, &train, allocator);
+    const root: id3.ID3TreeType(GolfConditions, &attribute_fields, "play") = try id3.ID3TreeType(GolfConditions, &attribute_fields, "play").buildNode(&attribute_fields, &train, allocator);
     defer root.deinit(); // deinitialize the root node to free memory
     try root.print();
 
@@ -33,7 +33,7 @@ pub fn main() !void {
 
     // Building a tree using humidity to test the use of a non-enum field
     const attribute_fields_alternate: [3][]const u8 = .{ "outlook", "windy", "humidity" };
-    const root_alternate: id3.ID3NodeType(GolfConditions, &attribute_fields_alternate, "play") = try id3.ID3NodeType(GolfConditions, &attribute_fields_alternate, "play").buildNode(&attribute_fields_alternate, &train, allocator);
+    const root_alternate: id3.ID3TreeType(GolfConditions, &attribute_fields_alternate, "play") = try id3.ID3TreeType(GolfConditions, &attribute_fields_alternate, "play").buildNode(&attribute_fields_alternate, &train, allocator);
     try root_alternate.print();
     defer root_alternate.deinit(); // deinitialize the root node to free memory
 }
