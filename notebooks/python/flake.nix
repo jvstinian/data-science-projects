@@ -34,7 +34,7 @@
               # opencv4
               scikit-learn scikit-image
               tensorflowWithCuda keras
-              torch torchvision
+              torch torchvision torchmetrics
               gymnasium pygame
               jupyter ipython
           ];
