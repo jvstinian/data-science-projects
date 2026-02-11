@@ -4,7 +4,7 @@ synopsis:       synopsis
 description:
   Description
 
-license:        BSD-3-Clause
+license:        BSD3
 license-file:   LICENSE
 homepage:       https://github.com/jvstinian/data-science-projects/haskell/statistics/statistical-models
 bug-reports:    https://github.com/jvstinian/data-science-projects/issues
@@ -26,6 +26,9 @@ library
   exposed-modules:
     Statistics.Distribution.Pareto
     , Statistics.Regression.Linear
+    , Statistics.Regression.Families.Family
+    , Statistics.Regression.Families.Links
+    , Statistics.Regression.Families.VarFuncs
     , Statistics.Regression.Logistic
   other-modules:
     Statistics.Regression.Internal
