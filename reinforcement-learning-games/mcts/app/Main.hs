@@ -5,7 +5,7 @@ import qualified LineWalk as LW
     ( LineWalkAction(..)
     , initState
     , applyAction )
-import MCTS (uctSearch, initTree)
+import MCTS (uctSearch, initTree, uctUpdate)
 import System.Random.MWC
 
 main :: IO ()
@@ -17,10 +17,18 @@ main = do
   let tree = initTree state
   print tree
   g <- create
-  actionTreeM <- uctSearch 8 g tree
+  {-
+  tree1 <- updateTree g (5 :: Int) tree
+  putStrLn ("Updated tree: " ++ show tree1)
+  -}
+  actionTreeM <- uctSearch 100 g tree
   case actionTreeM of
     Just (a, tree1) -> do
         putStrLn ("Action: " ++ show a) 
         putStrLn ("Updated tree: " ++ show tree1) 
     Nothing        ->
         putStrLn "UCT search returned nothing."
+  {-
+  where updateTree g k tree0 | k > 0     = uctUpdate g tree0 >>= updateTree g (k - 1)
+                             | otherwise = return tree0
+  -}

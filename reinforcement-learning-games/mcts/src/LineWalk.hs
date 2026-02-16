@@ -43,7 +43,7 @@ instance MCTS.Environment LineWalkState LineWalkAction Double where
     isTerminal (LineWalkState n pos) = (pos < 1) || (pos > n)
     act s = (flip execState s) . applyAction
     -- act s a = execState (applyAction a) s
-    reward (LineWalkState n pos) =
+    reward _ (LineWalkState n pos) =
         if pos < 1
         then (-1.0)
         else if pos > n

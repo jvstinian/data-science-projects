@@ -1,11 +1,15 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
+-- {-# LANGUAGE FlexibleInstances #-}
+-- {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 module MCTS
     ( someFunc
     , Tree(..)
     , Environment(..)
     -- , expand
     , uctSearch
+    , uctUpdate 
     , initTree ) where
 
 -- import System.Random.MWC
@@ -22,7 +26,7 @@ data InteriorNode s a r = InteriorNode Int r s [(a, Tree s a r)]
     deriving (Show, Eq)
 
 data Tree s a r = Node (InteriorNode s a r) -- Int r s [(a, Tree s a r)]
-                | Terminal Int r
+                | Terminal Int r s
     deriving (Show, Eq)
 
 {-
@@ -39,7 +43,7 @@ class Environment s a r | s -> a, s -> r where
     validActions :: s -> [a]
     isTerminal :: s -> Bool
     act :: s -> a -> s
-    reward :: s -> r
+    reward :: s -> s -> r
 
 expand :: (Eq a, Environment s a r, StatefulGen g m) => g -> InteriorNode s a r -> m (Maybe a)
 expand g (InteriorNode _ _ state actionnodes) =
@@ -65,7 +69,7 @@ uctObjective parentvisits (Node (InteriorNode visits totalreward _ _)) =
         uctconst = sqrt (fromIntegral (2 :: Int))
     in 
         (totalreward / cvs) + uctconst * sqrt (2 * (log pvs) / cvs)
-uctObjective parentvisits (Terminal visits incrementalreward) =
+uctObjective parentvisits (Terminal visits incrementalreward _) =
     let pvs = fromIntegral parentvisits
         cvs = fromIntegral visits
         uctconst = sqrt (fromIntegral (2 :: Int))
@@ -80,12 +84,13 @@ bestChild numvisits action_nodes =
     in maximumBy comparefn action_nodes
 
 data PolicyAction s a r = Expand a
-                    | BestChild a (Tree s a r)
+                        | BestChild a (Tree s a r)
     deriving (Show, Eq)
 
 bestChildForNode :: (Eq a, Ord r, Floating r) => InteriorNode s a r -> PolicyAction s a r
 bestChildForNode (InteriorNode numvisits _ _ action_nodes) = uncurry BestChild $ bestChild numvisits action_nodes
 
+{-
 defaultPolicy :: (Environment s a r, StatefulGen g m) => g -> s -> m r
 defaultPolicy g s = if isTerminal s
     then return $ reward s
@@ -96,6 +101,17 @@ defaultPolicy g s = if isTerminal s
         let next_action = possible_actions !! idx
             next_state = act s next_action
         defaultPolicy g next_state 
+-}
+defaultPolicyTerminalState :: (Environment s a r, StatefulGen g m) => g -> s -> m s
+defaultPolicyTerminalState  g s = if isTerminal s
+    then return s
+    else do
+        let possible_actions = validActions s
+            num_actions = length possible_actions 
+        idx <- uniformRM (0, num_actions - 1) g
+        let next_action = possible_actions !! idx
+            next_state = act s next_action
+        defaultPolicyTerminalState g next_state 
 
 -- treePolicy
 -- treePolicyNext :: (Environment s a r, StatefulGen g m) => g -> Int -> s -> [(a, Tree s a r)] -> m (PolicyAction s a r)
@@ -111,40 +127,51 @@ replaceListElement :: a -> (a -> a -> Bool) -> [a] -> [a]
 replaceListElement new_val cond (x : xs) = if cond new_val x then (new_val : xs) else (x : replaceListElement new_val cond xs)
 replaceListElement _ _ []       = []
 
+{-
 backup :: r -> r
 backup = id
+-}
 
-uctUpdateWithReward :: (Eq a, Ord r, Num r, Floating r, Environment s a r, StatefulGen g m) => g -> InteriorNode s a r -> m (r, Tree s a r)
+increment_node_reward :: (Num r) => r -> Tree s a r -> Tree s a r
+increment_node_reward inc_reward (Node (InteriorNode numvisits totalreward state action_nodes)) =
+    Node (InteriorNode numvisits (totalreward + inc_reward) state action_nodes)
+increment_node_reward _ term = term
+
+
+uctUpdateWithReward :: (Eq a, Ord r, Num r, Floating r, Environment s a r, StatefulGen g m) => g -> InteriorNode s a r -> m (s, Tree s a r)
 uctUpdateWithReward g node@(InteriorNode numvisits totalreward state action_nodes) = do
     next_policy <- treePolicyNext g node
     case next_policy of
         Expand a -> do
             let child_state = act state a
-            inc_reward <- defaultPolicy g child_state
-            let child_node = createNewChildNode child_state inc_reward
-                updated_node = Node (InteriorNode (numvisits + 1) (totalreward + inc_reward) state ((a, child_node) : action_nodes))
-            return (backup inc_reward, updated_node)
+            terminal_state <- defaultPolicyTerminalState g child_state
+            let inc_reward = reward state terminal_state
+                child_node = createNewChildNode child_state inc_reward
+                updated_node = Node (InteriorNode (numvisits + 1) totalreward state ((a, child_node) : action_nodes))
+            return (terminal_state, updated_node)
         BestChild a child_tree -> case child_tree of
             Node child_node -> do
-                (inc_reward, updated_child_node) <- uctUpdateWithReward g child_node
-                let updated_action_nodes = replaceListElement (a, updated_child_node) nodeActionEq action_nodes
-                    updated_node = Node (InteriorNode (numvisits + 1) (totalreward + inc_reward) state updated_action_nodes)
-                return (backup inc_reward, updated_node)
-            Terminal termvisits inc_reward -> do
-                let updated_child_node = Terminal (termvisits + 1) inc_reward
+                (terminal_state, updated_child_node) <- uctUpdateWithReward g child_node
+                let inc_reward = reward state terminal_state
+                    rewarded_child_node = increment_node_reward inc_reward updated_child_node
+                    updated_action_nodes = replaceListElement (a, rewarded_child_node) nodeActionEq action_nodes
+                    updated_node = Node (InteriorNode (numvisits + 1) totalreward state updated_action_nodes)
+                return (terminal_state, updated_node)
+            Terminal termvisits inc_reward terminal_state -> do
+                let updated_child_node = Terminal (termvisits + 1) inc_reward terminal_state
                     updated_action_nodes = replaceListElement (a, updated_child_node) nodeActionEq action_nodes
-                    updated_node = Node (InteriorNode (numvisits + 1) (totalreward + inc_reward) state updated_action_nodes)
-                return (backup inc_reward, updated_node)
+                    updated_node = Node (InteriorNode (numvisits + 1) totalreward state updated_action_nodes)
+                return (terminal_state, updated_node)
     where nodeActionEq x y = (fst x) == (fst y)
           createNewChildNode child_state inc_reward = if isTerminal child_state
-                then Terminal 1 inc_reward
+                then Terminal 1 inc_reward child_state
                 else Node (InteriorNode 1 inc_reward child_state [])
 
 uctUpdate :: (Eq a, Ord r, Floating r, Environment s a r, StatefulGen g m) => g -> Tree s a r -> m (Tree s a r)
 uctUpdate g tree = do
     case tree of
-        Node node    -> snd <$> uctUpdateWithReward g node
-        Terminal _ _ -> return tree
+        Node node      -> snd <$> uctUpdateWithReward g node
+        Terminal _ _ _ -> return tree
 
 {-
 data MCTSState s a r = 
@@ -156,11 +183,37 @@ uctSearch n g tree = do
     updated_tree <- updateTree n tree
     case updated_tree of
         Node (InteriorNode numvisits _ _ action_nodes) -> return $ Just (bestChild numvisits action_nodes)
-        Terminal _ _                                   -> return $ Nothing
+        Terminal _ _ _                                 -> return $ Nothing
  where updateTree k tree0 | k > 0     = uctUpdate g tree0 >>= updateTree (k - 1)
                           | otherwise = return tree0
 
 initTree :: (Num r, Environment s a r) => s -> Tree s a r
 initTree s = if isTerminal s
-    then Terminal 0 (reward s)
+    then Terminal 0 (reward s s) s
     else Node (InteriorNode 0 (fromIntegral (0 :: Int)) s [])
+
+
+{-
+class RewardContainer p rc r | rc -> p, rc -> r where
+    gamePlayerReward :: p -> rc -> r
+
+instance RewardContainer Int [Double] Double where
+    gamePlayerReward = flip (!!)
+
+class GameEnvironment s p a rc | s -> p, s -> a, s -> rc where
+    gameValidActions :: s -> [a]
+    gameIsTerminal :: s -> Bool
+    gameAct :: s -> a -> s
+    gamePlayer :: s -> Maybe p
+    gameRewards :: s -> rc
+
+instance (Eq a, Ord r, Num r, GameEnvironment s p a rc, RewardContainer p rc r) => Environment s a r where
+    validActions = gameValidActions
+    isTerminal = gameIsTerminal
+    act = gameAct
+    -- reward :: s -> s -> r
+    reward currentstate terminalstate =
+        let defaultreward = fromIntegral 0
+            playerRewardComponent = flip gamePlayerReward (gameRewards terminalstate)
+        in maybe defaultreward playerRewardComponent (gamePlayer currentstate)
+-}
