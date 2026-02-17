@@ -7,6 +7,7 @@ module MCTS
     ( someFunc
     , Tree(..)
     , Environment(..)
+    , UCTParams (UCTParams, explorationConstant)
     -- , expand
     , uctSearch
     , uctUpdate 
@@ -21,6 +22,12 @@ import System.Random.Stateful (StatefulGen, uniformRM)
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
+data (Floating r) => UCTParams r = UCTParams {
+        explorationConstant :: r
+    } deriving (Show, Eq)
+
+selectionUCTParams :: (Floating r) => UCTParams r -> UCTParams r
+selectionUCTParams params = params { explorationConstant = fromIntegral (0 :: Int) }
 
 data InteriorNode s a r = InteriorNode Int r s [(a, Tree s a r)]
     deriving (Show, Eq)
@@ -59,36 +66,36 @@ expand g (InteriorNode _ _ state actionnodes) =
           remaining_actions = filter not_attempted all_actions
           num_remaining_actions = length remaining_actions
 
-uctObjective :: (Floating r) => Int -> Tree s a r -> r
-uctObjective parentvisits (Node (InteriorNode visits totalreward _ _)) =
+uctObjective :: (Floating r) => UCTParams r -> Int -> Tree s a r -> r
+uctObjective (UCTParams uctconst) parentvisits (Node (InteriorNode visits totalreward _ _)) =
     let pvs = fromIntegral parentvisits
         cvs = fromIntegral visits
         -- two = (fromIntegral 2) :: r
         -- uctconst = sqrt ((fromIntegral (2 :: Int)) :: r)
         -- uctconst = sqrt two
-        uctconst = sqrt (fromIntegral (2 :: Int))
+        -- uctconst = sqrt (fromIntegral (2 :: Int))
     in 
         (totalreward / cvs) + uctconst * sqrt (2 * (log pvs) / cvs)
-uctObjective parentvisits (Terminal visits incrementalreward _) =
+uctObjective (UCTParams uctconst) parentvisits (Terminal visits incrementalreward _) =
     let pvs = fromIntegral parentvisits
         cvs = fromIntegral visits
-        uctconst = sqrt (fromIntegral (2 :: Int))
+        -- uctconst = sqrt (fromIntegral (2 :: Int))
     in 
         -- Note that we don't need something like totalreward / visits in the first
         -- term of the following since the reward won't vary in the terminal state
         incrementalreward + uctconst * sqrt (2 * (log pvs) / cvs)
 
-bestChild :: (Eq a, Ord r, Floating r) => Int -> [(a, Tree s a r)] -> (a, Tree s a r)
-bestChild numvisits action_nodes =
-    let comparefn = comparing (uctObjective numvisits . snd)
+bestChild :: (Eq a, Ord r, Floating r) => UCTParams r -> Int -> [(a, Tree s a r)] -> (a, Tree s a r)
+bestChild params numvisits action_nodes =
+    let comparefn = comparing (uctObjective params numvisits . snd)
     in maximumBy comparefn action_nodes
 
 data PolicyAction s a r = Expand a
                         | BestChild a (Tree s a r)
     deriving (Show, Eq)
 
-bestChildForNode :: (Eq a, Ord r, Floating r) => InteriorNode s a r -> PolicyAction s a r
-bestChildForNode (InteriorNode numvisits _ _ action_nodes) = uncurry BestChild $ bestChild numvisits action_nodes
+bestChildForNode :: (Eq a, Ord r, Floating r) => UCTParams r -> InteriorNode s a r -> PolicyAction s a r
+bestChildForNode params (InteriorNode numvisits _ _ action_nodes) = uncurry BestChild $ bestChild params numvisits action_nodes
 
 {-
 defaultPolicy :: (Environment s a r, StatefulGen g m) => g -> s -> m r
@@ -115,12 +122,12 @@ defaultPolicyTerminalState  g s = if isTerminal s
 
 -- treePolicy
 -- treePolicyNext :: (Environment s a r, StatefulGen g m) => g -> Int -> s -> [(a, Tree s a r)] -> m (PolicyAction s a r)
-treePolicyNext :: (Eq a, Ord r, Floating r, Environment s a r, StatefulGen g m) => g -> InteriorNode s a r -> m (PolicyAction s a r)
-treePolicyNext g node = do
+treePolicyNext :: (Eq a, Ord r, Floating r, Environment s a r, StatefulGen g m) => g -> UCTParams r -> InteriorNode s a r -> m (PolicyAction s a r)
+treePolicyNext g params node = do
     actionM <- expand g node
     let next_policy = case actionM of
             Just action -> Expand action
-            Nothing     -> bestChildForNode node
+            Nothing     -> bestChildForNode params node
     return next_policy
 
 replaceListElement :: a -> (a -> a -> Bool) -> [a] -> [a]
@@ -138,9 +145,9 @@ increment_node_reward inc_reward (Node (InteriorNode numvisits totalreward state
 increment_node_reward _ term = term
 
 
-uctUpdateWithReward :: (Eq a, Ord r, Num r, Floating r, Environment s a r, StatefulGen g m) => g -> InteriorNode s a r -> m (s, Tree s a r)
-uctUpdateWithReward g node@(InteriorNode numvisits totalreward state action_nodes) = do
-    next_policy <- treePolicyNext g node
+uctUpdateWithReward :: (Eq a, Ord r, Num r, Floating r, Environment s a r, StatefulGen g m) => g -> UCTParams r -> InteriorNode s a r -> m (s, Tree s a r)
+uctUpdateWithReward g params node@(InteriorNode numvisits totalreward state action_nodes) = do
+    next_policy <- treePolicyNext g params node
     case next_policy of
         Expand a -> do
             let child_state = act state a
@@ -151,7 +158,7 @@ uctUpdateWithReward g node@(InteriorNode numvisits totalreward state action_node
             return (terminal_state, updated_node)
         BestChild a child_tree -> case child_tree of
             Node child_node -> do
-                (terminal_state, updated_child_node) <- uctUpdateWithReward g child_node
+                (terminal_state, updated_child_node) <- uctUpdateWithReward g params child_node
                 let inc_reward = reward state terminal_state
                     rewarded_child_node = increment_node_reward inc_reward updated_child_node
                     updated_action_nodes = replaceListElement (a, rewarded_child_node) nodeActionEq action_nodes
@@ -167,10 +174,10 @@ uctUpdateWithReward g node@(InteriorNode numvisits totalreward state action_node
                 then Terminal 1 inc_reward child_state
                 else Node (InteriorNode 1 inc_reward child_state [])
 
-uctUpdate :: (Eq a, Ord r, Floating r, Environment s a r, StatefulGen g m) => g -> Tree s a r -> m (Tree s a r)
-uctUpdate g tree = do
+uctUpdate :: (Eq a, Ord r, Floating r, Environment s a r, StatefulGen g m) => g -> UCTParams r -> Tree s a r -> m (Tree s a r)
+uctUpdate g params tree = do
     case tree of
-        Node node      -> snd <$> uctUpdateWithReward g node
+        Node node      -> snd <$> uctUpdateWithReward g params node
         Terminal _ _ _ -> return tree
 
 {-
@@ -178,14 +185,15 @@ data MCTSState s a r =
     deriving (Show)
 -}
 
-uctSearch :: (Eq a, Ord r, Floating r, Environment s a r, StatefulGen g m) => Int -> g -> Tree s a r -> m (Maybe (a, Tree s a r))
-uctSearch n g tree = do
+uctSearch :: (Eq a, Ord r, Floating r, Environment s a r, StatefulGen g m) => Int -> g -> UCTParams r -> Tree s a r -> m (Maybe (a, Tree s a r))
+uctSearch n g params tree = do
     updated_tree <- updateTree n tree
     case updated_tree of
-        Node (InteriorNode numvisits _ _ action_nodes) -> return $ Just (bestChild numvisits action_nodes)
+        Node (InteriorNode numvisits _ _ action_nodes) -> return $ Just (bestChild exploitParams numvisits action_nodes)
         Terminal _ _ _                                 -> return $ Nothing
- where updateTree k tree0 | k > 0     = uctUpdate g tree0 >>= updateTree (k - 1)
+ where updateTree k tree0 | k > 0     = uctUpdate g params tree0 >>= updateTree (k - 1)
                           | otherwise = return tree0
+       exploitParams = selectionUCTParams params
 
 initTree :: (Num r, Environment s a r) => s -> Tree s a r
 initTree s = if isTerminal s
