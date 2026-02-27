@@ -29,11 +29,11 @@
       },
       "locked": {
         "dir": "reinforcement-learning-games/prlp-demo",
-        "lastModified": 1741996154,
-        "narHash": "sha256-bwBu2v0RC/Vdk4DFsj/0cG/8Qo7PTQVwGcbFe2had7U=",
+        "lastModified": 1743687947,
+        "narHash": "sha256-Nk8A3IOc+kn/dMkD+gy1JgUraXNvzsf88kOeWUyCheQ=",
         "owner": "jvstinian",
         "repo": "data-science-projects",
-        "rev": "26c33328ff0faa09181f72ab67c3fee1cc452aa4",
+        "rev": "38f431294d3ea9019c3d0ae03548f42f686d3ee7",
         "type": "github"
       },
       "original": {
@@ -53,11 +53,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1741918565,
-        "narHash": "sha256-eQ8K7cxxWp0QxMR2di9ScJdHHCBiQlAyjYkXkchw6TY=",
+        "lastModified": 1742157124,
+        "narHash": "sha256-YRRRnpQSAqaw+Cp2ZL0REfVKaEnM8uhY6opOajESRt8=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "d6afa5a21f99a0ca0154dddbcbd58a4ed1dff48d",
+        "rev": "bb518cccdf1825df8637dc46966ddc5a0ee4f504",
         "type": "github"
       },
       "original": {
@@ -76,11 +76,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1741918884,
-        "narHash": "sha256-aKNANT5b1UY0GMCmN0kEHDdB5VnUBC9eb9pMSHNoZO4=",
+        "lastModified": 1742157215,
+        "narHash": "sha256-DBORFlWQ6f4P1rk1iHDA7VQh9sQCcAevz2GM9M895lg=",
         "owner": "jvstinian",
         "repo": "libzombsole",
-        "rev": "d44412a21355fb3998b82b105a05dfa2f070bc7e",
+        "rev": "89ab757591239711455b6b81753c77ed829b9078",
         "type": "github"
       },
       "original": {
@@ -91,16 +91,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1720535198,
-        "narHash": "sha256-zwVvxrdIzralnSbcpghA92tWu2DV2lwv89xZc8MTrbg=",
+        "lastModified": 1735563628,
+        "narHash": "sha256-OnSAY7XDSx7CtDoqNh8jwVwh4xNL/2HaJxGjryLWzX8=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "205fd4226592cc83fd4c0885a3e4c9c400efabb5",
+        "rev": "b134951a4c9f3c995fd7be05f3243f8ecd65d798",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixos-23.11",
+        "ref": "nixos-24.05",
         "repo": "nixpkgs",
         "type": "github"
       }

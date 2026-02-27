@@ -2,7 +2,7 @@
 {
   inputs = {
     nixpkgs = {
-      url = "github:nixos/nixpkgs/nixos-23.11";
+      url = "github:nixos/nixpkgs/nixos-24.05";
     };
     libzombsole = {
       url = "github:jvstinian/libzombsole";
