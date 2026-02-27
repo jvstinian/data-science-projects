@@ -34,7 +34,9 @@ module Ale (
     getMaxNumFrames,
     getScreenGrayscale,
     getScreenRGB,
-    saveScreenPNG 
+    saveScreenPNG,
+    GameMode,
+    GameDifficulty
 ) where
 
 import qualified Language.C.Inline as C

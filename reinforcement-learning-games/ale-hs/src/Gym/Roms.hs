@@ -1,7 +1,8 @@
 module Gym.Roms 
     ( moduleName
     , getAllRomIds
-    , getRomPath ) where
+    , getRomPath
+    , RomPathResult(..)) where
 
 import Paths_ale_hs (getDataFileName)
 import System.FilePath ((</>))

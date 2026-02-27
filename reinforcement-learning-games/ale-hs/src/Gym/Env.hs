@@ -6,8 +6,14 @@ module Gym.Env
     , Frameskip(FrameskipLowHigh, FrameskipValue)
     ) where
 
--- import Data.Word (Word16)
-import Ale (ALEInterface, newAleInterface)
+import Data.Word (Word64)
+import Control.Monad (replicateM)
+import System.Random.SplitMix (SMGen, mkSMGen, newSMGen, nextInt)
+import Gym.Roms (getRomPath, RomPathResult(RomMD5HashNotFound, RomMD5HashMismatch, RomPath))
+import Ale (ALEInterface, newAleInterface, Action, loadRom, setMode, setDifficulty, setBool, setInt, setFloat, GameMode, GameDifficulty, getEpisodeFrameNumber, getFrameNumber, act, gameOver, gameTruncated)
+import qualified Ale (lives)
+
+getLives = Ale.lives
 
 -- OMISSIONS:
 -- ale::Logger has not been bound.  As such we do not support setLoggerMode.
@@ -70,14 +76,14 @@ data Frameskip = FrameskipLowHigh Int Int
 --           sound_obs: bool => Add the sound from the frame to the observation.
 -- 
 data AtariEnvParams = AtariEnvParams
-    { mode :: Maybe Int
-    , difficulty :: Maybe Int
+    { mode :: Maybe GameMode
+    , difficulty :: Maybe GameDifficulty
     , obsType :: ObservationType
     , frameskip :: Frameskip
-    , repeatActionProbability :: Double
+    , repeatActionProbability :: Float
     , fullActionSpace :: Bool
     , continuous :: Bool
-    , continuousActionThreshold :: Double
+    , continuousActionThreshold :: Float
     , maxNumFramesPerEpisode :: Maybe Int
     , renderMode :: GymRenderMode
     , soundObs :: Bool }
@@ -110,12 +116,15 @@ data AtariEnv = AtariEnv
 
 -- """This function initializes the ROM and sets the corresponding mode and difficulty."""
 loadGame :: ALEInterface -> String -> AtariEnvParams -> IO ()
-loadGame ale params = do
-        loadRom ale romPath
+loadGame ale rom params = do
+        romRes <- getRomPath rom
+        case romRes of
+            RomPath romPath -> loadRom ale romPath
+            RomMD5HashNotFound -> error $ "ROM MD5 hash not found for " ++ rom -- TODO: I'd like to avoid use of error
+            RomMD5HashMismatch -> error $ "Unexpected ROM MD5 hash for " ++ rom
         maybe (return ()) (setMode ale) gameModeM
         maybe (return ()) (setDifficulty ale) gameDifficultyM
-    where romPath = getRomPath rom
-          gameModeM = mode params
+    where gameModeM = mode params
           gameDifficultyM = difficulty params
 
 -- """Seeds the internal and ALE RNG."""
@@ -137,7 +146,7 @@ initAtariEnv rom params = do
         -- TODO: frameskip sanitize 
         ale <- newAleInterface
         -- TODO: self.ale.setLoggerMode(ale_py.LoggerMode.Error)
-        setFloat ale "repeat_action_probability" repeat_action_probability
+        setFloat ale "repeat_action_probability" rap
         maybe (return ()) (setInt ale "max_num_frames_per_episode") mnfM
         -- If render mode is human we can display screen and sound
         case render_mode of
@@ -153,7 +162,48 @@ initAtariEnv rom params = do
           mnfM = maxNumFramesPerEpisode params
           render_mode = renderMode params
           sound_obs = soundObs params
-          
+
+getInfo :: AtariEnv -> IO AtariEnvStepMetadata
+getInfo env = do
+        envLives <- getLives ale
+        envEpisodeFrameNumber <- getEpisodeFrameNumber ale
+        envFrameNumber <- getFrameNumber ale
+        return AtariEnvStepMetadata 
+            { lives = envLives
+            , episodeFrameNumber = envEpisodeFrameNumber
+            , frameNumber = envFrameNumber
+            , seeds = Nothing } -- TODO: Set seed info properly
+    where ale = aleInterface env
+    
+--         """Perform one agent step, i.e., repeats `action` frameskip # of steps.
+step :: AtariEnv -> Action -> IO (ObservationType, Double, Bool, Bool, AtariEnvStepMetadata)
+step env action = do
+        rewards <- replicateM fskip $ act ale action strength
+        is_terminal <- gameOver ale False
+        is_truncated <- gameTruncated ale
+        info <- getInfo env
+        -- obs <- getObs ale (obsType $ atariParams env) (soundObs $ atariParams env)
+        return (RGBObservation, fromIntegral (sum rewards), is_terminal, is_truncated, info)
+        -- return self._get_obs(), reward, is_terminal, is_truncated, self._get_info()
+    where ale = aleInterface env
+          params = atariParams env
+          fskip = case frameskip params of
+                        FrameskipValue v -> v
+                        FrameskipLowHigh low high -> high
+          strength = 1.0
+--         # If frameskip is a length 2 tuple then it's stochastic
+--         # frameskip between [frameskip[0], frameskip[1]] uniformly.
+--         if isinstance(self._frameskip, int):
+--             frameskip = self._frameskip
+--         elif isinstance(self._frameskip, tuple):
+--             frameskip = self.np_random.integers(*self._frameskip)
+--         else:
+--             raise error.Error(f"Invalid frameskip type: {self._frameskip}")
+
+{-
+closeAtariEnv :: AtariEnv -> IO ()
+closeAtariEnv env = do
+-}
 
 -- from ale_py import roms
 -- from gymnasium import error, spaces, utils

@@ -86,6 +86,8 @@ library
                       base16-bytestring,
                       bytestring,
                       filepath,
+		      splitmix,
+		      random,
                       aeson,
                       cryptohash-md5
 
