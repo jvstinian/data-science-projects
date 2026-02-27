@@ -299,7 +299,7 @@ let
     jupyter ipython matplotlib
   ];
   my-python = pkgs.python3.withPackages my-python-packages;
-  my-ghc = (pkgs.haskellPackages.ghcWithPackages (hs: [hs.cabal-install hs.containers hs.inline-c hs.inline-c-cpp]));
+  my-ghc = (pkgs.haskellPackages.ghcWithPackages (hs: [hs.cabal-install hs.containers hs.inline-c hs.inline-c-cpp hs.splitmix hs.random hs.haskell-language-server]));
 in 
 # my-python.env
 pkgs.mkShell {

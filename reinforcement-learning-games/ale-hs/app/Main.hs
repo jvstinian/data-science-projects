@@ -15,13 +15,17 @@ import qualified Ale
     , getScreenGrayscale
     , getScreenRGB
     , saveScreenPNG )
+import qualified Gym.Roms as Roms (getRomPath)
 -- import Foreign.C.String (peekCAString)
 
 main :: IO ()
 main = do
   let breakout = "/nix/store/ywni35n1b5alf045w58barll7kzbh9b0-python3.12-ale-py-0.10.1/lib/python3.12/site-packages/ale_py/roms/breakout.bin"
+      -- breakout = "/home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/tetris26/tetris.bin"
       paddlestrength = 1.0 :: Float
   putStrLn "Hello, Haskell!"
+  tetrisPath <- Roms.getRomPath "tetris"
+  print tetrisPath
   MyLib.someFunc
   InlineC.c_cos 0.0 >>= (putStrLn . ("cos(0) = " ++) . show)
   InlineC.faster_c_cos 1.57 >>= (putStrLn . ("cos(1.57) = " ++) . show)
@@ -41,7 +45,7 @@ main = do
   Ale.act aleiface Ale.PLAYER_A_RIGHT paddlestrength >>= (putStrLn . ("Reward from moving right: " ++) . show)
   Ale.act aleiface Ale.PLAYER_A_LEFT  paddlestrength >>= (putStrLn . ("Reward from moving left: " ++) . show)
   Ale.act aleiface Ale.PLAYER_A_LEFT  paddlestrength >>= (putStrLn . ("Reward from moving left: " ++) . show)
-  -- playGame aleiface (312 :: Int)
+  -- playGame aleiface (320 :: Int)
   Ale.getEpisodeFrameNumber aleiface >>= (putStrLn . ("Episode Frame Number: " ++) . show)
   Ale.getScreenGrayscale aleiface >>= (\(r, c, screenvec) -> putStrLn $ "Screen rows: " ++ show r ++ ", columns: " ++ show c ++ ", length of grayscale screen: " ++ show (length screenvec))
   Ale.getScreenRGB aleiface >>= (\(r, c, screenvec) -> putStrLn $ "RGB Screen rows: " ++ show r ++ ", columns: " ++ show c ++ ", length of RGB screen: " ++ show (length screenvec))

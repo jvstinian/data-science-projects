@@ -51,6 +51,9 @@ extra-doc-files:    CHANGELOG.md
 -- Extra source files to be distributed with the package, such as examples, or a tutorial module.
 -- extra-source-files:
 
+data-files: resources/md5.json
+            resources/tetris.bin
+
 common warnings
     ghc-options: -Wall
 
@@ -63,9 +66,13 @@ library
                       InlineC
                       Ale
                       AleContext
+                      Gym.Env
+                      Gym.Registration
+                      Gym.Roms
 
     -- Modules included in this library but not exported.
-    -- other-modules:
+    other-modules: Paths_ale_hs
+    autogen-modules: Paths_ale_hs
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -75,7 +82,12 @@ library
                       containers,
                       vector,
                       inline-c,
-                      inline-c-cpp
+                      inline-c-cpp,
+                      base16-bytestring,
+                      bytestring,
+                      filepath,
+                      aeson,
+                      cryptohash-md5
 
     -- Directories containing source files.
     hs-source-dirs:   src
