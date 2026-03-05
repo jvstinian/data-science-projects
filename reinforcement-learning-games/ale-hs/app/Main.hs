@@ -16,9 +16,11 @@ import qualified Ale
     , getScreenRGB
     , saveScreenPNG )
 import qualified Gym.Roms as Roms (getRomPath)
+import qualified Gym.Env as Gym (initAtariEnv, step, reset, defaultAtariEnvParams, GymRenderMode(Human), AtariEnvParams(renderMode))
 -- import Foreign.C.String (peekCAString)
 
 main :: IO ()
+{-
 main = do
   let breakout = "/nix/store/ywni35n1b5alf045w58barll7kzbh9b0-python3.12-ale-py-0.10.1/lib/python3.12/site-packages/ale_py/roms/breakout.bin"
       -- breakout = "/home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/tetris26/tetris.bin"
@@ -59,7 +61,21 @@ main = do
             if num_steps > 0
             then playGame aleinterface (num_steps - 1)
             else return ()
-            
+-}
+main = do
+  -- breakout = "/nix/store/ywni35n1b5alf045w58barll7kzbh9b0-python3.12-ale-py-0.10.1/lib/python3.12/site-packages/ale_py/roms/breakout.bin"
+  env <- Gym.initAtariEnv "tetris" (Gym.defaultAtariEnvParams { Gym.renderMode = Gym.Human })
+  Gym.reset env Nothing
+  playGame env (100 :: Int)
+  -- Gym.reset env Nothing
+  -- playGame env (100 :: Int)
+  where playGame env steps_remaining = do
+            (_, reward, gameover, gametrunc, _) <- Gym.step env Ale.PLAYER_A_NOOP
+            putStrLn $ "Reward: " ++ show reward ++ ", Game over: " ++ show gameover ++ ", Game truncated: " ++ show gametrunc
+            if not gameover && not gametrunc && steps_remaining > 0
+            then playGame env (steps_remaining - 1)
+            else return ()
+
 
 {- Running: /nix/store/wi8b7895zmzv4h1kva0bmw0p4lqvxm0l-ghc-9.6.6-with-packages/bin/ghc --make -no-link -fbuilding-cabal-package -O -static -outputdir /home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/build/x86_64-linux/ghc-9.6.6/ale-hs-0.1.0.0/x/ale-hs/build/ale-hs/ale-hs-tmp -odir /home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/build/x86_64-linux/ghc-9.6.6/ale-hs-0.1.0.0/x/ale-hs/build/ale-hs/ale-hs-tmp -hidir /home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/build/x86_64-linux/ghc-9.6.6/ale-hs-0.1.0.0/x/ale-hs/build/ale-hs/ale-hs-tmp -hiedir /home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/build/x86_64-linux/ghc-9.6.6/ale-hs-0.1.0.0/x/ale-hs/build/ale-hs/ale-hs-tmp/extra-compilation-artifacts/hie -stubdir /home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/build/x86_64-linux/ghc-9.6.6/ale-hs-0.1.0.0/x/ale-hs/build/ale-hs/ale-hs-tmp -i -iapp -i/home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/build/x86_64-linux/ghc-9.6.6/ale-hs-0.1.0.0/x/ale-hs/build/ale-hs/ale-hs-tmp -i/home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/build/x86_64-linux/ghc-9.6.6/ale-hs-0.1.0.0/x/ale-hs/build/ale-hs/autogen -i/home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/build/x86_64-linux/ghc-9.6.6/ale-hs-0.1.0.0/x/ale-hs/build/global-autogen -I/home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/build/x86_64-linux/ghc-9.6.6/ale-hs-0.1.0.0/x/ale-hs/build/ale-hs/autogen -I/home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/build/x86_64-linux/ghc-9.6.6/ale-hs-0.1.0.0/x/ale-hs/build/global-autogen -I/home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/build/x86_64-linux/ghc-9.6.6/ale-hs-0.1.0.0/x/ale-hs/build/ale-hs/ale-hs-tmp -optP-include -optP/home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/build/x86_64-linux/ghc-9.6.6/ale-hs-0.1.0.0/x/ale-hs/build/ale-hs/autogen/cabal_macros.h -this-unit-id ale-hs-0.1.0.0-inplace-ale-hs -hide-all-packages -Wmissing-home-modules -no-user-package-db -package-db /home/justinian/.local/state/cabal/store/ghc-9.6.6/package.db -package-db /home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/packagedb/ghc-9.6.6 -package-db /home/justinian/Code/datascience-miscellaneous/reinforcement-learning-games/ale-hs/dist-newstyle/build/x86_64-linux/ghc-9.6.6/ale-hs-0.1.0.0/x/ale-hs/package.conf.inplace -package-id ale-hs-0.1.0.0-inplace -package-id base-4.18.2.1 -package-id inline-c-0.9.1.10-D76GAfkM74pLa29elUEy2l -package-id inline-c-cpp-0.5.0.2-BY82m5wwVgCCDDrmXB1rjA -XHaskell2010 app/Main.hs -Wall -hide-all-packages
 

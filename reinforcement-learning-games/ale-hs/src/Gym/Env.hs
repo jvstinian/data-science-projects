@@ -1,16 +1,20 @@
 module Gym.Env
     ( AtariEnvParams(..)
     , defaultAtariEnvParams
+    , GymRenderMode(..)
     , AtariEnv
     , initAtariEnv
     , Frameskip(FrameskipLowHigh, FrameskipValue)
+    , initAtariEnv
+    , reset
+    , step
     ) where
 
 import Data.Word (Word64)
 import Control.Monad (replicateM)
 import System.Random.SplitMix (SMGen, mkSMGen, newSMGen, nextInt)
 import Gym.Roms (getRomPath, RomPathResult(RomMD5HashNotFound, RomMD5HashMismatch, RomPath))
-import Ale (ALEInterface, newAleInterface, Action, loadRom, setMode, setDifficulty, setBool, setInt, setFloat, GameMode, GameDifficulty, getEpisodeFrameNumber, getFrameNumber, act, gameOver, gameTruncated)
+import Ale (ALEInterface, newAleInterface, Action, loadRom, setMode, setDifficulty, setBool, setInt, setFloat, GameMode, GameDifficulty, getEpisodeFrameNumber, getFrameNumber, act, gameOver, gameTruncated, resetGame)
 import qualified Ale (lives)
 
 getLives = Ale.lives
@@ -187,6 +191,7 @@ step env action = do
         -- return self._get_obs(), reward, is_terminal, is_truncated, self._get_info()
     where ale = aleInterface env
           params = atariParams env
+          -- TODO: Improve the following.
           fskip = case frameskip params of
                         FrameskipValue v -> v
                         FrameskipLowHigh low high -> high
@@ -199,6 +204,25 @@ step env action = do
 --             frameskip = self.np_random.integers(*self._frameskip)
 --         else:
 --             raise error.Error(f"Invalid frameskip type: {self._frameskip}")
+
+--  """Resets environment and returns initial episode observation."""
+reset :: AtariEnv -> Maybe Word64 -> IO (ObservationType, AtariEnvStepMetadata)
+reset env seedM = do
+        -- super().reset(seed=seed, options=options)
+        -- # sets the seeds if it's specified for both ALE and frameskip np
+        -- # we only want to do this when commanded to, so we don't reset all previous states, statistics, etc.
+        -- seeded_with = None
+        -- if seed is not None:
+        --     seeded_with = self.seed_game(seed)
+        --     self.load_game()
+        -- 
+        resetGame ale
+        -- obs = self._get_obs()
+        info <- getInfo env
+        -- if seeded_with is not None:
+        --     info["seeds"] = seeded_with
+        return (RGBObservation, info)
+    where ale = aleInterface env
 
 {-
 closeAtariEnv :: AtariEnv -> IO ()
