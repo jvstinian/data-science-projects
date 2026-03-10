@@ -1,0 +1,39 @@
+name:           statistical-models
+version:        0.0.0.1
+synopsis:       synopsis
+description:
+  Description
+
+license:        BSD-3-Clause
+license-file:   LICENSE
+homepage:       https://github.com/jvstinian/data-science-projects/haskell/statistics/statistical-models
+bug-reports:    https://github.com/jvstinian/data-science-projects/issues
+author:         Justin Smith <jvstinian@gmail.com>
+maintainer:     Justin Smith <jvstinian@gmail.com>
+copyright:      2024 - 2025 Justin Smith, jvstinian.com
+category:       Math, Statistics
+build-type:     Simple
+cabal-version:  >= 1.10
+extra-source-files:
+  README.md
+
+tested-with:
+    GHC ==9.4.6
+
+
+library
+  default-language: Haskell2010
+  exposed-modules:
+    Statistics.Distribution.Pareto
+    , Statistics.Regression.Linear
+    , Statistics.Regression.Logistic
+  other-modules:
+    Statistics.Regression.Internal
+  build-depends: base            >= 4.9 && < 5
+               , statistics      >= 0.16.2.0
+               , vector          >= 0.10
+               , ad              >= 4.2 && <4.6
+	       , math-functions
+  hs-source-dirs:      src
+  ghc-options: -O2 -Wall -fwarn-tabs
+

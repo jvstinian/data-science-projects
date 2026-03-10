@@ -1,3 +1,7 @@
+# 1.3.0 
+
+Switching from gym to gymnasium.
+
 # 1.2.0 
 
 Adjusting the reset method in the gym implementation to return both an initial observation and an info dictionary.
