@@ -37,23 +37,28 @@
                   #         keras = python-prev.keras.override { tensorflow = python-prev.tensorflowWithCuda; };
                   #     };
                   # }; 
-                  (python-final: python-prev: {
-                    keras = python-prev.keras.override { tensorflow = python-prev.tensorflowWithCuda; };
+                  (python-final: python-prev: rec {
+                    # keras = python-prev.keras.override { tensorflow = python-prev.tensorflowWithCuda; };
+                    tf-keras = python-prev.tf-keras.override { tensorflow = python-prev.tensorflowWithCuda; };
+                    # TODO: Might need these in a future version
+                    # tf2onnx = python-prev.tf2onnx.override { tensorflow = python-prev.tensorflowWithCuda; };
+                    # keras = python-prev.keras.override { tensorflow = python-prev.tensorflowWithCuda; tf2onnx = python-final.tf2onnx; };
                   })
               ];
           };
     
           pkgs = import nixpkgs {
             inherit system;
-            # overlays = [ libzombsole.overlays.default libzombpyg.overlays.default libprlpdemo.overlays.default python-keras-overlay ];
-            overlays = [ libzombsole.overlays.default libzombpyg.overlays.default libprlpdemo.overlays.default ];
+            overlays = [ libzombsole.overlays.default libzombpyg.overlays.default libprlpdemo.overlays.default python-keras-overlay ];
+            # overlays = [ libzombsole.overlays.default libzombpyg.overlays.default libprlpdemo.overlays.default ];
           };
 
           dev-python-packages = ps: with ps; [
               numpy
+              scipy
               opencv4
-              tensorflowWithCuda
-              gymnasium tf-keras  # TODO: Is keras still used?
+              tensorflowWithCuda tf-keras # keras # TODO: Is keras still used?
+              gymnasium
               jvstinian-zombsole
               prlp-demo
               zombpyg 
