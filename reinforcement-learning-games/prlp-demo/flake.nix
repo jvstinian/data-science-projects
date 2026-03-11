@@ -1,7 +1,7 @@
 {
   inputs = {
     nixpkgs = {
-      url = "github:nixos/nixpkgs/nixos-24.05";
+      url = "github:nixos/nixpkgs/nixos-25.11";
     };
     flake-utils = {
       url = "github:numtide/flake-utils";
@@ -16,6 +16,10 @@
                       name = "prlp-demo";
                       src = ./.;
     
+                      # The following are needed for nixos-25.11
+                      pyproject = true;
+                      build-system = with python-final; [ setuptools ];
+
                       # was previously using "dependencies" but the packages 
                       # didn't appear to propagate to the output package
                       propagatedBuildInputs = with python-final; [
