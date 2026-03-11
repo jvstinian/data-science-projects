@@ -2,20 +2,20 @@
 {
   inputs = {
     nixpkgs = {
-      url = "github:nixos/nixpkgs/nixos-24.05";
+      url = "github:nixos/nixpkgs/nixos-25.11";
     };
     libzombsole = {
-      url = "github:jvstinian/libzombsole";
+      url = "github:jvstinian/libzombsole/nixos-25.11";  # TODO
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
     libzombpyg = {
-      url = "github:jvstinian/zombpyg";
+      url = "github:jvstinian/zombpyg/nixos-25.11";  # TODO
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
     libprlpdemo = {
-      url = "github:jvstinian/data-science-projects?dir=reinforcement-learning-games/prlp-demo";
+      url = "github:jvstinian/data-science-projects/prlp-demo-nixos-25.11?dir=reinforcement-learning-games/prlp-demo";  # TODO
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
@@ -30,12 +30,17 @@
           #       On the other hand, including keras without modification seems to 
           #       resolve the missing module we were seeing with tensorflow.
           python-keras-overlay = final: prev: {
-              python3 = prev.python3.override {
-                  # The keras override seems to cause a problem
-                  packageOverrides = python-final: python-prev: {
-		      keras = python-prev.keras.override { tensorflow = python-prev.tensorflowWithCuda; };
-                  };
-              }; 
+              pythonPackagesOverlays = (prev.pythonPackagesOverlays or [ ]) ++ [
+                  # python3 = prev.python3.override {
+                  #     # The keras override seems to cause a problem
+                  #     packageOverrides = python-final: python-prev: {
+                  #         keras = python-prev.keras.override { tensorflow = python-prev.tensorflowWithCuda; };
+                  #     };
+                  # }; 
+                  (python-final: python-prev: {
+                    keras = python-prev.keras.override { tensorflow = python-prev.tensorflowWithCuda; };
+                  })
+              ];
           };
     
           pkgs = import nixpkgs {
@@ -48,7 +53,7 @@
               numpy
               opencv4
               tensorflowWithCuda
-              gymnasium # keras  # TODO: Is keras still used?
+              gymnasium tf-keras  # TODO: Is keras still used?
               jvstinian-zombsole
               prlp-demo
               zombpyg 
@@ -75,15 +80,15 @@
           dqn-train = python-train-app;
         };
         apps = {
-	  dqn-train = {
-	    type = "app";
+          dqn-train = {
+            type = "app";
             program = "${python-train-app}/bin/train_dqn.py";
           };
-	  dqn-eval = {
-	    type = "app";
+          dqn-eval = {
+            type = "app";
             program = "${python-train-app}/bin/eval_dqn.py";
           };
-	};
+        };
       }
     );
 }

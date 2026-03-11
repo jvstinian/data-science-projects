@@ -29,11 +29,11 @@
       },
       "locked": {
         "dir": "reinforcement-learning-games/prlp-demo",
-        "lastModified": 1743687947,
-        "narHash": "sha256-Nk8A3IOc+kn/dMkD+gy1JgUraXNvzsf88kOeWUyCheQ=",
+        "lastModified": 1773176480,
+        "narHash": "sha256-5nHsLlPoRHAKhv/DZc1G9VDdpVKITxZ2W8PUhcFYzMU=",
         "owner": "jvstinian",
         "repo": "data-science-projects",
-        "rev": "38f431294d3ea9019c3d0ae03548f42f686d3ee7",
+        "rev": "c0a5013dd42cb23056bf1477dc065cde6e88866f",
         "type": "github"
       },
       "original": {
@@ -53,15 +53,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1742157124,
-        "narHash": "sha256-YRRRnpQSAqaw+Cp2ZL0REfVKaEnM8uhY6opOajESRt8=",
+        "lastModified": 1773188779,
+        "narHash": "sha256-674LSnQgQhn6rpmT/bmQvoZqJUAxvR0gnZM1EUh9GbA=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "bb518cccdf1825df8637dc46966ddc5a0ee4f504",
+        "rev": "02db371ed0484eaf96a79701adae23de17ae0094",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
+        "ref": "nixos-25.11",
         "repo": "zombpyg",
         "type": "github"
       }
@@ -76,31 +77,32 @@
         ]
       },
       "locked": {
-        "lastModified": 1742157215,
-        "narHash": "sha256-DBORFlWQ6f4P1rk1iHDA7VQh9sQCcAevz2GM9M895lg=",
+        "lastModified": 1773181249,
+        "narHash": "sha256-bHrkjjN01mcY+qsfZZlwYwtRqzWY8N8LYzPlboeo4vE=",
         "owner": "jvstinian",
         "repo": "libzombsole",
-        "rev": "89ab757591239711455b6b81753c77ed829b9078",
+        "rev": "1944c4bed59f399618a925d89b0c3a44383d106a",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
+        "ref": "nixos-25.11",
         "repo": "libzombsole",
         "type": "github"
       }
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1735563628,
-        "narHash": "sha256-OnSAY7XDSx7CtDoqNh8jwVwh4xNL/2HaJxGjryLWzX8=",
+        "lastModified": 1773068389,
+        "narHash": "sha256-vMrm7Pk2hjBRPnCSjhq1pH0bg350Z+pXhqZ9ICiqqCs=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "b134951a4c9f3c995fd7be05f3243f8ecd65d798",
+        "rev": "44bae273f9f82d480273bab26f5c50de3724f52f",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixos-24.05",
+        "ref": "nixos-25.11",
         "repo": "nixpkgs",
         "type": "github"
       }
