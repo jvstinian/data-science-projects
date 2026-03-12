@@ -15,7 +15,7 @@
                   prlp-demo = python-final.buildPythonPackage rec {
                       name = "prlp-demo";
                       src = ./.;
-    
+
                       # The following are needed for nixos-25.11
                       pyproject = true;
                       build-system = with python-final; [ setuptools ];

@@ -4,7 +4,7 @@ Created on May 16, 2016
 @author: a0096049
 '''
 
-import numpy, pygame
+import pygame
 from prlp_demo.utils import Color, calculateIntersectPoint
 
 
@@ -36,7 +36,7 @@ class Food(Object):
         
         super().__init__(x, y, radius, game)
         self.type = t
-        self.life = numpy.random.randint(1000, 5000)
+        self.life = game.rng.integers(1000, 5000)
         
     def decrease_life(self):
         self.life -= 1

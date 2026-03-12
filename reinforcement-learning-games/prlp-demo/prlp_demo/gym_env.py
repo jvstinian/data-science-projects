@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import gymnasium as gym
 from gymnasium.spaces.discrete import Discrete
 from gymnasium.spaces.box import Box
 from gymnasium.envs.registration import register
@@ -6,7 +7,7 @@ import pygame
 from prlp_demo.game import Game
 
 
-class DemoGymEnv(object):
+class DemoGymEnv(gym.Env):
     """The main OpenAI Gym class. It encapsulates an environment with
     arbitrary behind-the-scenes dynamics. An environment can be
     partially or fully observed.
@@ -30,7 +31,7 @@ class DemoGymEnv(object):
     The methods are accessed publicly as "step", "reset", etc...
     """
     # See the supported modes in the render method
-    metadata = {'render.modes': ['human']}
+    metadata = {'render_modes': ['human']}
 
     # Set these in ALL subclasses
     reward_range = (-float('inf'), float('inf'))
@@ -45,8 +46,8 @@ class DemoGymEnv(object):
         self.w = 640
         self.h = 480
         self.window = None
-        if render_mode is not None and (render_mode not in self.metadata.get('render.modes', [])):
-            raise ValueError(f"In gymnasium environment, render_mode {render_mode} is not valid, must be one of {', '.join(self.metadata.get('render.modes', []))}")
+        if render_mode is not None and (render_mode not in self.metadata.get('render_modes', [])):
+            raise ValueError(f"In gymnasium environment, render_mode {render_mode} is not valid, must be one of {', '.join(self.metadata.get('render_modes', []))}")
         self.render_mode = render_mode
 
         if self.render_mode == "human":
@@ -57,8 +58,8 @@ class DemoGymEnv(object):
             self.w, self.h, self.window
         )
 
-        # NOTE: In the following, feedback_size is (1, 3*number_of_sensors, 1)
-        self.observation_space = Box(low=0.0, high=1.0, shape=self.game.get_feedback_size())
+        # NOTE: In the following, feedback_size is (3*number_of_sensors, 1)
+        self.observation_space = Box(low=0.0, high=2.0, shape=self.game.get_feedback_size())
         self.action_space = Discrete(len(self.game.get_available_actions()))
 
     def __initialize_renderer__(self):
@@ -96,7 +97,7 @@ class DemoGymEnv(object):
             
         return observation, reward, done, truncated, info
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
         """Resets the environment to an initial state and returns an initial
         observation.
 
@@ -109,7 +110,8 @@ class DemoGymEnv(object):
         Returns:
             observation (object): the initial observation.
         """
-        self.game.reset()
+        super().reset(seed=seed)
+        self.game.reset(seed=seed)
         return self.get_observation(), {}
 
     def render(self):
@@ -129,7 +131,7 @@ class DemoGymEnv(object):
           and ANSI escape sequences (e.g. for colors).
 
         Note:
-            Make sure that your class's metadata 'render.modes' key includes
+            Make sure that your class's metadata 'render_modes' key includes
               the list of supported modes. It's recommended to call super()
               in implementations to use the functionality of this method.
 
@@ -139,7 +141,7 @@ class DemoGymEnv(object):
         Example:
 
         class MyEnv(Env):
-            metadata = {'render.modes': ['human', 'rgb_array']}
+            metadata = {'render_modes': ['human', 'rgb_array']}
 
             def render(self, mode='human'):
                 if mode == 'rgb_array':
@@ -165,22 +167,20 @@ class DemoGymEnv(object):
             pygame.display.quit()
             pygame.quit()
 
-    def seed(self, seed=None):
-        """Sets the seed for this env's random number generator(s).
-
-        Note:
-            Some environments use multiple pseudorandom number generators.
-            We want to capture all such seeds used in order to ensure that
-            there aren't accidental correlations between multiple generators.
-
-        Returns:
-            list<bigint>: Returns the list of seeds used in this env's random
-              number generators. The first value in the list should be the
-              "main" seed, or the value which a reproducer should pass to
-              'seed'. Often, the main seed equals the provided 'seed', but
-              this won't be true if seed=None, for example.
-        """
-        return
+    # def seed(self, seed=None):
+    #     """Sets the seed for this env's random number generator(s).
+    #     Note:
+    #         Some environments use multiple pseudorandom number generators.
+    #         We want to capture all such seeds used in order to ensure that
+    #         there aren't accidental correlations between multiple generators.
+    #     Returns:
+    #         list<bigint>: Returns the list of seeds used in this env's random
+    #           number generators. The first value in the list should be the
+    #           "main" seed, or the value which a reproducer should pass to
+    #           'seed'. Often, the main seed equals the provided 'seed', but
+    #           this won't be true if seed=None, for example.
+    #     """
+    #     return
 
     @property
     def unwrapped(self):
