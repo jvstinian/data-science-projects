@@ -36,7 +36,7 @@ class Game:
         self.walls = []
         self.robot = Robot(x=0, y=0, radius=self.obj_radius, sensor_num=self.robot_sensor_num, 
                            sensor_length=self.robot_sensor_length, game=self)
-        self.feedback_size = self.robot.get_feedback_size()
+        self.robot_feedback_size = self.robot.get_feedback_size()
 
         self.rng = numpy.random.default_rng()
         
@@ -172,7 +172,7 @@ class Game:
         return x, y
     
     def get_feedback_size(self):
-        return (self.feedback_size, 1)
+        return (1, self.robot_feedback_size, 1)
     
     def play_action(self, action, num_frames=1):
         
