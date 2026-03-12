@@ -7,10 +7,10 @@ import os
 os.environ["TF_USE_LEGACY_KERAS"]="1"  # Must import before tensorflow
 import sys
 import argparse
+import json
 import gymnasium as gym
 from gymnasium.envs.registration import registry, register
 import tensorflow as tf
-# import json
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
 from envs.cartpole import CartPoleObservationWrapper
 from dqn.q_learning import DQN
@@ -104,8 +104,8 @@ def main():
     conf = config['model']
     model_dir = os.path.join(conf['log_dir'], args.config, model_version)
     log_dir = os.path.join(model_dir, 'train')
-    if not tf.gfile.Exists(log_dir):
-        tf.gfile.MakeDirs(log_dir)
+    if not tf.io.gfile.exists(log_dir):
+        tf.io.gfile.makedirs(log_dir)
     
     with open(os.path.join(model_dir, "run_config.json"), "w") as run_config_file:
         json.dump(config, run_config_file, indent=4)

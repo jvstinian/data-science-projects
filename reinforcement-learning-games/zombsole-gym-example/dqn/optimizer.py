@@ -241,12 +241,13 @@ class Optimizer:
             posrewpct = 100.0 * posrew / max(memlen, 1)
             nzrewpct = 100.0 * nzrew / max(memlen, 1)
             # TODO: Just use print here, tensorflow is not being used
-            local_print_op = tf.print(
+            # local_print_op = tf.print(
+            print(
                 "Percent of memories with non-zero reward: ", nzrewpct, "\n",
                 "Percent of memories with positive reward: ", posrewpct,
             )
             # TODO: The following probably doesn't work in tfv2
-            sess.run([local_print_op], feed_dict=feed_dict) # TODO: Is feed_dict needed here?
+            # sess.run([local_print_op], feed_dict=feed_dict) # TODO: Is feed_dict needed here?
         else:
             # sess.run(self.train_op, feed_dict=feed_dict)
             gradient, _ = self.q_network.get_gradients_and_loss(states, actions, targets)

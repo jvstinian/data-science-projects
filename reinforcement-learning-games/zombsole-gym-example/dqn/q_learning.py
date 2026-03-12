@@ -19,7 +19,7 @@ class DQN:
         if verbose:
             print(self.env.action_space)
         self.actions = range(0, env.action_space.n) # TODO: Improve this
-        self.feedback_size = env.get_frame_size()
+        self.feedback_size = env.unwrapped.get_frame_size()  # TODO: Unwrapping for now to avoid a code change
         print("feedback_size: %s" % (self.feedback_size,))
         self.callback = callback
         self.summary_writer = summary_writer
@@ -182,7 +182,8 @@ class DQN:
 
                 # TODO: Does it make sense to keep the following in tfv2?
                 if self.verbose:
-                    temp_q_value_for_action, temp_q_action, temp_values = self.get_tensor_values(sess, state)
+                    # temp_q_value_for_action, temp_q_action, temp_values = self.get_tensor_values(sess, state)
+                    temp_q_value_for_action, temp_q_action, temp_values = self.get_tensor_values(state)
                     print("epi {}, frame {}k: model q_action {}, q_value {:.4}, values {}".format(episode, 
                                                                  int(num_of_trials / 1000), 
                                                                  temp_q_action,
@@ -245,12 +246,19 @@ class DQN:
                 if termination:
                     break
 
-    def get_tensor_values(self, sess, state):
-        # state = self.replay_memory.phi(frame) # TODO: Remove
+    # def get_tensor_values(self, sess, state):
+    #     # state = self.replay_memory.phi(frame) # TODO: Remove
+    #     temp_x = numpy.asarray(numpy.expand_dims(state, axis=0) / self.input_scale, dtype=numpy.float32)
+    #     temp_q_value_for_action = self.q_network.get_q_value(sess, temp_x)[0]
+    #     temp_q_action = self.q_network.get_q_action(sess, temp_x)[0]
+    #     temp_values, = sess.run(self.q_network.net['values'], feed_dict={self.q_network.x: temp_x})
+    #     return temp_q_value_for_action, temp_q_action, temp_values
+    
+    def get_tensor_values(self, state):
         temp_x = numpy.asarray(numpy.expand_dims(state, axis=0) / self.input_scale, dtype=numpy.float32)
-        temp_q_value_for_action = self.q_network.get_q_value(sess, temp_x)[0]
-        temp_q_action = self.q_network.get_q_action(sess, temp_x)[0]
-        temp_values, = sess.run(self.q_network.net['values'], feed_dict={self.q_network.x: temp_x})
+        temp_q_value_for_action = self.q_network.get_q_value(temp_x)[0]
+        temp_q_action = self.q_network.get_q_action(temp_x)[0]
+        temp_values, = self.q_network.net['values']  # TODO: Does this work?
         return temp_q_value_for_action, temp_q_action, temp_values
     
     # def save(self, sess, saver, model_name='model.ckpt'):
