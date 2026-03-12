@@ -98,7 +98,7 @@ ZOMBSOLE_MLP = {
     'optimizer': 'momentum', # tried rmsprop
     'rho': 0.9, # tried 0.0
     'rmsprop_epsilon': 1e-6,
-    'log_dir': 'log/'
+    'log_dir': 'log_tfv2/'
 }
 
 ZOMBSOLE_CNN = {
