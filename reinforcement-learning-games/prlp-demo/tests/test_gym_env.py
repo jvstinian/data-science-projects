@@ -14,8 +14,7 @@ def test_gym_env_frame_size():
         render_mode=None
     )
     observation, _ = env.reset()
-    feedback_size = env.get_frame_size()
-    expected_observation_shape = feedback_size  # TODO: Remove unnecessary variable
+    expected_observation_shape = env.get_frame_size()
     assert observation.shape == expected_observation_shape
 
 def test_gym_env_step():
