@@ -1,7 +1,9 @@
 # tests/test_gym_env.py
+from contextlib import contextmanager
 import pytest
 from prlp_demo.gym_env import DemoGymEnv
 import gymnasium as gym
+from gymnasium.utils.env_checker import check_env
 
 
 def test_gym_env_registry():
@@ -12,8 +14,7 @@ def test_gym_env_frame_size():
         render_mode=None
     )
     observation, _ = env.reset()
-    feedback_size = env.get_frame_size()
-    expected_observation_shape = (1,) + feedback_size
+    expected_observation_shape = env.get_frame_size()
     assert observation.shape == expected_observation_shape
 
 def test_gym_env_step():
@@ -30,4 +31,16 @@ def test_gym_env_step():
     env.close()
 
     assert done or (step_count == 100)
+
+@contextmanager
+def not_raises(exception):
+    try:
+        yield
+    except exception as ex:
+        raise pytest.fail("DID RAISE {0}".format(ex))
+
+def test_gym_make_env_v0():
+    env = gym.make("prlp/Demo-v0", render_mode=None)
+    with not_raises(Exception):
+        check_env(env.unwrapped, skip_render_check=True)
 
