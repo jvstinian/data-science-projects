@@ -26,21 +26,11 @@
   outputs = { nixpkgs, flake-utils, libzombsole, libzombpyg, libprlpdemo, ... }: 
       flake-utils.lib.eachDefaultSystem (system:
         let 
-          # TODO: As noted below, the keras override seems to create a problem.
-          #       On the other hand, including keras without modification seems to 
-          #       resolve the missing module we were seeing with tensorflow.
           python-keras-overlay = final: prev: {
               pythonPackagesOverlays = (prev.pythonPackagesOverlays or [ ]) ++ [
-                  # python3 = prev.python3.override {
-                  #     # The keras override seems to cause a problem
-                  #     packageOverrides = python-final: python-prev: {
-                  #         keras = python-prev.keras.override { tensorflow = python-prev.tensorflowWithCuda; };
-                  #     };
-                  # }; 
                   (python-final: python-prev: rec {
-                    # keras = python-prev.keras.override { tensorflow = python-prev.tensorflowWithCuda; };
                     tf-keras = python-prev.tf-keras.override { tensorflow = python-prev.tensorflowWithCuda; };
-                    # TODO: Might need these in a future version
+                    # NOTE: Might need these in a future version
                     # tf2onnx = python-prev.tf2onnx.override { tensorflow = python-prev.tensorflowWithCuda; };
                     # keras = python-prev.keras.override { tensorflow = python-prev.tensorflowWithCuda; tf2onnx = python-final.tf2onnx; };
                   })
@@ -50,14 +40,14 @@
           pkgs = import nixpkgs {
             inherit system;
             overlays = [ libzombsole.overlays.default libzombpyg.overlays.default libprlpdemo.overlays.default python-keras-overlay ];
-            # overlays = [ libzombsole.overlays.default libzombpyg.overlays.default libprlpdemo.overlays.default ];
           };
 
           dev-python-packages = ps: with ps; [
               numpy
               scipy
               opencv4
-              tensorflowWithCuda tf-keras # keras # TODO: Is keras still used?
+              tensorflowWithCuda
+              tf-keras # NOTE: use tf-keras rather than keras for now
               gymnasium
               jvstinian-zombsole
               prlp-demo
