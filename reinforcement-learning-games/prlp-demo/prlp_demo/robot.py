@@ -87,6 +87,11 @@ class Robot(Object):
         
         self.total_reward = 0
         
+    def set_orientation(self, orientation):
+        self.orientation = orientation
+        for sensor in self.sensors:
+            sensor.set_orientation(self.orientation)
+
     def set_reward(self, r):
         self.total_reward = r
     
