@@ -15,7 +15,7 @@
       inputs.flake-utils.follows = "flake-utils";
     };
     libprlpdemo = {
-      url = "github:jvstinian/data-science-projects/prlp-demo-nixos-25.11?dir=reinforcement-learning-games/prlp-demo";  # TODO
+      url = "github:jvstinian/data-science-projects?dir=reinforcement-learning-games/prlp-demo";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
