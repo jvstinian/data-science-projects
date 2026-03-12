@@ -1,3 +1,19 @@
+# 1.4.0 
+
+Updates to the demo environment have been made to address additional constraints introduced
+in newer versions of `gymnasium`.
+With these changes the environment now satisfies the requirements of the `check_env` function.
+In particular, episodes can be reproduced by setting the seed when resetting the environment.
+
+Changes to the demo environment include
+* making the feedback size consistent across the game and gymnasium environment,
+* using a single numpy generator for random number generation throughout the application,
+  which allows for setting the seed and supports reproducibility of episodes,
+* making the termination value in the step method a boolean rather than an integer,
+* fixing the bounds in the observation space,
+* adding the ability to reset the orientation of the agent for reproducibility, and
+* adding a test that calls gymnasium's `check_env` on the custom PRLP demo gymnasium environment.
+
 # 1.3.0 
 
 Switching from gym to gymnasium.
