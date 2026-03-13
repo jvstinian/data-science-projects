@@ -1,0 +1,8 @@
+project C_Lib is
+   for Externally_Built use "true";
+   for Source_Files use (); -- No Ada sources
+   -- for Library_Dir use "lib"; -- Directory containing the C library file
+   for Library_Name use "sdl2"; -- Name of the C library without 'lib' or extension
+   for Library_Kind use "dynamic"; -- or "dynamic" if it's a shared library
+end C_Lib;
+
