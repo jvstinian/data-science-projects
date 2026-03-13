@@ -36,13 +36,16 @@ class Game:
         self.walls = []
         self.robot = Robot(x=0, y=0, radius=self.obj_radius, sensor_num=self.robot_sensor_num, 
                            sensor_length=self.robot_sensor_length, game=self)
-        self.feedback_size = self.robot.get_feedback_size()
+        self.robot_feedback_size = self.robot.get_feedback_size()
+
+        self.rng = numpy.random.default_rng()
         
     def init_player_position(self):
         
-        x = numpy.random.randint(0, self.w)
-        y = numpy.random.randint(0, self.h)
+        x = self.rng.integers(0, self.w)
+        y = self.rng.integers(0, self.h)
         self.robot.set_position(x, y)
+        self.robot.set_orientation(0)
         self.robot.set_reward(r=0)
         return x, y
     
@@ -50,8 +53,8 @@ class Game:
         
         while True:      
               
-            x = numpy.random.randint(0, self.w)
-            y = numpy.random.randint(0, self.h)
+            x = self.rng.integers(0, self.w)
+            y = self.rng.integers(0, self.h)
             radius = self.obj_radius * 2
             
             if self.collide_with_walls(x-radius, y-radius, x+radius, y+radius):
@@ -59,7 +62,7 @@ class Game:
             if self.collide_with_walls(x-radius, y+radius, x+radius, y-radius):
                 continue
             
-            t = "bad" if numpy.random.binomial(1, bad_food_prob) == 1 else "good"
+            t = "bad" if self.rng.binomial(1, bad_food_prob) == 1 else "good"
             if self.foods.get((x, y), None) is None:
                 self.foods[(x, y)] = Food(x=x, y=y, radius=self.obj_radius, t=t, game=self)
                 break
@@ -119,7 +122,9 @@ class Game:
         self.walls.append(Wall(start=start, end=end, game=self))
         '''
         
-    def reset(self):
+    def reset(self, seed=None):
+        if seed is not None:
+            self.rng = numpy.random.default_rng(seed)
         
         self.foods = {}
         self.init_player_position()
@@ -167,7 +172,7 @@ class Game:
         return x, y
     
     def get_feedback_size(self):
-        return (self.feedback_size, 1)
+        return (1, self.robot_feedback_size, 1)
     
     def play_action(self, action, num_frames=1):
         
@@ -194,12 +199,13 @@ class Game:
             self.remove_food(food)
             self.generate_food(bad_food_prob=0.5)
         
-        termination = 0
+        termination = False
         if self.check_terminate:
             if self.get_total_reward() < -10 or self.num_of_rounds > 5001:
-                termination = 1
+                termination = True
         
-        return reward, feedbacks.reshape((1, len(feedbacks), 1)), termination
+        feedback_shape = self.get_feedback_size()
+        return reward, feedbacks.reshape(feedback_shape), termination
     
     def move_robot(self):
         self.robot.move_one_step()
@@ -219,7 +225,8 @@ class Game:
     def get_current_feedback(self, num_frames=1):
         assert num_frames == 1
         feedbacks, _, _ = self.robot.sensor_feedback()
-        return feedbacks.reshape((1, len(feedbacks), 1))
+        feedback_shape = self.get_feedback_size()
+        return feedbacks.reshape(feedback_shape)
     
     def get_number_of_foods(self):
         return len(list(self.foods.keys()))
