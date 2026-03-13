@@ -53,16 +53,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1773287428,
-        "narHash": "sha256-c6TghkL+jZ1bouEwFtgf8xpRsKVlcq+PwAiO1tWE1rs=",
+        "lastModified": 1773419465,
+        "narHash": "sha256-vd5FqV0BO/wMuAnfJQ4b6RYxB9vUQfeMymEwud611cM=",
         "owner": "jvstinian",
         "repo": "zombpyg",
-        "rev": "904fc4072a33b3055b032d8753869fca045a167c",
+        "rev": "3dd2145dc6d6742b4ebd67a97d03e1880ab3084d",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
-        "ref": "nixos-25.11",
         "repo": "zombpyg",
         "type": "github"
       }
@@ -77,16 +76,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1773181249,
-        "narHash": "sha256-bHrkjjN01mcY+qsfZZlwYwtRqzWY8N8LYzPlboeo4vE=",
+        "lastModified": 1773418465,
+        "narHash": "sha256-rCWPS91U6bMC19QJlJ+Eohd2PGjs4PJrBVdlfNQKt2g=",
         "owner": "jvstinian",
         "repo": "libzombsole",
-        "rev": "1944c4bed59f399618a925d89b0c3a44383d106a",
+        "rev": "e5b8d130e6acc684a5e1ce111daff58dccec852a",
         "type": "github"
       },
       "original": {
         "owner": "jvstinian",
-        "ref": "nixos-25.11",
         "repo": "libzombsole",
         "type": "github"
       }

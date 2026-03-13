@@ -5,12 +5,12 @@
       url = "github:nixos/nixpkgs/nixos-25.11";
     };
     libzombsole = {
-      url = "github:jvstinian/libzombsole/nixos-25.11";  # TODO
+      url = "github:jvstinian/libzombsole";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
     libzombpyg = {
-      url = "github:jvstinian/zombpyg/nixos-25.11";  # TODO
+      url = "github:jvstinian/zombpyg";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
