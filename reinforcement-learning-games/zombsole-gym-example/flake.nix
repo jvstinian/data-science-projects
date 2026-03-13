@@ -52,8 +52,6 @@
               jvstinian-zombsole
               prlp-demo
               zombpyg 
-              jupyter
-              ipython
           ];
           dev-python = pkgs.python3.withPackages dev-python-packages;
 

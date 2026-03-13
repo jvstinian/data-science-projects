@@ -19,7 +19,9 @@ class DQN:
         if verbose:
             print(self.env.action_space)
         self.actions = range(0, env.action_space.n)
-        self.feedback_size = env.unwrapped.get_frame_size()  # TODO: Have to unwrap for the new gymnasium.  Perhaps use observation space instead.
+        # NOTE: Have to unwrap to get the frame size as newer versions of gymnasium wrap the custom class.
+        #       Perhaps use observation space instead.
+        self.feedback_size = env.unwrapped.get_frame_size()
         print("feedback_size: %s" % (self.feedback_size,))
         self.callback = callback
         self.summary_writer = summary_writer
