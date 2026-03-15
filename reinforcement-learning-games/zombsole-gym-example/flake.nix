@@ -2,7 +2,7 @@
 {
   inputs = {
     nixpkgs = {
-      url = "github:nixos/nixpkgs/nixos-24.05";
+      url = "github:nixos/nixpkgs/nixos-25.11";
     };
     libzombsole = {
       url = "github:jvstinian/libzombsole";
@@ -26,19 +26,32 @@
   outputs = { nixpkgs, flake-utils, libzombsole, libzombpyg, libprlpdemo, ... }: 
       flake-utils.lib.eachDefaultSystem (system:
         let 
-          pkgs = import nixpkgs {
-            inherit system;
-            overlays = [ libzombsole.overlays.default libzombpyg.overlays.default libprlpdemo.overlays.default ];
+          python-keras-overlay = final: prev: {
+              pythonPackagesOverlays = (prev.pythonPackagesOverlays or [ ]) ++ [
+                  (python-final: python-prev: rec {
+                    tf-keras = python-prev.tf-keras.override { tensorflow = python-prev.tensorflowWithCuda; };
+                    # NOTE: Might need these in a future version
+                    # tf2onnx = python-prev.tf2onnx.override { tensorflow = python-prev.tensorflowWithCuda; };
+                    # keras = python-prev.keras.override { tensorflow = python-prev.tensorflowWithCuda; tf2onnx = python-final.tf2onnx; };
+                  })
+              ];
           };
     
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [ libzombsole.overlays.default libzombpyg.overlays.default libprlpdemo.overlays.default python-keras-overlay ];
+          };
+
           dev-python-packages = ps: with ps; [
               numpy
+              scipy
               opencv4
               tensorflowWithCuda
+              tf-keras # NOTE: use tf-keras rather than keras for now
               gymnasium
               jvstinian-zombsole
-              zombpyg
-	      prlp-demo
+              prlp-demo
+              zombpyg 
           ];
           dev-python = pkgs.python3.withPackages dev-python-packages;
 
@@ -60,15 +73,15 @@
           dqn-train = python-train-app;
         };
         apps = {
-	  dqn-train = {
-	    type = "app";
+          dqn-train = {
+            type = "app";
             program = "${python-train-app}/bin/train_dqn.py";
           };
-	  dqn-eval = {
-	    type = "app";
+          dqn-eval = {
+            type = "app";
             program = "${python-train-app}/bin/eval_dqn.py";
           };
-	};
+        };
       }
     );
 }
