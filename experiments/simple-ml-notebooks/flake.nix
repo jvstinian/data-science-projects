@@ -41,19 +41,6 @@
           ];
           shellHook = "export PS1='\\[\\e[1;34m\\]jupyter > \\[\\e[0m\\]'";
         };
-        # packages = {
-        #   dqn-train = python-train-app;
-        # };
-        # apps = {
-	#   dqn-train = {
-	#     type = "app";
-        #     program = "${python-train-app}/bin/train_dqn.py";
-        #   };
-	#   dqn-eval = {
-	#     type = "app";
-        #     program = "${python-train-app}/bin/eval_dqn.py";
-        #   };
-	# };
       }
     );
 }
