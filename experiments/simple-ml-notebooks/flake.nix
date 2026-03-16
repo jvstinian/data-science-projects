@@ -1,4 +1,3 @@
-# NOTE: Had a name collision between the flake input zombpyg and the zombpyg python package added by overlay, so renaming the input to libzombpyg
 {
   inputs = {
     nixpkgs = {
