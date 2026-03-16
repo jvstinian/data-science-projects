@@ -1,0 +1,5 @@
+# Executable
+fact
+
+# Generated C Files
+*.c

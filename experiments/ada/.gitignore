@@ -1,0 +1,5 @@
+*.ali
+*.o
+
+# Multi-language object files
+**/obj
