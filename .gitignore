@@ -16,6 +16,7 @@
 
 # Jupyter
 **/.ipynb_checkpoints
+**/.jupyter
 
 # Haskell
 dist-newstyle
