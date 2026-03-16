@@ -3,3 +3,7 @@ cg
 
 # Bindings omitted from version control for now
 bindings
+
+# A specification for the external SDL2 library.
+# We are not using this currently.
+sdl2.gpr
