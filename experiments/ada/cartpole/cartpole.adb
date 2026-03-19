@@ -72,7 +72,7 @@ package body Cartpole is
         X_Dot: Float := State.X_Dot;
         Theta: Theta_Threshold_Type := State.Theta;
         Theta_Dot: Float := State.Theta_Dot;
-        Force: Float := (If action = Right then Force_Mag else -Force_Mag);
+        Force: Float := (if action = Right then Force_Mag else -Force_Mag);
         Costheta: Float := Cos(Float(Theta));
         Sintheta: Float := Sin(Float(Theta));
         Temp: Float;
@@ -114,7 +114,7 @@ package body Cartpole is
             or (Float(Theta) < -Float(Theta_Threshold_Radians))
             or (Float(Theta) > Float(Theta_Threshold_Radians));
 
-        if NOT Terminated
+        if not Terminated
         then 
             Reward := (if Sutton_Barto_Reward then 0.0 else 1.0);
         else

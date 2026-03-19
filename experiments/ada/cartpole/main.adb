@@ -31,7 +31,7 @@ begin
         Total_Reward := Total_Reward + Step_Output.Reward;
         I := I + 1;
         -- Print the reward for this step
-        Put(I'Image & " Reward: ");
+        Put("Step" & I'Image & " Reward: ");
         Ada.Float_Text_IO.Put(Item => Step_Output.Reward, Fore => 2, Aft => 2, Exp => 0);
         New_Line;
         if Step_Output.Terminated then
