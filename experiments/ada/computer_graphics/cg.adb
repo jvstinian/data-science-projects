@@ -7,7 +7,7 @@ with Interfaces.C.Strings; use Interfaces.C.Strings;
 -- https://github.com/libsdl-org/SDL/blob/SDL2/include/SDL.h
 -- http://www.ada-auth.org/standards/22rm/html/rm-b-3.html
 
-procedure Main is
+procedure CG is
     SDL_INIT_VIDEO : constant :=16#00000020#;
     SDL_WINDOWPOS_CENTERED : constant := 16#2FFF0000#;
     SDL_RENDERER_ACCELERATED : constant := 16#00000002#;
@@ -102,14 +102,22 @@ procedure Main is
         unused_status := SDL_RenderDrawPoint(renderer, x, y);
     end PutPixel; 
 
+    type SDL_QuitEvent is record
+	eventtype : unsigned; -- SDL_QUIT
+	timestamp : unsigned;   -- In milliseconds, populated using SDL_GetTicks()
+    end record
+    with Convention => C;
+
     -- Define types and constants for the discriminant
-    type Discriminant_Type is (TYPE_TAG, PADDING_TAG);
+    type Discriminant_Type is (TYPE_TAG, QUIT_EVENT, PADDING_TAG);
     Default_Tag : constant Discriminant_Type := TYPE_TAG;
     -- subtype SDL_Event is unsigned; -- TODO: This needs to be an unchecked union
     type SDL_Event (Tag : Discriminant_Type := Default_Tag) is record
       case Tag is
          when TYPE_TAG =>
             eventtype : unsigned;
+         when QUIT_EVENT =>
+            quit : SDL_QuitEvent;
          when PADDING_TAG =>
             padding : unsigned_long_long;
       end case;
@@ -140,6 +148,8 @@ begin
         SDL_Log(To_C("Unable to initialize SDL: %s"), SDL_GetError);
     end if;
     Put_Line("SDL_INIT_VIDEO return: " & val'Image);
+    -- TODO: chars_ptr allocated by New_String must be freed.
+    --       We aren't really using this line, so perhaps just remove
     SDL_Log(To_C("Initialized SDL: %s"), New_String("example string"));
     window := SDL_CreateWindow(To_C("SDL2 Simple Example"), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, 0);
     if System."="(window, System.Null_Address) then
@@ -160,12 +170,24 @@ begin
     while keep_going loop
         -- keep_going := False;
         while SDL_PollEvent(event_ptr) /= 0 loop
-            if event.eventtype = SDL_EVENTTYPE_QUIT then  -- should be event.type
-                keep_going := False;
-                Put_Line("Got quit event");
-            else
-                Put_Line("Got event type " & event.eventtype'Image);
-            end if;
+	    if event.eventtype = SDL_EVENTTYPE_QUIT then  -- should be event.type
+	       keep_going := False;
+	       Put_Line("Got quit event");
+	       Put_Line("Got quit event with timestamp " & event.quit.timestamp'Image);
+	    else
+	       Put_Line("Got event type " & event.eventtype'Image);
+	    end if;
+	    -- case event.Tag is
+	    --     when TYPE_TAG =>
+	    --         if event.eventtype = SDL_EVENTTYPE_QUIT then  -- should be event.type
+	    --     	keep_going := False;
+	    --     	Put_Line("Got quit event");
+	    --         else
+	    --     	Put_Line("Got event type " & event.eventtype'Image);
+	    --         end if;
+	    --     when PADDING_TAG =>
+	    --        Put_Line("Got padding tag " & event.padding'Image);
+	    -- end case;
         end loop;
         
         --- Rendering ---
@@ -186,7 +208,7 @@ begin
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit;
-end Main;
+end CG;
 
 -- #include <SDL2/SDL.h>
 -- 
