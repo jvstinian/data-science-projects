@@ -4,10 +4,13 @@ with System;
 with Ada.Command_Line; use Ada.Command_Line;
 with Interfaces.C.Strings; use Interfaces.C.Strings;
 
+with Canvas;
 -- https://github.com/libsdl-org/SDL/blob/SDL2/include/SDL.h
 -- http://www.ada-auth.org/standards/22rm/html/rm-b-3.html
 
 procedure CG is
+    package Canvas_640_480 is new Canvas (Width => 640, Height => 480);
+
     SDL_INIT_VIDEO : constant :=16#00000020#;
     SDL_WINDOWPOS_CENTERED : constant := 16#2FFF0000#;
     SDL_RENDERER_ACCELERATED : constant := 16#00000002#;
@@ -139,6 +142,8 @@ procedure CG is
     window: SDL_Window_Access;
     renderer: SDL_Renderer_Access;
     unused_status: int;
+
+    S: Canvas_640_480.Screen_Array := (others => (others => Canvas_640_480.RGBA'(255, 255, 0, 255)));
 begin
     Put_Line("SDL_INIT_VIDEO: " & SDL_INIT_VIDEO'Image);
 
@@ -191,7 +196,7 @@ begin
         end loop;
         
         --- Rendering ---
-        unused_status := SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); -- Set draw color to black (RGBA)
+        unused_status := SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); -- Set draw color to blue (RGBA)
         unused_status := SDL_RenderClear(renderer);                      -- Clear the renderer with the current color
         for I in (640 / 4) .. (3 * 640 / 4) loop
             for J in (480 / 4) .. (3 * 480 / 4) loop
@@ -202,7 +207,7 @@ begin
         SDL_RenderPresent(renderer);                    -- Update the screen
         delay (1.0 / 30.0);
     end loop;
-    
+
     -- delay 2.0;
 
     SDL_DestroyRenderer(renderer);
