@@ -3,3 +3,6 @@
 
 # Multi-language object files
 **/obj
+
+# Common executables
+**/main
