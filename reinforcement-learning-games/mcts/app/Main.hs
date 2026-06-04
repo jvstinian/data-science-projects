@@ -24,7 +24,7 @@ main = do
   tree1 <- updateTree g (5 :: Int) tree
   putStrLn ("Updated tree: " ++ show tree1)
   -}
-  actionTreeM <- uctSearch 100 g uctparams tree
+  actionTreeM <- uctSearch 100000 g uctparams tree
   case actionTreeM of
     Just (a, tree1) -> do
         putStrLn ("Action: " ++ show a) 
