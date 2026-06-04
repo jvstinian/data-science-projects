@@ -3,6 +3,11 @@
 
 # Multi-language object files
 **/obj
+**/b~*
 
 # Common executables
 **/main
+
+# Other projects for review
+orka
+mathpaqs
