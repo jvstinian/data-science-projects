@@ -53,13 +53,18 @@ package body Blackjack is
       end if;
       return Res;
    end Hand_Sum_And_Usable_Ace;
+      
+   function Sum_Hand(Hand : Hand_Type) return Integer is
+   begin
+      return Hand_Sum_And_Usable_Ace(Hand).Hand_Sum;
+   end Sum_Hand;
 
    function Get_Obs(Env : Environment_Type) return Observation_Type is
       Temp_Summary : Hand_Summary_Type := Hand_Sum_And_Usable_Ace(Env.Player_Hand);
    begin
       return Observation_Type'(
          Player_Sum => Temp_Summary.Hand_Sum,
-         Dealer_Showing_Card => Env.Dealer_Showing_Card,
+         Dealer_Showing_Card_Value => Card_Values(Env.Dealer_Showing_Card),
          Usable_Ace => Temp_Summary.Usable_Ace);
    end Get_Obs;
 
@@ -71,7 +76,8 @@ package body Blackjack is
       --    Dealer_Showing_Card => Ace); -- TODO: What to do for the generator?
    begin
       return Environment_Type'(
-         Natural_Win_Reward => Config.Natural_Win_Reward,
+         Config => Config,
+         -- Natural_Win_Reward => Config.Natural_Win_Reward,
          Player_Hand => (others => 0),
          Dealer_Hand => (others => 0),
          Dealer_Showing_Card => Ace,
@@ -79,9 +85,19 @@ package body Blackjack is
    end Make;
 
    function Reset(Env : in out Environment_Type) return Observation_Type is
+      -- Helper function
+      procedure Hit_Till_12(Hand : in out Hand_Type) is
+         New_Card : Card_Type;
+      begin
+         while Sum_Hand(Hand) < 12 loop
+            New_Card := Draw_Card(Env.Gen);
+            Hand(New_Card) := Hand(New_Card) + 1;
+         end loop;
+      end Hit_Till_12;
+
       Dealer_Card : Card_Type;
       Other_Dealer_Card : Card_Type;
-      Player_Sum : Integer;
+      -- Player_Sum : Integer;
       Usable_Ace : Boolean;
    begin
       -- TODO: Need to determine how we want to set a seed
@@ -96,6 +112,10 @@ package body Blackjack is
       
       -- Reset player hand
       Env.Player_Hand := Draw_Hand(Env.Gen);
+      
+      if Env.Config.Auto_Hit then
+         Hit_Till_12(Env.Player_Hand);
+      end if;
 
       return Get_Obs(Env);
    end Reset;
@@ -114,11 +134,6 @@ package body Blackjack is
 
    function Step(Env : in out Environment_Type; Action : Action_Type) return Step_Return_Type is
       -- Helper functions
-      function Sum_Hand(Hand : Hand_Type) return Integer is
-      begin
-         return Hand_Sum_And_Usable_Ace(Hand).Hand_Sum;
-      end Sum_Hand;
-
       function Is_Bust(Hand : Hand_Type) return Boolean is
       begin
          return Sum_Hand(Hand) > 21;
@@ -184,10 +199,10 @@ package body Blackjack is
                Env.Dealer_Hand(New_Card) := Env.Dealer_Hand(New_Card) + 1;
             end loop;
             Reward := Cmp(Score(Env.Player_Hand), Score(Env.Dealer_Hand));
-            if Env.Natural_Win_Reward = SAB and then Is_Natural(Env.Player_Hand) and then not Is_Natural(Env.Dealer_Hand) then
+            if Env.Config.Natural_Win_Reward = SAB and then Is_Natural(Env.Player_Hand) and then not Is_Natural(Env.Dealer_Hand) then
                -- Player automatically wins. Rules consistent with S&B
                Reward := 1.0;
-            elsif Env.Natural_Win_Reward = Natural and then Is_Natural(Env.Player_Hand) and then Reward = 1.0 then
+            elsif Env.Config.Natural_Win_Reward = Natural and then Is_Natural(Env.Player_Hand) and then Reward = 1.0 then
                -- Natural gives extra points, but doesn't autowin. Legacy implementation
                Reward := 1.5;
             end if;
@@ -235,7 +250,8 @@ package body Blackjack is
    begin
       Put("Player Sum: " & Obs.Player_Sum'Image & ", ");
       Put("Usable Ace: " & Obs.Usable_Ace'Image & ", ");
-      Put("Dealer Showing Card: " & Obs.Dealer_Showing_Card'Image);
+      Put("Dealer Showing Card Value: " & Obs.Dealer_Showing_Card_Value'Image);
+      Put("(" & Env.Dealer_Showing_Card'Image & ")");
       New_Line;
    end Render_Text;
 end Blackjack;
