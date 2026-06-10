@@ -120,7 +120,7 @@ package Blackjack is
 
    type Action_Type is (Stick, Hit);
 
-   type Natural_Win_Reward_Type is (SAB, Natural, No_Natural);
+   type Natural_Win_Reward_Type is (SAB, Natural_Win, No_Natural_Win);
    type Config_Type is record
       Natural_Win_Reward : Natural_Win_Reward_Type;
       Auto_Hit : Boolean;

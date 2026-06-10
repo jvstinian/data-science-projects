@@ -201,8 +201,9 @@ package body Blackjack is
             Reward := Cmp(Score(Env.Player_Hand), Score(Env.Dealer_Hand));
             if Env.Config.Natural_Win_Reward = SAB and then Is_Natural(Env.Player_Hand) and then not Is_Natural(Env.Dealer_Hand) then
                -- Player automatically wins. Rules consistent with S&B
+               -- Put_Line("Natural win under SAB rules");
                Reward := 1.0;
-            elsif Env.Config.Natural_Win_Reward = Natural and then Is_Natural(Env.Player_Hand) and then Reward = 1.0 then
+            elsif Env.Config.Natural_Win_Reward = Natural_Win and then Is_Natural(Env.Player_Hand) and then Reward = 1.0 then
                -- Natural gives extra points, but doesn't autowin. Legacy implementation
                Reward := 1.5;
             end if;
