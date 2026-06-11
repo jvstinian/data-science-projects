@@ -16,7 +16,7 @@ procedure Eligibility_Trace_Example is
     type Policy_Type is array (Precise_State_Type) of Action_Type;
 
     type Value_Function_Type is array (Precise_State_Type) of Float;
-    
+
     type Action_Value_Function_Type is array (Precise_State_Type, Action_Type) of Float;
 
     type ET_Config_Type is record
@@ -57,6 +57,8 @@ procedure Eligibility_Trace_Example is
 
             Prev_Value_Function := Value_Function;
 
+            -- TODO: From the text of the book and the book errata, E needs to be set to 0
+            --       at the beginning of an episode.
             Obs := Reset(Env);
             S := Precise_State_Type(Obs.Position_Index);
             Step_Index := 0;
@@ -79,7 +81,7 @@ procedure Eligibility_Trace_Example is
                 Step_Index := Step_Index + 1;
                 Terminated := Step_Result.Terminated or else Step_Index >= Max_Steps;
             end loop;
-            
+
             Local_Delta := 0.0;
             -- NOTE: We exit when the max value function change falls below a threshold.
             --       This differs from the textbook algorithm.
@@ -90,7 +92,7 @@ procedure Eligibility_Trace_Example is
         end loop;
         return Value_Function;
     end ET_Iterative_Policy_Evaluation;
- 
+
    -- TODO: Note that there is a type with the same name in the TD example
    type SARSA_Config_Type is record
       Alpha: Float;
@@ -184,6 +186,8 @@ procedure Eligibility_Trace_Example is
 
             Prev_Action_Value_Function := Action_Value_Function;
 
+            -- TODO: From the text of the book and the book errata, E needs to be set to 0
+            --       at the beginning of an episode.
             Obs := Reset(Env);
             S := Precise_State_Type(Obs.Position_Index);
             A := Choose_Action_Epsilon_Greedy(Epsilon, Action_Value_Function, S);
@@ -225,7 +229,7 @@ procedure Eligibility_Trace_Example is
         end loop;
         return Action_Value_Function;
     end ET_SARSA_On_Policy;
-   
+
    function Watkins_Q_Iteration(Env_Config: Environment_Config; SARSA_Config: SARSA_Config_Type) return Action_Value_Function_Type is
       Env : Environment_State := Make (Env_Config);
 
@@ -310,6 +314,8 @@ procedure Eligibility_Trace_Example is
 
             Prev_Action_Value_Function := Action_Value_Function;
 
+            -- TODO: From the text of the book and the book errata, E needs to be set to 0
+            --       at the beginning of an episode.
             Obs := Reset(Env);
             S := Precise_State_Type(Obs.Position_Index);
             A := Choose_Action_Epsilon_Greedy(Epsilon, Action_Value_Function, S);
@@ -376,7 +382,7 @@ begin
     P (8) := Right;
     P (13) := Right;
     P (14) := Right;
-    
+
     Local_Value_Function := ET_Iterative_Policy_Evaluation(Frozen_Lake_Config, ET_Config, P);
     for S in Precise_State_Type loop
         -- (S, F, F, F),
@@ -397,7 +403,7 @@ begin
          New_Line;
        end loop;
     end loop;
-    
+
     Put_Line("Running Watkins Q Control Method");
     Local_Action_Value_Function := Watkins_Q_Iteration(Frozen_Lake_Config, SARSA_Config);
     for S in Precise_State_Type loop
@@ -408,4 +414,4 @@ begin
        end loop;
     end loop;
 end Eligibility_Trace_Example;
-    
+
