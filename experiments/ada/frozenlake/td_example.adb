@@ -287,6 +287,7 @@ procedure TD_Example is
             Terminated := False;
 
             while not Terminated loop
+                -- TODO: I think there's an error here.  A needs to be moved up (out of the loop)
                A := Choose_Action_Epsilon_Greedy(Epsilon, Action_Value_Function, S);
                Step_Result := Step(Env, A);
                Obs := Step_Result.State;
