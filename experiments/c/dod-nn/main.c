@@ -104,6 +104,12 @@ size_t inputs_size(struct Inputs* inputs) {
     return ret;
 }
 
+enum LayerType {
+    WEIGHT_ONLY,
+    WEIGHT_BIAS_ACTIVATOR,
+    LAYER_TYPE_COUNT
+};
+
 struct LayerDimensions {
     unsigned int output_dims;
     unsigned int output_shape[6];
@@ -180,30 +186,63 @@ struct TensorInfo {
 
 struct LayerInfo {
     unsigned int layer_id;
-    unsigned int input_offset;
-    unsigned int num_inputs;
-    /*
+    /* TODO: Add layer type field */
+    enum LayerType layer_type;
+    /* unsigned int input_offset; TODO: Change to instance_idx */
     unsigned int instance_idx;
+    /*
+    unsigned int num_inputs;
     */
 };
 
+/*
 struct LayerValueInfo {
     unsigned int layer_id;
     unsigned int value_id;
 };
+*/
 
-/*
+struct LayerTypeCounter {
+    unsigned int wo_count;
+    unsigned int wba_count;
+    /* unsigned int concat_count; */
+};
+
+struct LayerTypeCounter get_layer_type_counts(const struct LayerKinds* layer_kinds) {
+    struct LayerTypeCounter ret = {0, 0};
+    ret.wo_count = layer_kinds->num_layers;
+    return ret;
+}
+
+unsigned int get_tensor_count(struct LayerTypeCounter ltc) {
+    return ltc.wo_count + (2*ltc.wba_count);
+};
+
+struct WOLayerInfo {
+    unsigned int instance_idx; /* TODO: Remove when ready */
+    unsigned int layer_id;
+    unsigned int input_value_id;
+    unsigned int output_value_id;
+    unsigned int weights_tensor_id;
+    /*
+    int (*layer_output_derivative)(struct Network*, unsigned int);
+    float (*activator_func)(float);
+    float (*activator_deriv_func)(float);
+    */
+};
+
 struct WBALayerInfo {
-    unsigned int instance_idx; // TODO: Remove when ready
+    unsigned int instance_idx; /* TODO: Remove when ready */
     unsigned int layer_id;
     unsigned int input_value_id;
     unsigned int weights_tensor_id;
-    // unsigned int bias_tensor_id;
-    // int (*layer_output_derivative)(struct Network*, unsigned int);
-    // float (*activator_func)(float);
-    // float (*activator_deriv_func)(float);
+    unsigned int bias_tensor_id;
+    /*
+    int (*layer_output_derivative)(struct Network*, unsigned int);
+    float (*activator_func)(float);
+    float (*activator_deriv_func)(float);
+    */
 };
-*/
 
 struct Network {
     unsigned int batchsize;
@@ -223,12 +262,15 @@ struct Network {
     struct TensorInfo* ti;
     unsigned int num_layers;
     struct LayerInfo* li;
+    /*
     unsigned int layer_inputs_length;
     struct LayerValueInfo* layer_inputs;
-    /*
+    */
+    /* Layer Instances */
+    unsigned int woli_length;
+    struct WOLayerInfo* woli;
     unsigned int wbali_length;
     struct WBALayerInfo* wbali;
-    */
     /*
     unsigned int layer_outputs_length;
     struct LayerValueInfo* layer_outputs;
@@ -259,6 +301,54 @@ void vector_multiply_diff(float c, float* a, float* b, size_t len, float* out) {
     }
 }
 
+/* TODO: The following is not used yet.  It is intended to replace layer_compute. */
+int weight_only_layer_eval(struct Network* network, unsigned int instance_idx) {
+    size_t i;
+    unsigned int batch_id = 0;
+
+    size_t input_length;
+    float* input;
+    size_t output_length;
+    float* output;
+#ifndef NDEBUG
+    size_t tensor_length;
+#endif
+    float* tensor;
+
+    /* Multiple inputs are possible, hence the offset to the layer_inputs array.
+     * However for the SequentialModel we have one input for each layer, so
+     * we just extract the value_id in layer_inputs at the offset index. */
+    unsigned int layer_id = network->woli[instance_idx].layer_id;
+    size_t input_value_idx = network->woli[instance_idx].input_value_id;
+    size_t output_value_idx = network->woli[instance_idx].output_value_id;
+
+    /* The following doesn't depend on batch ID */
+#ifndef NDEBUG
+    tensor_length = network->ti[layer_id].noe;
+#endif
+    tensor = network->tensors_ptr + network->ti[layer_id].offset;
+
+    input_length = network->vi[input_value_idx].individual_size;
+    output_length = network->vi[output_value_idx].individual_size;
+    assert(tensor_length == input_length * output_length);
+
+    for(batch_id = 0; batch_id < network->batchsize; batch_id++) {
+        input = network->values_ptr + network->vi[input_value_idx].offset + batch_id * input_length;
+        output = network->values_ptr + network->vi[output_value_idx].offset + batch_id * output_length;
+
+        for(i = 0; i < output_length; i++) {
+            dot_product(
+                tensor + i * input_length,
+                input,
+                input_length,
+                output + i
+            );
+        }
+        /* TODO: Add call to activator function */
+    }
+    return 0;
+}
+
 int layer_compute(struct Network* network, unsigned int layer_id) {
     size_t i;
     unsigned int batch_id = 0;
@@ -275,8 +365,12 @@ int layer_compute(struct Network* network, unsigned int layer_id) {
     /* Multiple inputs are possible, hence the offset to the layer_inputs array.
      * However for the SequentialModel we have one input for each layer, so
      * we just extract the value_id in layer_inputs at the offset index. */
-    size_t layer_input_offset = network->li[layer_id].input_offset;
-    size_t value_info_idx = network->layer_inputs[layer_input_offset].value_id;
+    /*
+    size_t layer_instance_offset = network->li[layer_id].input_offset;
+    size_t input_value_idx = network->layer_inputs[layer_input_offset].value_id;
+    */
+    size_t layer_instance_offset = network->li[layer_id].instance_idx;
+    size_t input_value_idx = network->woli[layer_instance_offset].input_value_id;
 
     size_t output_value_idx = network->num_inputs + layer_id; /* TODO: Need a more general approach here. */
 
@@ -297,8 +391,8 @@ int layer_compute(struct Network* network, unsigned int layer_id) {
         }
         */
         /* TODO: input and output length don't depend on batch_id, so can be moved out of the loop */
-        input_length = network->vi[value_info_idx].individual_size;
-        input = network->values_ptr + network->vi[value_info_idx].offset + batch_id * input_length;
+        input_length = network->vi[input_value_idx].individual_size;
+        input = network->values_ptr + network->vi[input_value_idx].offset + batch_id * input_length;
 
         output_length = network->vi[output_value_idx].individual_size;
         output = network->values_ptr + network->vi[output_value_idx].offset + batch_id * output_length;
@@ -404,8 +498,12 @@ int layer_update_weights(struct Network* network, unsigned int layer_id) {
     /* Multiple inputs are possible, hence the offset to the layer_inputs array.
      * However for the SequentialModel we have one input for each layer, so
      * we just extract the value_id in layer_inputs at the offset index. */
-    size_t layer_input_offset = network->li[layer_id].input_offset;
+    /*
+    size_t layer_instance_offset = network->li[layer_id].input_offset;
     size_t input_value_idx = network->layer_inputs[layer_input_offset].value_id;
+    */
+    size_t layer_instance_offset = network->li[layer_id].instance_idx;
+    size_t input_value_idx = network->woli[layer_instance_offset].input_value_id;
 
     /* NOTE: We don't use output but we do use the output length for
      *       the size of the activator derivative terms. */
@@ -556,6 +654,8 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
     size_t i;
     size_t layer_idx;
     unsigned int last_offset;
+    struct LayerTypeCounter ltc_sizes;
+    struct LayerTypeCounter ltc_indices = { 0 };
 
     /* batchsize */
     network->batchsize = batchsize;
@@ -657,9 +757,12 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
     }
     network->derivatives_size = last_offset;
 
+    /* Calculate the number of each layer type */
+    ltc_sizes = get_layer_type_counts(layer_kinds);
     /* Tensor Info */
     /* TODO: Need to define a method for calculating the number of tensors */
-    network->num_tensors = layer_kinds->num_layers;
+    /* network->num_tensors = layer_kinds->num_layers; */
+    network->num_tensors = get_tensor_count(ltc_sizes);
     assert(network->num_tensors > 0); /* TODO: Move an assert for layer_kinds->num_layers up */
 
     network->ti = malloc(network->num_tensors * sizeof(struct TensorInfo));
@@ -668,6 +771,56 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
         /*free(network->ii); network->ii =NULL;*/
         free(network->vi); network->vi =NULL;
         free(network->di); network->di =NULL;
+        return 1;
+    }
+    /* WOLayerInfo */
+    network->woli_length = ltc_sizes.wo_count;
+    if (ltc_sizes.wo_count > 0) {
+        network->woli = malloc(ltc_sizes.wo_count * sizeof(struct WOLayerInfo));
+        if (network->woli == NULL) {
+            fprintf(stderr, "network_init: could not allocate WOLayerInfo");
+            /*free(network->ii); network->ii =NULL;*/
+            free(network->vi); network->vi =NULL;
+            free(network->di); network->di =NULL;
+            free(network->ti); network->ti =NULL;
+            return 1;
+        }
+    }
+    /* WBALayerInfo */
+    network->wbali_length = ltc_sizes.wba_count;
+    if (ltc_sizes.wba_count > 0) {
+        network->wbali = malloc(ltc_sizes.wba_count * sizeof(struct WBALayerInfo));
+        if (network->wbali == NULL) {
+            fprintf(stderr, "network_init: could not allocate WOLayerInfo");
+            /*free(network->ii); network->ii =NULL;*/
+            free(network->vi); network->vi =NULL;
+            free(network->di); network->di =NULL;
+            free(network->ti); network->ti =NULL;
+            if (network->woli != NULL) {
+                free(network->woli); 
+            }
+            network->woli = NULL;
+            return 1;
+        }
+    }
+    
+    /* Layer Info */
+    network->num_layers = layer_kinds->num_layers;
+    network->li = malloc(network->num_layers * sizeof(struct LayerInfo));
+    if (network->li == NULL) {
+        fprintf(stderr, "network_init: could not allocate LayerInfo");
+        /*free(network->ii); network->ii =NULL;*/
+        free(network->vi); network->vi =NULL;
+        free(network->di); network->di =NULL;
+        free(network->ti); network->ti =NULL;
+        if (network->woli != NULL) {
+            free(network->woli); 
+        }
+        network->woli = NULL;
+        if (network->wbali != NULL) {
+            free(network->wbali); 
+        }
+        network->wbali = NULL;
         return 1;
     }
     
@@ -681,6 +834,25 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
 
     last_offset = 0;
     for (i = 0; i < layer_kinds->num_layers ; i++) {
+        /* Set layer info */
+        network->li[i].layer_id = i;
+        /*network->li[i].input_offset = i; */
+        network->li[i].layer_type = WEIGHT_ONLY;
+        network->li[i].instance_idx = ltc_indices.wo_count;
+
+        /* Set layer instance info */
+        network->woli[ltc_indices.wo_count].instance_idx = ltc_indices.wo_count;
+        network->woli[ltc_indices.wo_count].layer_id = i;
+        if (i == 0) {
+            network->woli[ltc_indices.wo_count].input_value_id = 0;
+        } else {
+            network->woli[ltc_indices.wo_count].input_value_id = network->num_inputs + (i - 1);
+        }
+        network->woli[ltc_indices.wo_count].output_value_id = network->num_inputs + i;
+        network->woli[ltc_indices.wo_count].weights_tensor_id = i;
+        ltc_indices.wo_count++;
+
+        /* Set tensor info */
         network->ti[i].layer_id = i;
         network->ti[i].component_id = 0;  /* NOTE: Currently always setting to 1 */
         network->ti[i].dims = layer_kinds->layer_specs[i].output_dims;
@@ -710,35 +882,35 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
     }
     network->tensors_size = last_offset;
 
-    /* Layer Info */
-    network->num_layers = layer_kinds->num_layers;
-    network->li = malloc(network->num_layers * sizeof(struct LayerInfo));
-    if (network->li == NULL) {
-        fprintf(stderr, "network_init: could not allocate LayerInfo");
-        /*free(network->ii); network->ii =NULL;*/
-        free(network->vi); network->vi =NULL;
-        free(network->di); network->di =NULL;
-        free(network->ti); network->ti =NULL;
-        return 1;
-    }
-    last_offset = 0;
+    /* 
+    // last_offset = 0;
     for (i = 0; i < network->num_layers ; i++) {
         network->li[i].layer_id = i;
-        network->li[i].input_offset = last_offset;
-        network->li[i].num_inputs = 1;
-
-        last_offset += network->li[i].num_inputs;
+        network->li[i].input_offset = i;
+        // network->li[i].input_offset = last_offset;
+        // network->li[i].num_inputs = 1;
+        // last_offset += network->li[i].num_inputs;
     }
+    */
 
+    /*
     network->layer_inputs_length = last_offset;
     network->layer_inputs = malloc(network->layer_inputs_length * sizeof(struct LayerValueInfo));
     if (network->layer_inputs == NULL) {
         fprintf(stderr, "network_init: could not allocate LayerValueInfo");
-        /*free(network->ii); network->ii =NULL;*/
+        // free(network->ii); network->ii =NULL;
         free(network->vi); network->vi =NULL;
         free(network->di); network->di =NULL;
         free(network->ti); network->ti =NULL;
-        free(network->li); network->ti =NULL;
+        if (network->woli != NULL) {
+            free(network->woli); 
+        }
+        network->woli = NULL;
+        if (network->wbali != NULL) {
+            free(network->wbali); 
+        }
+        network->wbali = NULL;
+        free(network->li); network->li =NULL;
         return 1;
     }
     for (i = 0; i < network->num_layers ; i++) {
@@ -746,10 +918,11 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
         if (i == 0) {
             network->layer_inputs[i].value_id = 0;
         } else {
-            /* The first layer output corresponds to the value_id = network->num_inputs */
+            // The first layer output corresponds to the value_id = network->num_inputs
             network->layer_inputs[i].value_id = network->num_inputs + (i - 1);
         }
     }
+    */
 
     /* Create arrays for data */
     /*
@@ -770,6 +943,15 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
         free(network->di); network->di =NULL;
         free(network->ti); network->ti =NULL;
         /* free(network->inputs_ptr); network->inputs_ptr =NULL; */
+        if (network->woli != NULL) {
+            free(network->woli); 
+        }
+        network->woli = NULL;
+        if (network->wbali != NULL) {
+            free(network->wbali); 
+        }
+        network->wbali = NULL;
+        free(network->li); network->li =NULL;
     }
     network->derivatives_ptr = malloc(network->derivatives_size * sizeof(float));
     if (network->derivatives_ptr == NULL) {
@@ -779,6 +961,15 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
         free(network->di); network->di =NULL;
         free(network->ti); network->ti =NULL;
         /* free(network->inputs_ptr); network->inputs_ptr =NULL; */
+        if (network->woli != NULL) {
+            free(network->woli); 
+        }
+        network->woli = NULL;
+        if (network->wbali != NULL) {
+            free(network->wbali); 
+        }
+        network->wbali = NULL;
+        free(network->li); network->li =NULL;
         free(network->values_ptr); network->values_ptr =NULL;
     }
     network->tensors_ptr = malloc(network->tensors_size * sizeof(float));
@@ -789,6 +980,15 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
         free(network->di); network->di =NULL;
         free(network->ti); network->ti =NULL;
         /* free(network->inputs_ptr); network->inputs_ptr =NULL; */
+        if (network->woli != NULL) {
+            free(network->woli); 
+        }
+        network->woli = NULL;
+        if (network->wbali != NULL) {
+            free(network->wbali); 
+        }
+        network->wbali = NULL;
+        free(network->li); network->li =NULL;
         free(network->values_ptr); network->values_ptr =NULL;
         free(network->derivatives_ptr); network->derivatives_ptr =NULL;
     }
@@ -800,8 +1000,10 @@ void network_destroy(struct Network network){
     free(network.vi);
     free(network.di);
     free(network.ti);
+    if (network.woli != NULL) free(network.woli); 
+    if (network.wbali != NULL) free(network.wbali); 
     free(network.li);
-    free(network.layer_inputs);
+    /* free(network.layer_inputs) */
     /* free(network.inputs_ptr); */
     free(network.values_ptr);
     free(network.derivatives_ptr);
