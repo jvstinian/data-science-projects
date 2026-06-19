@@ -106,7 +106,7 @@ size_t inputs_size(struct Inputs* inputs) {
 
 enum LayerType {
     WEIGHT_ONLY,
-    WEIGHT_BIAS_ACTIVATOR,
+    /* WEIGHT_BIAS_ACTIVATOR, */
     LAYER_TYPE_COUNT
 };
 
@@ -226,9 +226,9 @@ struct WOLayerInfo {
     unsigned int weights_tensor_id;
     /*
     int (*layer_output_derivative)(struct Network*, unsigned int);
+    */
     float (*activator_func)(float);
     float (*activator_deriv_func)(float);
-    */
 };
 
 struct WBALayerInfo {
@@ -343,11 +343,174 @@ int weight_only_layer_eval(struct Network* network, unsigned int instance_idx) {
                 input_length,
                 output + i
             );
+            /* Call activator function */
+            output[i] = network->woli[instance_idx].activator_func(output[i]);
         }
-        /* TODO: Add call to activator function */
+
     }
     return 0;
 }
+
+static int (*layer_eval_methods[LAYER_TYPE_COUNT])(struct Network *, unsigned int) = { &weight_only_layer_eval };
+
+/* TODO: Note that the following takes the derivative with respect to the input to the
+ *       layer rather than the output (which is what does) */
+int weight_only_layer_derivative(struct Network* network, unsigned int instance_idx) {
+    unsigned int layer_id = network->woli[instance_idx].layer_id;
+    /* Nothing to do for layer 0.
+     * We don't need to know the derivative for the input values. 
+    if (layer_id == 0) return 0; */ 
+    /* We should omit layer_id 0 */
+    assert(layer_id > 0);
+    printf("weight_only_layer_derivative with layer_id %u (%u layers)\n", layer_id, network->num_layers);
+    size_t i, j;
+    unsigned int batch_id;
+
+    size_t input_value_idx = network->woli[instance_idx].input_value_id;
+    size_t output_value_idx = network->woli[instance_idx].output_value_id;
+
+    size_t input_length;
+    float* input;
+    size_t output_length;
+    size_t backprop_deriv_length;
+    float* backprop_deriv;
+    size_t layer_deriv_length;
+    float* layer_deriv;
+    size_t tensor_length;
+    float* tensor;
+    
+    input_length = network->vi[input_value_idx].individual_size;
+    output_length = network->vi[output_value_idx].individual_size;
+    backprop_deriv_length = network->di[layer_id].individual_size;
+    layer_deriv_length = network->di[layer_id-1].individual_size;
+
+    /* The following doesn't depend on batch ID */
+    tensor_length = network->ti[layer_id].noe;
+    tensor = network->tensors_ptr + network->ti[layer_id].offset;
+    
+    assert(backprop_deriv_length == output_length);
+    assert(layer_deriv_length == input_length);
+    assert(tensor_length == input_length * output_length);
+    assert(tensor_length == backprop_deriv_length * layer_deriv_length);
+
+    float* temp_output = malloc(output_length * sizeof(float));
+    if (temp_output == NULL) {
+        fprintf(stderr, "weight_only_layer_derivative: could not allocate activator function derivative array");
+        return 1;
+    }
+
+    for(batch_id = 0; batch_id < network->batchsize; batch_id++) {
+        input  = network->values_ptr + network->vi[input_value_idx].offset + batch_id * input_length;
+        backprop_deriv = network->derivatives_ptr + network->di[layer_id].offset + batch_id * backprop_deriv_length;
+        layer_deriv = network->derivatives_ptr + network->di[layer_id-1].offset + batch_id * layer_deriv_length;
+
+        /* As with the layer output value, we apply the tensor */
+        /* temp_output overwritten for each batch_id */
+        for(i = 0; i < output_length; i++) {
+            dot_product(
+                tensor + i * input_length,
+                input,
+                input_length,
+                temp_output + i
+            );
+            /* We apply the activator derivative component-wise */
+            temp_output[i] = network->woli[instance_idx].activator_deriv_func(temp_output[i]);
+        }
+
+        printf("Performing manual tensor left-multiplication for batch_id=%u in layer_id=%u\n", batch_id, layer_id);
+        printf("backprop_deriv_length=%lu, layer_deriv_length=%lu, tensor_length=%lu\n",
+                backprop_deriv_length,
+                layer_deriv_length,
+                tensor_length);
+        for(j = 0; j < layer_deriv_length; j++) {
+            layer_deriv[j] = 0.0f;
+            for(i = 0; i < backprop_deriv_length; i++) {
+                layer_deriv[j] += backprop_deriv[i] * temp_output[i] * tensor[i * layer_deriv_length + j];
+            }
+        }
+    }
+    free(temp_output);
+    return 0;
+}
+
+int weight_only_update_weights(struct Network* network, unsigned int instance_idx) {
+    unsigned int layer_id = network->woli[instance_idx].layer_id;
+    size_t i, j;
+    unsigned int batch_id = 0;
+
+    size_t input_length;
+    float* input;
+    size_t output_length;
+    size_t backprop_deriv_length;
+    float* backprop_deriv;
+    size_t tensor_length;
+    float* tensor;
+
+    size_t input_value_idx = network->woli[instance_idx].input_value_id;
+    size_t output_value_idx = network->woli[instance_idx].output_value_id;
+ 
+    input_length = network->vi[input_value_idx].individual_size;
+    output_length = network->vi[output_value_idx].individual_size;
+    backprop_deriv_length = network->di[layer_id].individual_size;
+    /* total_deriv_length = network->di[layer_id].individual_size; */
+
+    /* The following doesn't depend on batch ID */
+    tensor_length = network->ti[layer_id].noe;
+    tensor = network->tensors_ptr + network->ti[layer_id].offset;
+
+    assert(backprop_deriv_length == output_length);
+    assert(tensor_length == input_length * output_length);
+
+    /* We allocate a temporary array for activator function part of the derivative.
+     * We also allocate for the derivative which has the same shape as the layer tensor,
+     * and initialize to 0 */
+    float* temp_output = malloc(output_length * sizeof(float));
+    if (temp_output == NULL) {
+        fprintf(stderr, "layer_update_weight: could not allocate activator function derivative array");
+        return 1;
+    }
+    float* total_agg_deriv = calloc(tensor_length, sizeof(float));
+    if (total_agg_deriv == NULL) {
+        fprintf(stderr, "layer_update_weight: could not allocate total aggregate derivative array");
+        free(temp_output);
+        return 1;
+    }
+
+    for(batch_id = 0; batch_id < network->batchsize; batch_id++) {
+        input  = network->values_ptr + network->vi[input_value_idx].offset + batch_id * input_length;
+        backprop_deriv = network->derivatives_ptr + network->di[layer_id].offset + batch_id * backprop_deriv_length;
+
+        /* As with the layer output value, we apply the tensor */
+        /* temp_output overwritten for each batch_id */
+        for(i = 0; i < output_length; i++) {
+            dot_product(
+                tensor + i * input_length,
+                input,
+                input_length,
+                temp_output + i
+            );
+            /* Apply the activator function */
+            temp_output[i] = network->woli[instance_idx].activator_deriv_func(temp_output[i]);
+        }
+        
+        for(i = 0; i < output_length; i++) {
+            for(j = 0; j < input_length; j++) {
+                total_agg_deriv[i * input_length + j] += backprop_deriv[i] * temp_output[i] * input[j];
+            }
+        }
+    }
+    /* Adjust tensor */
+    /* TODO: Replace 0.05 with a parameter */
+    for(i = 0; i < tensor_length; i++) {
+        tensor[i] += 0.05 * total_agg_deriv[i];
+    }
+
+    /* Clean up */
+    free(total_agg_deriv);
+    free(temp_output);
+    return 0;
+}
+
 
 int layer_compute(struct Network* network, unsigned int layer_id) {
     size_t i;
@@ -415,6 +578,7 @@ void last_layer_output_derivative(struct Network* network) {
     unsigned int layer_id = network->num_layers - 1;
     unsigned int output_value_idx = network->num_values - 1;
     unsigned int response_value_idx = 1;
+    /* TODO: Should have a 2.0 in the numerator of the following */
     float mult = -1.0 / ((float) network->batchsize);
 
     unsigned int output_value_length = network->vi[output_value_idx].individual_size;
@@ -599,12 +763,47 @@ void eval(struct Network* network) {
     }
 }
 
+void eval2(struct Network* network) {
+    unsigned int layer_id;
+    /* We introduce an eval function pointer, to help with readability */
+    int (*evalfp)(struct Network*, unsigned int);
+
+    /* TODO: We need arrays of eval and derivative function pointers
+     *       indexed by the layer type enum. */
+    for(layer_id = 0; layer_id < network->num_layers; layer_id++) {
+        evalfp = layer_eval_methods[network->li[layer_id].layer_type];
+        evalfp(network, network->li[layer_id].instance_idx);
+        /* weight_only_layer_eval(network, network->li[layer_id].instance_idx); */
+    }
+    /* Calculate the derivatives */
+    last_layer_output_derivative(network);
+    layer_id = network->num_layers - 1;
+    /* NOTE: We omit a derivative calculation for layer_id == 0,
+     *       since we don't need to know the derivative of the output
+     *       with respect to the input. */
+    while (layer_id > 0) {
+        weight_only_layer_derivative(network, network->li[layer_id].instance_idx);
+        layer_id--;
+    }
+}
+
 int update_weights(struct Network* network) {
     unsigned int layer_id = network->num_layers;
     int status = 0;
     while (layer_id > 0) {
         layer_id--;
         status = layer_update_weights(network, layer_id);
+        if (status) break;
+    }
+    return status;
+}
+
+int update_weights2(struct Network* network) {
+    unsigned int instance_idx = network->woli_length;
+    int status = 0;
+    while (instance_idx > 0) {
+        instance_idx--;
+        status = weight_only_update_weights(network, instance_idx);
         if (status) break;
     }
     return status;
@@ -850,6 +1049,8 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
         }
         network->woli[ltc_indices.wo_count].output_value_id = network->num_inputs + i;
         network->woli[ltc_indices.wo_count].weights_tensor_id = i;
+        network->woli[ltc_indices.wo_count].activator_func = activator_function;
+        network->woli[ltc_indices.wo_count].activator_deriv_func = activator_derivative;
         ltc_indices.wo_count++;
 
         /* Set tensor info */
@@ -1210,7 +1411,6 @@ int main(void) {
         if (max_tensor_val < 1e-4) break;
     }
 
-    
     network_destroy(network);
     /* tensor_infos_free(tis); */
 
