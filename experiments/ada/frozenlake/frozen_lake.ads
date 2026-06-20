@@ -9,6 +9,15 @@ package Frozen_Lake is
    type Cell_Type is (Start, Frozen, Hole, Goal);
    type Action_Type is (Left, Down, Right, Up);
 
+   -- TODO: The following is experimental, and might not be needed in the future.
+   type Map_Info_Type is record
+      Map_Name: Map_Type;
+      Rows: Positive;
+      Cols: Positive;
+   end record;
+   function Get_Map_Info(Map_Name: Map_Type) return Map_Info_Type;
+   -- End of experimental code.
+
    type Environment_Config is record
       Map_Name: Map_Type;
       Slippery : Boolean;
@@ -36,6 +45,14 @@ package Frozen_Lake is
    -- an "A" to indicate the position of the agent rather than highlighting the
    -- cell type abbreviation in red.
    procedure Render_Text(Env : Environment_State);
+
+   type Discrete_State_Type is new Natural range 0 .. 63; -- Allow for 8x8 map.
+   type Transition_Probability_Type is record
+       Probability : Float;
+       Reward : Float;
+   end record;
+   type Discrete_Model_Type is array (Discrete_State_Type, Action_Type, Discrete_State_Type) of Transition_Probability_Type;
+   function Get_Model(config: Environment_Config) return Discrete_Model_Type;
 
 private
    type Map_Element is (S, F, H, G);
