@@ -7,7 +7,7 @@ with Blackjack; use Blackjack;
 procedure Main is
     package Action_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
     Gen: Action_Random.Generator;
-    Env : Environment_Type := Make(Config_Type'(Natural_Win_Reward => SAB));
+    Env : Environment_Type := Make(Config_Type'(Natural_Win_Reward => SAB, Auto_Hit => False));
     Obs: Observation_Type;
     Action: Action_Type;
     Step_Output: Step_Return_Type;

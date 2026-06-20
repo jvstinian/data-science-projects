@@ -100,7 +100,8 @@ package Blackjack is
    --  * v0: Initial version release
    
    type Card_Type is (Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King);
-   type Card_Value_Array is array (Card_Type) of Integer;
+   subtype Card_Value_Type is Integer range 1..10;
+   type Card_Value_Array is array (Card_Type) of Card_Value_Type;
 
    Card_Values : constant Card_Value_Array := (
       Ace => 1, Two => 2, Three => 3, Four => 4, Five => 5,
@@ -119,16 +120,17 @@ package Blackjack is
 
    type Action_Type is (Stick, Hit);
 
-   type Natural_Win_Reward_Type is (SAB, Natural, No_Natural);
+   type Natural_Win_Reward_Type is (SAB, Natural_Win, No_Natural_Win);
    type Config_Type is record
       Natural_Win_Reward : Natural_Win_Reward_Type;
+      Auto_Hit : Boolean;
    end record;
 
    type Environment_Type is limited private;
 
    type Observation_Type is record
-      Player_Sum : Integer;
-      Dealer_Showing_Card : Card_Type;
+      Player_Sum : Integer;  -- TODO: Natural?
+      Dealer_Showing_Card_Value : Card_Value_Type;
       Usable_Ace : Boolean;
    end record;
    
@@ -151,7 +153,8 @@ private
 
    -- Note that we omit the dealer_top_card_suit and dealer_top_card_value_str 
    type Environment_Type is record
-      Natural_Win_Reward : Natural_Win_Reward_Type;
+      -- Natural_Win_Reward : Natural_Win_Reward_Type;
+      Config : Config_Type;
       Gen : Draw_Random.Generator;
       Player_Hand : Hand_Type;
       Dealer_Hand : Hand_Type;
@@ -161,6 +164,7 @@ private
    function Draw_Card(Gen : in out Draw_Random.Generator) return Card_Type;
    function Draw_Hand(Gen : in out Draw_Random.Generator) return Hand_Type;
    function Hand_Sum_And_Usable_Ace(Hand : Hand_Type) return Hand_Summary_Type;
+   function Sum_Hand(Hand : Hand_Type) return Integer;
    function Get_Obs(Env : Environment_Type) return Observation_Type;
 
 end Blackjack;
