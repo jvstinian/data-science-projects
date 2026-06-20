@@ -104,6 +104,12 @@ size_t inputs_size(struct Inputs* inputs) {
     return ret;
 }
 
+enum LayerType {
+    WEIGHT_ONLY,
+    /* WEIGHT_BIAS_ACTIVATOR, */
+    LAYER_TYPE_COUNT
+};
+
 struct LayerDimensions {
     unsigned int output_dims;
     unsigned int output_shape[6];
@@ -132,28 +138,8 @@ struct SequentialModel {
     struct LayerKinds *layer_kinds;
 };
    
-/* TODO: Is the following used? */
-struct Tensor {
-    unsigned int dims;
-    unsigned int shape[6];
-    float* weights;
-    /* float bias[2]; */
-    /* float x[2]; */
-};
-
-/* NOTE: Will use a list of ValueInfo instead
-struct InputInfo {
-    unsigned int offset;
-    unsigned int individual_size;
-    unsigned int batch_size;
-    unsigned int dims;
-    unsigned int shape[7];
-};
-*/
-
 struct ValueInfo {
     unsigned int offset;
-    /*unsigned int layer_id;*/
     unsigned int individual_size;
     unsigned int batch_size;
     unsigned int dims;
@@ -180,68 +166,74 @@ struct TensorInfo {
 
 struct LayerInfo {
     unsigned int layer_id;
-    unsigned int input_offset;
-    unsigned int num_inputs;
-    /*
+    enum LayerType layer_type;
     unsigned int instance_idx;
-    */
 };
 
-struct LayerValueInfo {
+struct LayerTypeCounter {
+    unsigned int wo_count;
+    unsigned int wba_count;
+    /* unsigned int concat_count; */
+};
+
+struct LayerTypeCounter get_layer_type_counts(const struct LayerKinds* layer_kinds) {
+    struct LayerTypeCounter ret = {0, 0};
+    ret.wo_count = layer_kinds->num_layers;
+    return ret;
+}
+
+unsigned int get_tensor_count(struct LayerTypeCounter ltc) {
+    return ltc.wo_count + (2*ltc.wba_count);
+};
+
+struct WOLayerInfo {
+    unsigned int instance_idx; /* TODO: Remove when ready */
     unsigned int layer_id;
-    unsigned int value_id;
+    unsigned int input_value_id;
+    unsigned int output_value_id;
+    unsigned int weights_tensor_id;
+    float (*activator_func)(float);
+    float (*activator_deriv_func)(float);
 };
 
-/*
 struct WBALayerInfo {
-    unsigned int instance_idx; // TODO: Remove when ready
+    unsigned int instance_idx; /* TODO: Remove when ready */
     unsigned int layer_id;
     unsigned int input_value_id;
     unsigned int weights_tensor_id;
-    // unsigned int bias_tensor_id;
-    // int (*layer_output_derivative)(struct Network*, unsigned int);
-    // float (*activator_func)(float);
-    // float (*activator_deriv_func)(float);
+    unsigned int bias_tensor_id;
+    /*
+    float (*activator_func)(float);
+    float (*activator_deriv_func)(float);
+    */
 };
-*/
 
 struct Network {
     unsigned int batchsize;
-    /*unsigned int inputs_size;*/
+    unsigned int num_inputs;
+    unsigned int num_values;
+    unsigned int num_derivatives;
+    unsigned int num_tensors;
+    unsigned int num_layers;
+    struct ValueInfo* vi;
+    struct ValueInfo* di;
+    struct TensorInfo* ti;
+    struct LayerInfo* li;
+    /* Layer Instances */
+    unsigned int woli_length;
+    unsigned int wbali_length;
+    struct WOLayerInfo* woli;
+    struct WBALayerInfo* wbali;
+    /* Tensor data */
     unsigned int values_size;
     unsigned int derivatives_size;
     unsigned int tensors_size;
-    unsigned int num_inputs;
-    /*
-    struct InputInfo* ii;
-    */
-    unsigned int num_values;
-    struct ValueInfo* vi;
-    unsigned int num_derivatives;
-    struct ValueInfo* di;
-    unsigned int num_tensors;
-    struct TensorInfo* ti;
-    unsigned int num_layers;
-    struct LayerInfo* li;
-    unsigned int layer_inputs_length;
-    struct LayerValueInfo* layer_inputs;
-    /*
-    unsigned int wbali_length;
-    struct WBALayerInfo* wbali;
-    */
-    /*
-    unsigned int layer_outputs_length;
-    struct LayerValueInfo* layer_outputs;
-    */
-    /*
-    float* inputs_ptr;
-    */
     float* values_ptr;
     float* derivatives_ptr;
     float* tensors_ptr;
 };
 
-/* TODO: Can we use restrict on out? */
+/* NOTE: Consider restrict if we move to C99 */
 void dot_product(float* a, float* b, size_t len, float* out) {
     size_t i;
 
@@ -259,6 +251,216 @@ void vector_multiply_diff(float c, float* a, float* b, size_t len, float* out) {
     }
 }
 
+/* TODO: The following is not used yet.  It is intended to replace layer_compute. */
+int weight_only_layer_eval(struct Network* network, unsigned int instance_idx) {
+    size_t i;
+    unsigned int batch_id = 0;
+
+    size_t input_length;
+    float* input;
+    size_t output_length;
+    float* output;
+#ifndef NDEBUG
+    size_t tensor_length;
+#endif
+    float* tensor;
+
+    /* Multiple inputs are possible, hence the offset to the layer_inputs array.
+     * However for the SequentialModel we have one input for each layer, so
+     * we just extract the value_id in layer_inputs at the offset index. */
+    unsigned int layer_id = network->woli[instance_idx].layer_id;
+    size_t input_value_idx = network->woli[instance_idx].input_value_id;
+    size_t output_value_idx = network->woli[instance_idx].output_value_id;
+
+    /* The following doesn't depend on batch ID */
+#ifndef NDEBUG
+    tensor_length = network->ti[layer_id].noe;
+#endif
+    tensor = network->tensors_ptr + network->ti[layer_id].offset;
+
+    input_length = network->vi[input_value_idx].individual_size;
+    output_length = network->vi[output_value_idx].individual_size;
+    assert(tensor_length == input_length * output_length);
+
+    for(batch_id = 0; batch_id < network->batchsize; batch_id++) {
+        input = network->values_ptr + network->vi[input_value_idx].offset + batch_id * input_length;
+        output = network->values_ptr + network->vi[output_value_idx].offset + batch_id * output_length;
+
+        for(i = 0; i < output_length; i++) {
+            dot_product(
+                tensor + i * input_length,
+                input,
+                input_length,
+                output + i
+            );
+            /* Call activator function */
+            output[i] = network->woli[instance_idx].activator_func(output[i]);
+        }
+
+    }
+    return 0;
+}
+
+static int (*layer_eval_methods[LAYER_TYPE_COUNT])(struct Network *, unsigned int) = { &weight_only_layer_eval };
+
+/* TODO: Note that the following takes the derivative with respect to the input to the
+ *       layer rather than the output (which is what last_layer_output_derivative does) */
+int weight_only_layer_derivative(struct Network* network, unsigned int instance_idx) {
+    unsigned int layer_id = network->woli[instance_idx].layer_id;
+    /* Nothing to do for layer 0.
+     * We don't need to know the derivative for the input values. 
+    if (layer_id == 0) return 0; */ 
+    /* We should omit layer_id 0 */
+    assert(layer_id > 0);
+    printf("weight_only_layer_derivative with layer_id %u (%u layers)\n", layer_id, network->num_layers);
+    size_t i, j;
+    unsigned int batch_id;
+
+    size_t input_value_idx = network->woli[instance_idx].input_value_id;
+    size_t output_value_idx = network->woli[instance_idx].output_value_id;
+
+    size_t input_length;
+    float* input;
+    size_t output_length;
+    size_t backprop_deriv_length;
+    float* backprop_deriv;
+    size_t layer_deriv_length;
+    float* layer_deriv;
+    size_t tensor_length;
+    float* tensor;
+    
+    input_length = network->vi[input_value_idx].individual_size;
+    output_length = network->vi[output_value_idx].individual_size;
+    backprop_deriv_length = network->di[layer_id].individual_size;
+    layer_deriv_length = network->di[layer_id-1].individual_size;
+
+    /* The following doesn't depend on batch ID */
+    tensor_length = network->ti[layer_id].noe;
+    tensor = network->tensors_ptr + network->ti[layer_id].offset;
+    
+    assert(backprop_deriv_length == output_length);
+    assert(layer_deriv_length == input_length);
+    assert(tensor_length == input_length * output_length);
+    assert(tensor_length == backprop_deriv_length * layer_deriv_length);
+
+    float* temp_output = malloc(output_length * sizeof(float));
+    if (temp_output == NULL) {
+        fprintf(stderr, "weight_only_layer_derivative: could not allocate activator function derivative array");
+        return 1;
+    }
+
+    for(batch_id = 0; batch_id < network->batchsize; batch_id++) {
+        input  = network->values_ptr + network->vi[input_value_idx].offset + batch_id * input_length;
+        backprop_deriv = network->derivatives_ptr + network->di[layer_id].offset + batch_id * backprop_deriv_length;
+        layer_deriv = network->derivatives_ptr + network->di[layer_id-1].offset + batch_id * layer_deriv_length;
+
+        /* As with the layer output value, we apply the tensor */
+        /* temp_output overwritten for each batch_id */
+        for(i = 0; i < output_length; i++) {
+            dot_product(
+                tensor + i * input_length,
+                input,
+                input_length,
+                temp_output + i
+            );
+            /* We apply the activator derivative component-wise */
+            temp_output[i] = network->woli[instance_idx].activator_deriv_func(temp_output[i]);
+        }
+
+        printf("Performing manual tensor left-multiplication for batch_id=%u in layer_id=%u\n", batch_id, layer_id);
+        printf("backprop_deriv_length=%lu, layer_deriv_length=%lu, tensor_length=%lu\n",
+                backprop_deriv_length,
+                layer_deriv_length,
+                tensor_length);
+        for(j = 0; j < layer_deriv_length; j++) {
+            layer_deriv[j] = 0.0f;
+            for(i = 0; i < backprop_deriv_length; i++) {
+                layer_deriv[j] += backprop_deriv[i] * temp_output[i] * tensor[i * layer_deriv_length + j];
+            }
+        }
+    }
+    free(temp_output);
+    return 0;
+}
+
+int weight_only_update_weights(struct Network* network, unsigned int instance_idx) {
+    unsigned int layer_id = network->woli[instance_idx].layer_id;
+    size_t i, j;
+    unsigned int batch_id = 0;
+
+    size_t input_length;
+    float* input;
+    size_t output_length;
+    size_t backprop_deriv_length;
+    float* backprop_deriv;
+    size_t tensor_length;
+    float* tensor;
+
+    size_t input_value_idx = network->woli[instance_idx].input_value_id;
+    size_t output_value_idx = network->woli[instance_idx].output_value_id;
+ 
+    input_length = network->vi[input_value_idx].individual_size;
+    output_length = network->vi[output_value_idx].individual_size;
+    backprop_deriv_length = network->di[layer_id].individual_size;
+
+    /* The following doesn't depend on batch ID */
+    tensor_length = network->ti[layer_id].noe;
+    tensor = network->tensors_ptr + network->ti[layer_id].offset;
+
+    assert(backprop_deriv_length == output_length);
+    assert(tensor_length == input_length * output_length);
+
+    /* We allocate a temporary array for activator function part of the derivative.
+     * We also allocate for the derivative which has the same shape as the layer tensor,
+     * and initialize to 0 */
+    float* temp_output = malloc(output_length * sizeof(float));
+    if (temp_output == NULL) {
+        fprintf(stderr, "layer_update_weight: could not allocate activator function derivative array");
+        return 1;
+    }
+    float* total_agg_deriv = calloc(tensor_length, sizeof(float));
+    if (total_agg_deriv == NULL) {
+        fprintf(stderr, "layer_update_weight: could not allocate total aggregate derivative array");
+        free(temp_output);
+        return 1;
+    }
+
+    for(batch_id = 0; batch_id < network->batchsize; batch_id++) {
+        input  = network->values_ptr + network->vi[input_value_idx].offset + batch_id * input_length;
+        backprop_deriv = network->derivatives_ptr + network->di[layer_id].offset + batch_id * backprop_deriv_length;
+
+        /* As with the layer output value, we apply the tensor */
+        /* temp_output overwritten for each batch_id */
+        for(i = 0; i < output_length; i++) {
+            dot_product(
+                tensor + i * input_length,
+                input,
+                input_length,
+                temp_output + i
+            );
+            /* Apply the activator function */
+            temp_output[i] = network->woli[instance_idx].activator_deriv_func(temp_output[i]);
+        }
+        
+        for(i = 0; i < output_length; i++) {
+            for(j = 0; j < input_length; j++) {
+                total_agg_deriv[i * input_length + j] += backprop_deriv[i] * temp_output[i] * input[j];
+            }
+        }
+    }
+    /* Adjust tensor */
+    /* TODO: Replace 0.05 with a parameter */
+    for(i = 0; i < tensor_length; i++) {
+        tensor[i] += 0.05 * total_agg_deriv[i];
+    }
+
+    /* Clean up */
+    free(total_agg_deriv);
+    free(temp_output);
+    return 0;
+}
+
+
 int layer_compute(struct Network* network, unsigned int layer_id) {
     size_t i;
     unsigned int batch_id = 0;
@@ -275,8 +477,8 @@ int layer_compute(struct Network* network, unsigned int layer_id) {
     /* Multiple inputs are possible, hence the offset to the layer_inputs array.
      * However for the SequentialModel we have one input for each layer, so
      * we just extract the value_id in layer_inputs at the offset index. */
-    size_t layer_input_offset = network->li[layer_id].input_offset;
-    size_t value_info_idx = network->layer_inputs[layer_input_offset].value_id;
+    size_t layer_instance_offset = network->li[layer_id].instance_idx;
+    size_t input_value_idx = network->woli[layer_instance_offset].input_value_id;
 
     size_t output_value_idx = network->num_inputs + layer_id; /* TODO: Need a more general approach here. */
 
@@ -286,24 +488,13 @@ int layer_compute(struct Network* network, unsigned int layer_id) {
 #endif
     tensor = network->tensors_ptr + network->ti[layer_id].offset;
 
+    input_length = network->vi[input_value_idx].individual_size;
+    output_length = network->vi[output_value_idx].individual_size;
+    assert(tensor_length == input_length * output_length);
+
     for(batch_id = 0; batch_id < network->batchsize; batch_id++) {
-        /*
-        if (layer_id == 0) {
-            input_length = network->ii[0].individual_size;
-            input = network->inputs_ptr + network->ii[0].offset + batch_id * input_length;
-        } else {
-            input_length = network->vi[layer_id - 1].individual_size;
-            input = network->values_ptr + network->vi[layer_id - 1].offset + batch_id * input_length;
-        }
-        */
-        /* TODO: input and output length don't depend on batch_id, so can be moved out of the loop */
-        input_length = network->vi[value_info_idx].individual_size;
-        input = network->values_ptr + network->vi[value_info_idx].offset + batch_id * input_length;
-
-        output_length = network->vi[output_value_idx].individual_size;
+        input = network->values_ptr + network->vi[input_value_idx].offset + batch_id * input_length;
         output = network->values_ptr + network->vi[output_value_idx].offset + batch_id * output_length;
-
-        assert(tensor_length == input_length * output_length);
 
         for(i = 0; i < output_length; i++) {
             dot_product(
@@ -321,6 +512,7 @@ void last_layer_output_derivative(struct Network* network) {
     unsigned int layer_id = network->num_layers - 1;
     unsigned int output_value_idx = network->num_values - 1;
     unsigned int response_value_idx = 1;
+    /* TODO: Should have a 2.0 in the numerator of the following */
     float mult = -1.0 / ((float) network->batchsize);
 
     unsigned int output_value_length = network->vi[output_value_idx].individual_size;
@@ -361,7 +553,6 @@ void layer_output_derivative(struct Network* network, unsigned int layer_id) {
     size_t tensor_length;
     float* tensor;
 
-    /* TODO: How would we handle multiple inputs? */
     backprop_deriv_length = network->di[layer_id+1].individual_size;
     layer_deriv_length = network->di[layer_id].individual_size;
 
@@ -370,16 +561,17 @@ void layer_output_derivative(struct Network* network, unsigned int layer_id) {
     tensor = network->tensors_ptr + network->ti[layer_id+1].offset;
 
     assert(tensor_length == backprop_deriv_length * layer_deriv_length);
+    
+    printf("backprop_deriv_length=%lu, layer_deriv_length=%lu, tensor_length=%lu\n",
+            backprop_deriv_length,
+            layer_deriv_length,
+            tensor_length);
 
     for(batch_id = 0; batch_id < network->batchsize; batch_id++) {
         backprop_deriv = network->derivatives_ptr + network->di[layer_id+1].offset + batch_id * backprop_deriv_length;
         layer_deriv = network->derivatives_ptr + network->di[layer_id].offset + batch_id * layer_deriv_length;
 
         printf("Performing manual tensor left-multiplication for batch_id=%u in layer_id=%u\n", batch_id, layer_id);
-        printf("backprop_deriv_length=%lu, layer_deriv_length=%lu, tensor_length=%lu\n",
-                backprop_deriv_length,
-                layer_deriv_length,
-                tensor_length);
         for(j = 0; j < layer_deriv_length; j++) {
             layer_deriv[j] = 0.0f;
             for(i = 0; i < backprop_deriv_length; i++) {
@@ -401,11 +593,9 @@ int layer_update_weights(struct Network* network, unsigned int layer_id) {
     size_t tensor_length;
     float* tensor;
 
-    /* Multiple inputs are possible, hence the offset to the layer_inputs array.
-     * However for the SequentialModel we have one input for each layer, so
-     * we just extract the value_id in layer_inputs at the offset index. */
-    size_t layer_input_offset = network->li[layer_id].input_offset;
-    size_t input_value_idx = network->layer_inputs[layer_input_offset].value_id;
+    /* Input value id using the instance index */
+    size_t layer_instance_offset = network->li[layer_id].instance_idx;
+    size_t input_value_idx = network->woli[layer_instance_offset].input_value_id;
 
     /* NOTE: We don't use output but we do use the output length for
      *       the size of the activator derivative terms. */
@@ -414,7 +604,6 @@ int layer_update_weights(struct Network* network, unsigned int layer_id) {
     input_length = network->vi[input_value_idx].individual_size;
     output_length = network->vi[output_value_idx].individual_size;
     backprop_deriv_length = network->di[layer_id].individual_size;
-    /* total_deriv_length = network->di[layer_id].individual_size; */
 
     /* The following doesn't depend on batch ID */
     tensor_length = network->ti[layer_id].noe;
@@ -426,15 +615,14 @@ int layer_update_weights(struct Network* network, unsigned int layer_id) {
     /* We allocate a temporary array for activator function part of the derivative.
      * We also allocate for the derivative which has the same shape as the layer tensor,
      * and initialize to 0 */
-    /* TODO: Error handling needed */
     float* temp_output = malloc(output_length * sizeof(float));
     if (temp_output == NULL) {
-        fprintf(stderr, "layer_update_weight: could not allocate activator function derivative array");
+        fprintf(stderr, "layer_update_weights: could not allocate activator function derivative array");
         return 1;
     }
     float* total_agg_deriv = calloc(tensor_length, sizeof(float));
     if (total_agg_deriv == NULL) {
-        fprintf(stderr, "layer_update_weight: could not allocate total aggregate derivative array");
+        fprintf(stderr, "layer_update_weights: could not allocate total aggregate derivative array");
         free(temp_output);
         return 1;
     }
@@ -453,9 +641,6 @@ int layer_update_weights(struct Network* network, unsigned int layer_id) {
                 temp_output + i
             );
         }
-        /* TODO: Apply activator derivative
-        array_map(temp_output, output_length, activator_derivative);
-        */
         /* TODO: We manually set the output to the derivative of the identity function (i.e., constant 1),
          *       which undoes the previous loop */
         for(i = 0; i < output_length; i++) {
@@ -481,13 +666,9 @@ int layer_update_weights(struct Network* network, unsigned int layer_id) {
 }
 
 void eval(struct Network* network) {
-    /* TODO: We use the tensors data as a proxy for the layers.
-     *       We should probably have dedicated layer data. */
-    size_t i;
     unsigned int layer_id;
 
-    for(i = 0; i < network->num_tensors; i++) {
-        layer_id = network->ti[i].layer_id;  /* TODO: Maybe li instead of ti? */
+    for(layer_id = 0; layer_id < network->num_layers; layer_id++) {
         layer_compute(network, layer_id);
     }
     /* Calculate the derivatives */
@@ -498,6 +679,30 @@ void eval(struct Network* network) {
             layer_id--;
             layer_output_derivative(network, layer_id);
         }
+    }
+}
+
+void eval2(struct Network* network) {
+    unsigned int layer_id;
+    /* We introduce an eval function pointer, to help with readability */
+    int (*evalfp)(struct Network*, unsigned int);
+
+    /* TODO: We need arrays of eval and derivative function pointers
+     *       indexed by the layer type enum.
+     *       We have a map now for eval. */
+    for(layer_id = 0; layer_id < network->num_layers; layer_id++) {
+        evalfp = layer_eval_methods[network->li[layer_id].layer_type];
+        evalfp(network, network->li[layer_id].instance_idx);
+    }
+    /* Calculate the derivatives */
+    last_layer_output_derivative(network);
+    layer_id = network->num_layers - 1;
+    /* NOTE: We omit a derivative calculation for layer_id == 0,
+     *       since we don't need to know the derivative of the output
+     *       with respect to the input. */
+    while (layer_id > 0) {
+        weight_only_layer_derivative(network, network->li[layer_id].instance_idx);
+        layer_id--;
     }
 }
 
@@ -512,25 +717,23 @@ int update_weights(struct Network* network) {
     return status;
 }
 
+int update_weights2(struct Network* network) {
+    unsigned int instance_idx = network->woli_length;
+    int status = 0;
+    while (instance_idx > 0) {
+        instance_idx--;
+        status = weight_only_update_weights(network, instance_idx);
+        if (status) break;
+    }
+    return status;
+}
+
 void fill_value(struct Network* network, unsigned int value_id, float val) {
     size_t i;
-    /*
-    unsigned int batch_id;
-    */
-
     size_t input_length;
     float* input;
     
-    /* No need for iteration
-    for(batch_id = 0; batch_id < network->batchsize; batch_id++) {
-        input_length = network->vi[value_id].individual_size;
-        input = network->values_ptr + network->vi[value_id].offset + batch_id * input_length;
-
-        for(i = 0; i < input_length; i++) {
-            input[i] = val;
-        }
-    }
-    */
+    /* No need for iteration over batches */
     input_length = network->vi[value_id].batch_size;
     input = network->values_ptr + network->vi[value_id].offset;
     for(i = 0; i < input_length; i++) {
@@ -551,40 +754,18 @@ void fill_rand(struct Network* network, unsigned int value_id) {
 }
 
 int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kinds, unsigned int batchsize, struct Network* network){
-    /* unsigned int batchsize = 1;  TODO: Remove when ready */
     assert(inputs->num_inputs > 0);
     size_t i;
     size_t layer_idx;
     unsigned int last_offset;
+    struct LayerTypeCounter ltc_sizes;
+    struct LayerTypeCounter ltc_indices = { 0 };
 
     /* batchsize */
     network->batchsize = batchsize;
 
     /* Input Info */
     network->num_inputs = inputs->num_inputs;
-    /*
-    network->ii = malloc(network->num_inputs * sizeof(struct InputInfo));
-    if (network->ii == NULL) {
-        fprintf(stderr, "network_init: could not allocate InputInfo");
-        return 1;
-    }
-    last_offset = 0;
-    for (i = 0; i < inputs->num_inputs; i++) {
-        network->ii[i].dims = inputs->input_shapes[i].dims + 1;
-        network->ii[i].shape[0] = batchsize; // TODO: use batchsize
-        memcpy(
-            ((unsigned int*) network->ii[i].shape) + 1,
-            inputs->input_shapes[i].shape,
-            inputs->input_shapes[i].dims * sizeof(unsigned int)
-        );
-
-        network->ii[i].individual_size = number_of_elements(inputs->input_shapes[i].shape, inputs->input_shapes[i].dims);
-        network->ii[i].batch_size = batchsize * network->ii[i].individual_size;
-        network->ii[i].offset = last_offset;
-        last_offset += network->ii[i].batch_size;
-    };
-    network->inputs_size = last_offset;
-    */
     
     /* Value Info
      * This includes both the inputs and the layer output values */
@@ -592,7 +773,6 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
     network->vi = malloc(network->num_values * sizeof(struct ValueInfo));
     if (network->vi == NULL) {
         fprintf(stderr, "network_init: could not allocate ValueInfo");
-        /* free(network->ii); network->ii =NULL; */
         return 1;
     }
     last_offset = 0;
@@ -611,13 +791,11 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
         network->vi[i].offset = last_offset;
         last_offset += network->vi[i].batch_size;
     };
-    /*network->inputs_size = last_offset;*/
     /* Fill in layer output information */
     for (i = inputs->num_inputs; i < inputs->num_inputs + layer_kinds->num_layers ; i++) {
         layer_idx = i - inputs->num_inputs;
-        /* network->vi[i].layer_id = layer_idx;  IN PROGRESS: Remove layer_id */
         network->vi[i].dims = layer_kinds->layer_specs[layer_idx].output_dims + 1;
-        network->vi[i].shape[0] = batchsize; /* TODO: use batchsize */
+        network->vi[i].shape[0] = batchsize;
         memcpy(
             ((unsigned int*) network->vi[i].shape) + 1,
             layer_kinds->layer_specs[layer_idx].output_shape,
@@ -638,7 +816,6 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
     network->di = malloc(network->num_derivatives * sizeof(struct DerivativeInfo));
     if (network->di == NULL) {
         fprintf(stderr, "network_init: could not allocate DerivativeInfo");
-        /*free(network->ii); network->ii =NULL;*/
         free(network->vi); network->vi =NULL;
         return 1;
     }
@@ -647,9 +824,8 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
     last_offset = 0;
     for (i = 0; i < layer_kinds->num_layers; i++) {
         /* Originally we iterated up to num_layers but reversed vi starting from the
-         * last element num_values - 1 */
-        /* network->di[i] = network->vi[network->num_values - 1 - i]; */
-        /* Now we just iterate starting with the output values of the layers */
+         * last element num_values - 1.
+         * Now we just iterate starting with the output values of the layers */
         network->di[i] = network->vi[inputs->num_inputs + i];
         /* Reset the offset */
         network->di[i].offset = last_offset;
@@ -657,17 +833,66 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
     }
     network->derivatives_size = last_offset;
 
+    /* Calculate the number of each layer type */
+    ltc_sizes = get_layer_type_counts(layer_kinds);
     /* Tensor Info */
-    /* TODO: Need to define a method for calculating the number of tensors */
-    network->num_tensors = layer_kinds->num_layers;
-    assert(network->num_tensors > 0); /* TODO: Move an assert for layer_kinds->num_layers up */
+    network->num_tensors = get_tensor_count(ltc_sizes);
+    assert(network->num_tensors > 0);
 
     network->ti = malloc(network->num_tensors * sizeof(struct TensorInfo));
     if (network->ti == NULL) {
         fprintf(stderr, "network_init: could not allocate TensorInfo");
-        /*free(network->ii); network->ii =NULL;*/
         free(network->vi); network->vi =NULL;
         free(network->di); network->di =NULL;
+        return 1;
+    }
+    /* WOLayerInfo */
+    network->woli_length = ltc_sizes.wo_count;
+    network->woli = NULL;
+    if (ltc_sizes.wo_count > 0) {
+        network->woli = malloc(ltc_sizes.wo_count * sizeof(struct WOLayerInfo));
+        if (network->woli == NULL) {
+            fprintf(stderr, "network_init: could not allocate WOLayerInfo");
+            free(network->vi); network->vi =NULL;
+            free(network->di); network->di =NULL;
+            free(network->ti); network->ti =NULL;
+            return 1;
+        }
+    }
+    /* WBALayerInfo */
+    network->wbali_length = ltc_sizes.wba_count;
+    network->wbali = NULL; /* Set to NULL to make sure not to free an empty list */
+    if (ltc_sizes.wba_count > 0) {
+        network->wbali = malloc(ltc_sizes.wba_count * sizeof(struct WBALayerInfo));
+        if (network->wbali == NULL) {
+            fprintf(stderr, "network_init: could not allocate WOLayerInfo");
+            free(network->vi); network->vi =NULL;
+            free(network->di); network->di =NULL;
+            free(network->ti); network->ti =NULL;
+            if (network->woli != NULL) {
+                free(network->woli); 
+            }
+            network->woli = NULL;
+            return 1;
+        }
+    }
+    
+    /* Layer Info */
+    network->num_layers = layer_kinds->num_layers;
+    network->li = malloc(network->num_layers * sizeof(struct LayerInfo));
+    if (network->li == NULL) {
+        fprintf(stderr, "network_init: could not allocate LayerInfo");
+        free(network->vi); network->vi =NULL;
+        free(network->di); network->di =NULL;
+        free(network->ti); network->ti =NULL;
+        if (network->woli != NULL) {
+            free(network->woli); 
+        }
+        network->woli = NULL;
+        if (network->wbali != NULL) {
+            free(network->wbali); 
+        }
+        network->wbali = NULL;
         return 1;
     }
     
@@ -681,6 +906,26 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
 
     last_offset = 0;
     for (i = 0; i < layer_kinds->num_layers ; i++) {
+        /* Set layer info */
+        network->li[i].layer_id = i;
+        network->li[i].layer_type = WEIGHT_ONLY;
+        network->li[i].instance_idx = ltc_indices.wo_count;
+
+        /* Set layer instance info */
+        network->woli[ltc_indices.wo_count].instance_idx = ltc_indices.wo_count;
+        network->woli[ltc_indices.wo_count].layer_id = i;
+        if (i == 0) {
+            network->woli[ltc_indices.wo_count].input_value_id = 0;
+        } else {
+            network->woli[ltc_indices.wo_count].input_value_id = network->num_inputs + (i - 1);
+        }
+        network->woli[ltc_indices.wo_count].output_value_id = network->num_inputs + i;
+        network->woli[ltc_indices.wo_count].weights_tensor_id = i;
+        network->woli[ltc_indices.wo_count].activator_func = activator_function;
+        network->woli[ltc_indices.wo_count].activator_deriv_func = activator_derivative;
+        ltc_indices.wo_count++;
+
+        /* Set tensor info */
         network->ti[i].layer_id = i;
         network->ti[i].component_id = 0;  /* NOTE: Currently always setting to 1 */
         network->ti[i].dims = layer_kinds->layer_specs[i].output_dims;
@@ -710,85 +955,55 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
     }
     network->tensors_size = last_offset;
 
-    /* Layer Info */
-    network->num_layers = layer_kinds->num_layers;
-    network->li = malloc(network->num_layers * sizeof(struct LayerInfo));
-    if (network->li == NULL) {
-        fprintf(stderr, "network_init: could not allocate LayerInfo");
-        /*free(network->ii); network->ii =NULL;*/
-        free(network->vi); network->vi =NULL;
-        free(network->di); network->di =NULL;
-        free(network->ti); network->ti =NULL;
-        return 1;
-    }
-    last_offset = 0;
-    for (i = 0; i < network->num_layers ; i++) {
-        network->li[i].layer_id = i;
-        network->li[i].input_offset = last_offset;
-        network->li[i].num_inputs = 1;
-
-        last_offset += network->li[i].num_inputs;
-    }
-
-    network->layer_inputs_length = last_offset;
-    network->layer_inputs = malloc(network->layer_inputs_length * sizeof(struct LayerValueInfo));
-    if (network->layer_inputs == NULL) {
-        fprintf(stderr, "network_init: could not allocate LayerValueInfo");
-        /*free(network->ii); network->ii =NULL;*/
-        free(network->vi); network->vi =NULL;
-        free(network->di); network->di =NULL;
-        free(network->ti); network->ti =NULL;
-        free(network->li); network->ti =NULL;
-        return 1;
-    }
-    for (i = 0; i < network->num_layers ; i++) {
-        network->layer_inputs[i].layer_id = i;
-        if (i == 0) {
-            network->layer_inputs[i].value_id = 0;
-        } else {
-            /* The first layer output corresponds to the value_id = network->num_inputs */
-            network->layer_inputs[i].value_id = network->num_inputs + (i - 1);
-        }
-    }
-
     /* Create arrays for data */
-    /*
-    network->inputs_ptr = malloc(network->inputs_size* sizeof(float));
-    if (network->inputs_ptr == NULL) {
-        fprintf(stderr, "network_init: could not allocate inputs array");
-        // free(network->ii); network->ii =NULL;
-        free(network->vi); network->vi =NULL;
-        free(network->di); network->di =NULL;
-        free(network->ti); network->ti =NULL;
-    }
-    */
     network->values_ptr = malloc(network->values_size * sizeof(float));
     if (network->values_ptr == NULL) {
         fprintf(stderr, "network_init: could not allocate values array");
-        /*free(network->ii); network->ii =NULL;*/
         free(network->vi); network->vi =NULL;
         free(network->di); network->di =NULL;
         free(network->ti); network->ti =NULL;
-        /* free(network->inputs_ptr); network->inputs_ptr =NULL; */
+        if (network->woli != NULL) {
+            free(network->woli); 
+        }
+        network->woli = NULL;
+        if (network->wbali != NULL) {
+            free(network->wbali); 
+        }
+        network->wbali = NULL;
+        free(network->li); network->li =NULL;
     }
     network->derivatives_ptr = malloc(network->derivatives_size * sizeof(float));
     if (network->derivatives_ptr == NULL) {
         fprintf(stderr, "network_init: could not allocate derivatives array");
-        /*free(network->ii); network->ii =NULL;*/
         free(network->vi); network->vi =NULL;
         free(network->di); network->di =NULL;
         free(network->ti); network->ti =NULL;
-        /* free(network->inputs_ptr); network->inputs_ptr =NULL; */
+        if (network->woli != NULL) {
+            free(network->woli); 
+        }
+        network->woli = NULL;
+        if (network->wbali != NULL) {
+            free(network->wbali); 
+        }
+        network->wbali = NULL;
+        free(network->li); network->li =NULL;
         free(network->values_ptr); network->values_ptr =NULL;
     }
     network->tensors_ptr = malloc(network->tensors_size * sizeof(float));
     if (network->tensors_ptr == NULL) {
         fprintf(stderr, "network_init: could not allocate tensors array");
-        /*free(network->ii); network->ii =NULL;*/
         free(network->vi); network->vi =NULL;
         free(network->di); network->di =NULL;
         free(network->ti); network->ti =NULL;
-        /* free(network->inputs_ptr); network->inputs_ptr =NULL; */
+        if (network->woli != NULL) {
+            free(network->woli); 
+        }
+        network->woli = NULL;
+        if (network->wbali != NULL) {
+            free(network->wbali); 
+        }
+        network->wbali = NULL;
+        free(network->li); network->li =NULL;
         free(network->values_ptr); network->values_ptr =NULL;
         free(network->derivatives_ptr); network->derivatives_ptr =NULL;
     }
@@ -796,146 +1011,17 @@ int network_init(const struct Inputs* inputs, const struct LayerKinds* layer_kin
 }
 
 void network_destroy(struct Network network){
-    /*free(network.ii);*/
     free(network.vi);
     free(network.di);
     free(network.ti);
+    if (network.woli != NULL) free(network.woli); 
+    if (network.wbali != NULL) free(network.wbali); 
     free(network.li);
-    free(network.layer_inputs);
-    /* free(network.inputs_ptr); */
     free(network.values_ptr);
     free(network.derivatives_ptr);
     free(network.tensors_ptr);
 }
 
-/* TODO: Remove
-struct TensorInfo* tensor_infos_new(const struct Inputs* inputs, const struct LayerKinds* layer_kinds, unsigned int* num_tensors) {
-    unsigned int layer_input_dims;
-    unsigned int layer_input_shape[6];
-    size_t i;
-
-    assert(inputs->num_inputs > 0);
-    layer_input_dims = inputs->input_shapes[0].dims;
-    memcpy(layer_input_shape, inputs->input_shapes[0].shape, layer_input_dims*sizeof(unsigned int));
-
-    // TODO: Need to define a method for calculating the number of tensors 
-    *num_tensors = layer_kinds->num_layers;
-
-    assert(*num_tensors > 0);
-    struct TensorInfo* ret = malloc(*num_tensors * sizeof(struct TensorInfo));
-
-    for (i = 0; i < layer_kinds->num_layers ; i++) {
-        ret[i].layer_id = i;
-        ret[i].component_id = 0;
-        ret[i].dims = layer_kinds->layer_specs[i].output_dims;
-        memcpy(
-            ret[i].shape,
-            layer_kinds->layer_specs[i].output_shape,
-            layer_kinds->layer_specs[i].output_dims * sizeof(unsigned int)
-        );
-
-        //
-        for (j = 0; j < layer_input_shape ; j++) {
-            ret[ret[i].shape + j] = layer_input_shape[j];
-        }
-        //
-        memcpy(
-            ((unsigned int*) ret[i].shape) + ret[i].dims,
-            layer_input_shape,
-            layer_input_dims * sizeof(unsigned int)
-        );
-        ret[i].dims += layer_input_dims;
-        
-        // Layer output dimensions become input dimensions for next layer //
-        layer_input_dims = layer_kinds->layer_specs[i].output_dims;
-        //
-        layer_input_shape = layer_kinds->layer_specs[i].output_shape;
-        //
-        memcpy(layer_input_shape, layer_kinds->layer_specs[i].output_shape, layer_input_dims*sizeof(unsigned int));
-    }
-    return ret;
-}
-*/
-
-/* TODO: Remove
-void tensor_infos_free(struct TensorInfo* tensor_info_ptr) {
-    free(tensor_info_ptr);
-}
-*/
-
-
-/*
-struct Deriv {
-    float grad[2];
-};
-
-float layer_objective(struct Layer layer, float xs[3][2], float ys[3]) {
-    int i;
-    float res = 0.0f;
-
-    for (i = 0; i < 3; i++) {
-        float v = xs[i][0] * layer.weights[0] + xs[i][1] * layer.weights[1];
-        res += (1/3.0f) * (v - ys[i]) * (v - ys[i]);
-    }
-    return res;
-}
-
-struct Deriv layer_deriv(struct Layer layer, float xs[3][2], float ys[3]) {
-    struct Deriv deriv = { { 0.0f, 0.0f } };
-
-    int i;
-    for (i = 0; i < 3; i++) {
-        float v = xs[i][0] * layer.weights[0] + xs[i][1] * layer.weights[1];
-        deriv.grad[0] += (1/3.0f) * 2.0f * (v - ys[i]) * xs[i][0];
-        deriv.grad[1] += (1/3.0f) * 2.0f * (v - ys[i]) * xs[i][1];
-    }
-    return deriv;
-}
-
-float inputs[3][2] = { { 0.0f, 1.0f }, { 2.0f, 3.0f }, { 4.0f, 5.0f } };
-
-const float a = 10.0f, b = 1.0f;
-
-float outputs[3];
-
-int main(void) {
-    outputs[0] = a * inputs[0][0] + b * inputs[0][1];
-    outputs[1] = a * inputs[1][0] + b * inputs[1][1];
-    outputs[2] = a * inputs[2][0] + b * inputs[2][1];
-
-    srand(137);
-    printf("Random float: %f\n", rand_float());
-    printf("Random float: %f\n", rand_float());
-    srand(137);
-    printf("Random float: %f\n", rand_float());
-    printf("Random float: %f\n", rand_float());
-
-    int i, j;
-    for (i = 0; i < 3; i++) {
-        for (j = 0; j < 2; j++) {
-            printf(" %.4f", inputs[i][j]);
-        }
-        printf("\n");
-    }
-
-    // struct Layer layer = { { 0.0f, 0.0f } }; 
-    // Start layer with random weights 
-    struct Layer layer = { { 20 * rand_float() - 10.0f, 20 * rand_float() - 10.0f } };
-    struct Deriv deriv;
-
-    for (i = 0; i < 500; i++) {
-        printf("layer weights = (%.4f, %.4f)\n", layer.weights[0], layer.weights[1]);
-        deriv = layer_deriv(layer, inputs, (float*) outputs);
-        printf("negative grad = (%.4f, %.4f)\n", -deriv.grad[0], -deriv.grad[1]);
-        layer.weights[0] -= 0.05*deriv.grad[0];
-        layer.weights[1] -= 0.05*deriv.grad[1];
-    }
-
-    float err = layer_objective(layer, inputs, outputs);
-    printf("Objective function given current weights: %.6f", err);
-    return 0;
-}
-*/
 int main(void) {
     struct Inputs* inputs = inputs_new(2);
     if (inputs == NULL) {
@@ -966,20 +1052,10 @@ int main(void) {
     layer_kinds[0].layer_specs[1].output_shape[0] = 3;
     */
 
-    /*
-    unsigned int num_tensors;
-    struct TensorInfo* tis = tensor_infos_new(inputs, layer_kinds, &num_tensors);
-    if (tis == NULL) {
-        fprintf(stderr, "Error allocating tensor info.");
-        goto defer_layer_kinds;
-    }
-    */
-
     unsigned int batchsize = 64;
 
     struct Network network;
     if (network_init(inputs, layer_kinds, batchsize, &network)) {
-        /* TODO: Assumes tis will be removed */
         goto defer_layer_kinds;
     }
     printf("Number of elements in values array: %u\n", network.values_size);
@@ -987,7 +1063,6 @@ int main(void) {
     /* TODO: The following is just to obtain some non-trivial values */
     fill_rand(&network, 0);  /* Fill input with random data */
     fill_value(&network, 1, 0.0f);
-    /* for(idx = 0; idx < 5; idx++) network.values_ptr[idx] = rand_float(); */
     /* Fill tensor with random values */
     size_t idx;
     for(idx = 0; idx < network.tensors_size; idx++) network.tensors_ptr[idx] = rand_float();
@@ -1008,13 +1083,12 @@ int main(void) {
         if (max_tensor_val < 1e-4) break;
     }
 
-    
     network_destroy(network);
-    /* tensor_infos_free(tis); */
 
-    /* TODO: Remove the following */
+    /* TODO: Move the following to test cases when ready
     printf("Activator function applied to 2.71: %.2f\n", activator_function(2.71f));
     printf("Activator function derivative applied to 2.71: %.2f\n", activator_derivative(2.71f));
+    */
 defer_layer_kinds:
     layer_kinds_free(layer_kinds);
 defer_free_inputs:
