@@ -4,7 +4,7 @@ synopsis:       synopsis
 description:
   Description
 
-license:        BSD-3-Clause
+license:        BSD3
 license-file:   LICENSE
 homepage:       https://github.com/jvstinian/data-science-projects/haskell/statistics/statistical-models
 bug-reports:    https://github.com/jvstinian/data-science-projects/issues
@@ -26,6 +26,9 @@ library
   exposed-modules:
     Statistics.Distribution.Pareto
     , Statistics.Regression.Linear
+    , Statistics.Regression.Families.Family
+    , Statistics.Regression.Families.Links
+    , Statistics.Regression.Families.VarFuncs
     , Statistics.Regression.Logistic
   other-modules:
     Statistics.Regression.Internal
@@ -33,7 +36,14 @@ library
                , statistics      >= 0.16.2.0
                , vector          >= 0.10
                , ad              >= 4.2 && <4.6
-	       , math-functions
+               , math-functions
   hs-source-dirs:      src
   ghc-options: -O2 -Wall -fwarn-tabs
+
+Benchmark benchmark-example
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   benchmark
+    main-is:          benchmark-example.hs
+    build-depends:    base >= 4.9 && < 5, time >= 1.1 && < 1.16
+    default-language: Haskell2010
 

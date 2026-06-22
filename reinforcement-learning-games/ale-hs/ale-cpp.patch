@@ -1,0 +1,30 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 764e216..5dba8e1 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -3,6 +3,12 @@ cmake_minimum_required (VERSION 3.14)
+ # Build the C++ shared library
+ option(BUILD_CPP_LIB "Build C++ Interface" ON)
+ 
++# Build the C++ library with interprocedural optimization enabled
++option(INTERPROCEDURAL_OPTIMIZATION_SUPPORT "Build library with interprocedural optimization" ON)
++ 
++# Build shared library
++option(BUILD_SHARED_LIBS "Build shared libraries by default" ON)
++
+ # Build the native Python bindings using pybind11
+ option(BUILD_PYTHON_LIB "Build Python Interface" ON)
+ 
+diff --git a/src/ale/CMakeLists.txt b/src/ale/CMakeLists.txt
+index 01ec94c..a4c9201 100644
+--- a/src/ale/CMakeLists.txt
++++ b/src/ale/CMakeLists.txt
+@@ -5,7 +5,7 @@ include_directories(BEFORE ${PROJECT_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}
+ set(CMAKE_CXX_STANDARD 17)
+ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+ set(CMAKE_CXX_EXTENSIONS FALSE)
+-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
++set(CMAKE_INTERPROCEDURAL_OPTIMIZATION INTERPROCEDURAL_OPTIMIZATION_SUPPORT)
+ set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+ 
+ # Compiler options
