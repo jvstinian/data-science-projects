@@ -8,6 +8,9 @@
 # Common executables
 **/main
 
+# Output
+**/*output.txt
+
 # Other projects for review
 orka
 mathpaqs
