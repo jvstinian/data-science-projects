@@ -40,6 +40,7 @@ target_link_libraries(rl_examples PRIVATE rllib)
 # add_test(NAME run_test_core COMMAND test_core)
 
 # Install
+include(GNUInstallDirs)
 install(TARGETS rllib rl_examples)
 
 install(DIRECTORY include/
