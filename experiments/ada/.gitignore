@@ -1,0 +1,16 @@
+*.ali
+*.o
+
+# Multi-language object files
+**/obj
+**/b~*
+
+# Common executables
+**/main
+
+# Output
+**/*output.txt
+
+# Other projects for review
+orka
+mathpaqs
