@@ -4,13 +4,13 @@ Created: 2021-07-20
 Author: Justin Smith (jvstinian@gmail.com)
 '''
 import os
+os.environ["TF_USE_LEGACY_KERAS"]="1"  # Must import before tensorflow
 import sys
 import argparse
 import json
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
 import gymnasium as gym
 from gymnasium.envs.registration import registry, register
+import tensorflow as tf
 from zombsole.gym_env import ZombsoleGymEnv, ZombsoleGymEnvDiscreteAction
 from envs.cartpole import CartPoleObservationWrapper
 from dqn.q_learning import DQN
@@ -22,13 +22,30 @@ from dqn.config import (
 import zombpyg.gym_env # to register the zombpyg gym environment
 import prlp_demo.gym_env # to register the demo gym environment
 
+# TODO: Is this registration needed or is it handled in the import?
+# register(
+#     id='Zombsole-v0', 
+#     # entry_point='zombsole.gym_env:ZombsoleGymEnv', 
+#     entry_point='zombsole.gym_env:ZombsoleGymEnvDiscreteAction', 
+#     max_episode_steps=1000,
+#     kwargs={
+#         'rules_name': 'extermination',
+#         'player_names': [],
+#         'map_name': 'bridge',
+#         'agent_id': 0,
+#         'initial_zombies': 5,
+#         'minimum_zombies': 0,
+#         'debug': False
+#     }
+# )
 
 # Remove if exists and recreate directory
 def truncate_dir(path):
-    if tf.gfile.Exists(path):
-        tf.gfile.DeleteRecursively(path)
-    tf.gfile.MakeDirs(path)
+    if tf.io.gfile.exists(path):
+        tf.io.gfile.rmtree(path)
+    tf.io.gfile.makedirs(path)
     return path
+
 
 def main():
     parser = argparse.ArgumentParser(description=None)
@@ -78,33 +95,59 @@ def main():
         config = DemoConfig
         game = gym.make('prlp/Demo-v0')
 
+    # TODO: From the merge conflict
+    # log_dir = os.path.join(conf['log_dir'], '{}/train'.format(args.config))
+    # if not tf.io.gfile.exists(log_dir):
+    #     tf.io.gfile.makedirs(log_dir)
+    # model_dir = os.path.join(conf['log_dir'], args.config)
+    
     conf = config['model']
     model_dir = os.path.join(conf['log_dir'], args.config, model_version)
     log_dir = os.path.join(model_dir, 'train')
-    if not tf.gfile.Exists(log_dir):
-        tf.gfile.MakeDirs(log_dir)
+    if not tf.io.gfile.exists(log_dir):
+        tf.io.gfile.makedirs(log_dir)
     
     with open(os.path.join(model_dir, "run_config.json"), "w") as run_config_file:
         json.dump(config, run_config_file, indent=4)
 
     device = '/{}:0'.format(args.device)
     lcallback = game.render if args.render else None
+    device = '/{}:0'.format(args.device)
     with tf.device(device):
         dqn = DQN(conf, game, model_dir, callback=lcallback, verbose=True)
-    
-    with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
-        saver = tf.train.Saver()
-        writer = tf.summary.FileWriter(truncate_dir(log_dir), sess.graph_def)
-        dqn.set_summary_writer(summary_writer=writer)
-        
-        sess.run(tf.global_variables_initializer())
-        if tf.train.latest_checkpoint(model_dir) is not None:
-            dqn.load(sess, saver)
-        # if configid == "zombpyg_withplayers_mlp":
-        #     dqn.load(sess, saver)
-        # elif configid == "zombpyg_mlp":
-        #     dqn.load(sess, saver)
-        dqn.train(sess, saver)
+
+    # TODO
+    # with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
+    #     saver = tf.train.Saver()
+    #     writer = tf.summary.FileWriter(delete_dir(log_dir), sess.graph_def)
+    #     dqn.set_summary_writer(summary_writer=writer)
+    #     
+    #     sess.run(tf.global_variables_initializer())
+    #     if configid == "zombpyg_withplayers_mlp": # TODO: Figure out how to train agents when there are other players or agents
+    #         dqn.load(sess, saver)
+    #     dqn.train(sess, saver)
+    # NOTE: The following probably wasn't the way to go
+    # def saver(model):
+    #     tf.saved_model.save(model, model_dir)
+    saver = tf.saved_model.save
+    writer = tf.summary.create_file_writer(truncate_dir(log_dir))
+    dqn.set_summary_writer(summary_writer=writer)
+    dqn.train(saver)
+
+    # TODO: From the merge conflict
+    # with tf.Session(config=tf.ConfigProto(allow_soft_placement=True)) as sess:
+    #     saver = tf.train.Saver()
+    #     writer = tf.summary.FileWriter(truncate_dir(log_dir), sess.graph_def)
+    #     dqn.set_summary_writer(summary_writer=writer)
+    #     
+    #     sess.run(tf.global_variables_initializer())
+    #     if tf.train.latest_checkpoint(model_dir) is not None:
+    #         dqn.load(sess, saver)
+    #     # if configid == "zombpyg_withplayers_mlp":
+    #     #     dqn.load(sess, saver)
+    #     # elif configid == "zombpyg_mlp":
+    #     #     dqn.load(sess, saver)
+    #     dqn.train(sess, saver)
         
 
 if __name__ == "__main__":
