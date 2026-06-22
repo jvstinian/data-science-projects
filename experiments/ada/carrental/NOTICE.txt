@@ -1,0 +1,23 @@
+Car Rental Example
+
+MIT License
+Copyright (c) 2026 Justin Smith
+
+===============================================================================
+We make use of the files
+generic_random_functions.ads and generic_random_functions.adb
+from the repo found at https://github.com/zertovitch/mathpaqs .
+Though the repo doesn't appear to include a LICENSE file at the root of
+the project, the top of one of the files used indicates the code falls under an
+MIT license with Copyright information as follows: 
+
+--  Legal licensing note:
+
+--  Copyright (c) 2010 .. 2023 Gautier de Montmollin
+--  Parts originally created by Stephen L. Moshier (see implementation for details)
+
+Note that we have removed functions we don't plan to use in this project
+so as to avoid bringing in additional files.
+Longer term, we might use Alire and set mathpaqs as an explicit dependency.
+===============================================================================
+ 
