@@ -15,5 +15,8 @@ build:
 build-prod:
 	gcc main.c -std=c89 -DNDEBUG -O3 -Wall -Wextra -o main-prod
 
+build-asm:
+	gcc -S main.c -std=c89 -DNDEBUG -march=native -O3 -Wall -Wextra -o main.asm
+
 run: build
 	./main

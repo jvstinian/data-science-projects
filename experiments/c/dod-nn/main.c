@@ -234,7 +234,7 @@ struct Network {
 };
 
 /* NOTE: Consider restrict if we move to C99 */
-void dot_product(float* a, float* b, size_t len, float* out) {
+void dot_product(float* a, float* b, size_t len, float* __restrict out) {
     size_t i;
 
     *out = 0.0f;
@@ -243,7 +243,7 @@ void dot_product(float* a, float* b, size_t len, float* out) {
     }
 }
 
-void vector_multiply_diff(float c, float* a, float* b, size_t len, float* out) {
+void vector_multiply_diff(float c, float* a, float* b, size_t len, float* __restrict out) {
     size_t i;
 
     for(i = 0; i < len; i++) {
