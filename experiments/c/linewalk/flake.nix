@@ -9,11 +9,11 @@
   };
   outputs = { nixpkgs, flake-utils, ... }: flake-utils.lib.eachDefaultSystem (system:
     let
-      hcdg = pkgs.stdenv.mkDerivation rec {
-          name = "hcdg";
+      line_walk = pkgs.stdenv.mkDerivation rec {
+          name = "line_walk";
           version = "0.1.0";
           src = ./.;
-          nativeBuildInputs = with pkgs; [ pkg-config autoreconfHook ];
+          nativeBuildInputs = with pkgs; [ pkg-config cmake ];
           # buildInputs = with pkgs; [
           # ];
           # installPhase = ''
@@ -38,17 +38,19 @@
       devShell = pkgs.mkShell {
         buildInputs = with pkgs; [
           pkg-config
-          automake autoconf libtool check
+          # automake autoconf libtool
+          cmake
+          check
           clang-tools
           ctags cscope
         ];
       };
       packages = {
-        default = pkgs.hcdg;
+        default = pkgs.line_walk;
       };
       apps.default = {
         type = "app";
-        program = "${packages.default}/bin/line_walk";
+        program = "${packages.default}/bin/rl_examples";
       };
     }
   );

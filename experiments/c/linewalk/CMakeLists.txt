@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 project(reinforcement_learning VERSION 1.0.0 LANGUAGES C)
 
 # C89
-set(CMAKE_C_STANDARD 89)
+set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
@@ -17,7 +17,7 @@ add_library(rllib
 target_include_directories(rllib
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     PRIVATE
         src
 )
@@ -38,3 +38,11 @@ target_link_libraries(rl_examples PRIVATE rllib)
 # )
 # target_link_libraries(test_core PRIVATE rllib)
 # add_test(NAME run_test_core COMMAND test_core)
+
+# Install
+install(TARGETS rllib rl_examples)
+
+install(DIRECTORY include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+

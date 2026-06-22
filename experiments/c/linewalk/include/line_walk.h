@@ -38,5 +38,9 @@ void print_state(LineWalkState state);
 
 void take_random_action(const LineWalkConfig* config, unsigned int max_steps);
 
+#define CONFIG_TYPE LineWalkConfig
+#include "random_action_h.inc"
+#undef CONFIG_TYPE
+
 int main();
 
