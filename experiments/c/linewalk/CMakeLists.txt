@@ -31,13 +31,13 @@ add_executable(rl_examples
 target_link_libraries(rl_examples PRIVATE rllib)
 
 # Testing
-# enable_testing()
-# 
-# add_executable(test_core
-#     tests/test_core.c
-# )
-# target_link_libraries(test_core PRIVATE rllib)
-# add_test(NAME run_test_core COMMAND test_core)
+enable_testing()
+
+add_executable(test_core
+    tests/test_example.c
+)
+target_link_libraries(test_core PRIVATE rllib check)
+add_test(NAME run_test_core COMMAND test_core)
 
 # Install
 include(GNUInstallDirs)
