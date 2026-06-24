@@ -43,6 +43,7 @@
           check
           clang-tools
           ctags cscope
+          valgrind
         ];
       };
       packages = {
