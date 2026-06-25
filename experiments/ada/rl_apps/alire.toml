@@ -1,0 +1,12 @@
+name = "rl_apps"
+description = "Example applications using techniques from the Reinforcement_Learning package"
+version = "0.1.0-dev"
+
+authors = ["Justin"]
+maintainers = ["Justin <jvstinian@gmail.com>"]
+maintainers-logins = ["jvstinian"]
+licenses = "BSD-3-Clause"
+website = ""
+tags = ["reinforcement-learning"]
+
+executables = ["rl_apps"]
