@@ -2,23 +2,6 @@ with Ada.Text_IO; use Ada.Text_IO;
 
 
 package body Reinforcement_Learning.Environments.LineWalk is
-
-    -- subtype Reward_Type is Integer range -1 .. 1;
-    -- type Action_Type is (MoveLeft, MoveRight);
-    -- type Available_Actions_Type is array (Action_Type) of Boolean;
-    -- type Active_State_Type is new Integer range 1 .. N;
-    -- type State_Kind_Type is (Active, Terminal);
-
-    -- type Line_Walk_State (Kind : State_Kind_Type) is
-    -- record
-    --     case Kind is
-    --         when Active =>
-    --             State : Active_State_Type;
-    --         when Terminal =>
-    --             Reward : Reward_Type;
-    --     end case;
-    -- end record;
-
     function Initial_State return State_Type is
     begin 
         return State_Type'(Kind => Active, State => Active_State_Type((N + 1) / 2));
