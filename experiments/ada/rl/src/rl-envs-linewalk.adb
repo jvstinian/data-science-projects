@@ -1,7 +1,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 
 
-package body Reinforcement_Learning.Environments.LineWalk is
+package body RL.Envs.LineWalk is
     function Initial_State return State_Type is
     begin 
         return State_Type'(Kind => Active, State => Active_State_Type((N + 1) / 2));
@@ -9,6 +9,7 @@ package body Reinforcement_Learning.Environments.LineWalk is
 
     function Is_Terminal (State : State_Type) return Boolean is
     begin
+        -- TODO: Use case
         if State.Kind = Active then
             return False;
         else
@@ -25,7 +26,6 @@ package body Reinforcement_Learning.Environments.LineWalk is
     begin
         if State.Kind = Active then
             declare
-                -- New_State : Active_State_Type := State.State;
                 New_State_Val : Integer := Integer(State.State);
             begin
                 case Action is
@@ -34,12 +34,10 @@ package body Reinforcement_Learning.Environments.LineWalk is
                     when MoveRight =>
                         New_State_Val := New_State_Val + 1;
                 end case;
-                -- Put_Line ("Moved, new state value: " & Integer'Image(New_State_Val));
 
                 if New_State_Val < 1 then
                     return State_Type'(Kind => Terminal, Reward => -1);
                 elsif New_State_Val > N then
-                    -- Put_Line ("Returning reward 1");
                     return State_Type'(Kind => Terminal, Reward => 1);
                 else
                     return State_Type'(Kind => Active, State => Active_State_Type(New_State_Val));
@@ -50,6 +48,7 @@ package body Reinforcement_Learning.Environments.LineWalk is
         end if;
     end Step;
 
+    -- TODO: Probably just change to Float
     function Reward(Player: Player_Type; State : State_Type) return Long_Float is
     begin
         if State.Kind = Terminal then
@@ -72,6 +71,7 @@ package body Reinforcement_Learning.Environments.LineWalk is
     function Get_Valid_Actions (State : State_Type) return Valid_Actions_Type is
         Result : Valid_Actions_Type := (MoveLeft, MoveRight);
     begin 
+        -- TODO: Try extended return statement
         return Result;
     end Get_Valid_Actions;
 
@@ -83,38 +83,4 @@ package body Reinforcement_Learning.Environments.LineWalk is
             Put_Line ("Terminal state with reward: " & Integer'Image(Integer(State.Reward)));
         end if;
     end Print_State;
-end Reinforcement_Learning.Environments.LineWalk;
-
--- initState :: Int -> Int -> LineWalkState
--- initState n pos | pos < 1   = LineWalkState n 1
---                 | pos > n   = LineWalkState n n
---                 | otherwise = LineWalkState n pos
--- 
--- applyAction :: LineWalkAction -> State LineWalkState Reward
--- applyAction MoveLeft = state (\s -> 
---     let LineWalkState n pos = s
---         newpos = pos - 1
---         reward = if newpos < 1
---                  then -1
---                  else 0
---     in (reward, LineWalkState n newpos))
--- applyAction MoveRight = state (\s -> 
---     let LineWalkState n pos = s
---         newpos = pos + 1
---         reward = if newpos > n
---                  then 1
---                  else 0
---     in (reward, LineWalkState n newpos))
--- 
--- instance MCTS.Environment LineWalkState LineWalkAction Double where
---     validActions _ = [MoveLeft, MoveRight]
---     isTerminal (LineWalkState n pos) = (pos < 1) || (pos > n)
---     act s = (flip execState s) . applyAction
---     -- act s a = execState (applyAction a) s
---     reward _ (LineWalkState n pos) =
---         if pos < 1
---         then (-1.0)
---         else if pos > n
---              then 1.0
---              else 0.0
--- 
+end RL.Envs.LineWalk;

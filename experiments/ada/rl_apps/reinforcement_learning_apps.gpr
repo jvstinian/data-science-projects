@@ -7,6 +7,10 @@ project Reinforcement_Learning_Apps is
    for Exec_Dir use "bin";
    for Main use ("rl_apps.adb");
 
+   package Builder is
+      for Executable ("rl_apps.adb") use "rl-examples";
+   end Builder;
+
    package Compiler is
       for Default_Switches ("Ada") use Reinforcement_Learning_Apps_Config.Ada_Compiler_Switches;
    end Compiler;

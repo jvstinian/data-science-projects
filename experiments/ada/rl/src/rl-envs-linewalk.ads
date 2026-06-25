@@ -1,16 +1,16 @@
 generic
     N : Positive;
-package Reinforcement_Learning.Environments.LineWalk is
+package RL.Envs.LineWalk is
     type State_Kind_Type is (Active, Terminal);
 
-    subtype Reward_Type is Integer range -1 .. 1;
     type Player_Type is (Line_Walker);
     type Action_Type is (MoveLeft, MoveRight);
 
     type Available_Actions_Type is array (Action_Type) of Boolean;
     type Valid_Actions_Type is array (Natural range <>) of Action_Type;
 
-    type Active_State_Type is new Integer range 1 .. N;
+    -- TODO: Remove discriminant on public declaration?
+    -- type State_Type is private;
     type State_Type(Kind : State_Kind_Type := Active) is private;
 
     function Initial_State return State_Type;
@@ -24,6 +24,9 @@ package Reinforcement_Learning.Environments.LineWalk is
     procedure Print_State (State : State_Type);
 
 private
+    subtype Reward_Type is Integer range -1 .. 1;
+    type Active_State_Type is new Integer range 1 .. N;
+
     type State_Type(Kind : State_Kind_Type := Active) is
     record
         case Kind is
@@ -34,4 +37,4 @@ private
         end case;
     end record;
 
-end Reinforcement_Learning.Environments.LineWalk;
+end RL.Envs.LineWalk;
