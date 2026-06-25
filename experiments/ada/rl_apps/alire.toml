@@ -1,5 +1,5 @@
-name = "rl_apps"
-description = "Example applications using techniques from the Reinforcement_Learning package"
+name = "reinforcement_learning_apps"
+description = "Example applications using the Reinforcement_Learning package"
 version = "0.1.0-dev"
 
 authors = ["Justin"]
@@ -7,6 +7,12 @@ maintainers = ["Justin <jvstinian@gmail.com>"]
 maintainers-logins = ["jvstinian"]
 licenses = "BSD-3-Clause"
 website = ""
-tags = ["reinforcement-learning"]
+tags = ["rl", "algorithms"]
 
 executables = ["rl_apps"]
+
+[[depends-on]]
+reinforcement_learning = "~0.1.0-dev"
+
+[[pins]]
+reinforcement_learning = { path='../rl' }
