@@ -9,7 +9,9 @@ licenses = "BSD-3-Clause"
 website = ""
 tags = ["rl", "algorithms"]
 
-executables = ["rl-examples"]
+executables = ["rl-examples", "frozenlake-example", "frozenlake-ipe-example", 
+               "policy_iteration_example", "value_iteration_example",
+               "td_example", "eligibility_trace_example" ]
 
 [[depends-on]]
 reinforcement_learning = "~0.1.0-dev"
