@@ -1,0 +1,10 @@
+name = "reinforcement_learning"
+description = "Reinforcement learning environments and algorithms"
+version = "0.1.0-dev"
+
+authors = ["Justin"]
+maintainers = ["Justin <jvstinian@gmail.com>"]
+maintainers-logins = ["jvstinian"]
+licenses = "BSD-3-Clause"
+website = ""
+tags = []
