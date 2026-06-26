@@ -5,10 +5,10 @@ project Reinforcement_Learning_Examples is
    for Object_Dir use "obj/" & Reinforcement_Learning_Examples_Config.Build_Profile;
    for Create_Missing_Dirs use "True";
    for Exec_Dir use "bin";
-   for Main use ("rl_apps.adb");
+   for Main use ("rl_examples.adb");
 
    package Builder is
-      for Executable ("rl_apps.adb") use "rl-examples";
+      for Executable ("rl_examples.adb") use "rl-examples";
    end Builder;
 
    package Compiler is
