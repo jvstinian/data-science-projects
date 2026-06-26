@@ -1,4 +1,4 @@
-name = "reinforcement_learning_apps"
+name = "reinforcement_learning_examples"
 description = "Example applications using the Reinforcement_Learning package"
 version = "0.1.0-dev"
 
@@ -9,7 +9,7 @@ licenses = "BSD-3-Clause"
 website = ""
 tags = ["rl", "algorithms"]
 
-executables = ["rl_apps"]
+executables = ["rl-examples"]
 
 [[depends-on]]
 reinforcement_learning = "~0.1.0-dev"
