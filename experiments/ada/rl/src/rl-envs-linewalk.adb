@@ -9,12 +9,10 @@ package body RL.Envs.LineWalk is
 
     function Is_Terminal (State : State_Type) return Boolean is
     begin
-        -- TODO: Use case
-        if State.Kind = Active then
-            return False;
-        else
-            return True;
-        end if;
+        case State.Kind is
+            when Active => return False;
+            when others => return True;
+        end case;
     end Is_Terminal;
 
     function Get_Player(State : State_Type) return Player_Type is
@@ -48,11 +46,10 @@ package body RL.Envs.LineWalk is
         end if;
     end Step;
 
-    -- TODO: Probably just change to Float
-    function Reward(Player: Player_Type; State : State_Type) return Long_Float is
+    function Reward(Player: Player_Type; State : State_Type) return Float is
     begin
         if State.Kind = Terminal then
-            return Long_Float(State.Reward);
+            return Float(State.Reward);
         else
             return 0.0;
         end if;
@@ -69,10 +66,8 @@ package body RL.Envs.LineWalk is
     end Get_Available_Actions;
 
     function Get_Valid_Actions (State : State_Type) return Valid_Actions_Type is
-        Result : Valid_Actions_Type := (MoveLeft, MoveRight);
     begin 
-        -- TODO: Try extended return statement
-        return Result;
+        return Result : Valid_Actions_Type := (MoveLeft, MoveRight);
     end Get_Valid_Actions;
 
     procedure Print_State (State : State_Type) is

@@ -1,4 +1,4 @@
-name = "reinforcement_learning_apps"
+name = "reinforcement_learning_examples"
 description = "Example applications using the Reinforcement_Learning package"
 version = "0.1.0-dev"
 
