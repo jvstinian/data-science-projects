@@ -1,8 +1,8 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Float_Text_IO;
 with Ada.Numerics.Discrete_Random;
-with Frozen_Lake; use Frozen_Lake;
-with Frozen_Lake.Child;
+with RL.Envs.Frozenlake; use RL.Envs.Frozenlake;
+with RL.Envs.Frozenlake.Child;
 
 procedure Main is
     package Action_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
@@ -14,7 +14,7 @@ procedure Main is
     I: Integer;
     Total_Reward: Float := 0.0;
 
-    package Frozen_Lake_Child is new Frozen_Lake.Child(Map_Info => Get_Map_Info(Map_4x4));
+    package Frozenlake_Child is new RL.Envs.Frozenlake.Child(Map_Info => Get_Map_Info(Map_4x4));
     DP_Model : Discrete_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Slippery => False));
 begin
     Action_Random.Reset(Gen);
@@ -51,8 +51,8 @@ begin
        end if;
     end loop;
 
-    Put_Line("Frozen Lake Child Get_Map_Rows: " & Frozen_Lake_Child.Num_Rows'Image);
-    Frozen_Lake_Child.Dummy_Method;
+    Put_Line("Frozen Lake Child Get_Map_Rows: " & Frozenlake_Child.Num_Rows'Image);
+    Frozenlake_Child.Dummy_Method;
     for Current_State in Discrete_State_Type loop
         for Current_Action in Action_Type loop
             for Next_State in Discrete_State_Type loop
