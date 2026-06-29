@@ -3,7 +3,7 @@ with Ada.Float_Text_IO;
 with Ada.Numerics.Discrete_Random;
 with Cartpole; use Cartpole;
 
-procedure Main is
+procedure Cartpole_Main is
     package Action_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
     Gen: Action_Random.Generator;
     State: Observation_Type;
@@ -42,4 +42,4 @@ begin
             exit;
         end if;
     end loop;
-end Main;
+end Cartpole_Main;

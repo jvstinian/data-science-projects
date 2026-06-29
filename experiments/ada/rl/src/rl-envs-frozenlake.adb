@@ -1,5 +1,5 @@
 
-package body Frozen_Lake is
+package body RL.Envs.Frozenlake is
    -- TODO: Experimental method
    function Get_Map_Info(Map_Name: Map_Type) return Map_Info_Type is
    begin
@@ -333,7 +333,7 @@ package body Frozen_Lake is
       end loop;
       return Res;
    end Get_Model;
-end Frozen_Lake;
+end RL.Envs.Frozenlake;
 
 -- # DFS to check that it's a valid path.
 -- def is_valid(board: List[List[str]], max_size: int) -> bool:

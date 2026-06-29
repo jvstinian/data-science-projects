@@ -1,8 +1,8 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Numerics;
-with Ada.Numerics.Float_Random; -- use Ada.Numerics.Float_Random;
+with Ada.Numerics.Float_Random;
 
-package Frozen_Lake is
+package RL.Envs.Frozenlake is
    package Float_Random renames Ada.Numerics.Float_Random;
 
    type Map_Type is (Map_4x4, Map_8x8);
@@ -23,7 +23,9 @@ package Frozen_Lake is
       Slippery : Boolean;
    end record;
 
-   -- type Map_Element is private;
+   -- Can't use the following as we would need default values for Rows and Cols
+   -- so that the private type is definite.
+   -- type Environment_State is limited private;
    type Environment_State(Rows: Positive; Cols: Positive) is limited private;
 
    type Observation_Type is record
@@ -98,7 +100,7 @@ private
    function To_S(Map: Map_Array; Position: Position_Type) return Natural;
    function Get_Start_Position(Map: Map_Array) return Position_Type;
 
-end Frozen_Lake;
+end RL.Envs.Frozenlake;
 
 --     """
 --     Frozen lake involves crossing a frozen lake from Start(S) to Goal(G) without falling into any Holes(H)

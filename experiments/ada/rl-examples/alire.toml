@@ -11,7 +11,8 @@ tags = ["rl", "algorithms"]
 
 executables = ["rl-examples", "frozenlake-example", "frozenlake-ipe-example", 
                "policy_iteration_example", "value_iteration_example",
-               "td_example", "eligibility_trace_example" ]
+               "td_example", "eligibility_trace_example",
+               "cartpole-main" ]
 
 [[depends-on]]
 reinforcement_learning = "~0.1.0-dev"
