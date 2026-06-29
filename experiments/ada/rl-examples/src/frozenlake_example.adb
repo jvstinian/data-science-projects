@@ -3,6 +3,7 @@ with Ada.Float_Text_IO;
 with Ada.Numerics.Discrete_Random;
 with RL.Envs.Frozenlake; use RL.Envs.Frozenlake;
 with RL.Envs.Frozenlake.Child;
+with Random_Actions; use Random_Actions;
 
 procedure Main is
     package Action_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
@@ -14,16 +15,19 @@ procedure Main is
     I: Integer;
     Total_Reward: Float := 0.0;
 
+    Sim_Summary : Simulation_Summary;
+
     package Frozenlake_Child is new RL.Envs.Frozenlake.Child(Map_Info => Get_Map_Info(Map_4x4));
     DP_Model : Discrete_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Slippery => False));
 begin
-    Action_Random.Reset(Gen);
+   Sim_Summary := Uniform_Random_Actions (False);
+   Put_Line("Simulation summary:");
+   Put_Line("  Number of steps: " & Natural'Image (Sim_Summary.Num_Steps));
+   Put("  Total reward: ");
+   Ada.Float_Text_IO.Put(Item => Sim_Summary.Total_Reward, Fore => 2, Aft => 2, Exp => 0);
+   New_Line;
 
-    -- if Get_Sutton_Barto_Reward then
-    --     Put_Line("Using Sutton-Barto reward");
-    -- else
-    --     Put_Line("Using default reward");
-    -- end if;
+    Action_Random.Reset(Gen);
 
     Put_Line("Initializing Frozen Lake environment");
     Obs:= Reset(Env);
