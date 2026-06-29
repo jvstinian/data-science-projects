@@ -1,19 +1,11 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Float_Text_IO;
-with Ada.Numerics.Discrete_Random;
 with RL.Envs.Frozenlake; use RL.Envs.Frozenlake;
 with RL.Envs.Frozenlake.Child;
 with RL.Algorithms.Random_Actions;
 
 procedure Main is
-    package Action_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
     Config: Environment_Config := Environment_Config'(Map_Name => Map_4x4, Slippery => False);
-    -- Env : Environment_State(4, 4) := Make(Environment_Config'(Map_Name => Map_4x4, Slippery => False));
-    -- Obs: Observation_Type;
-    -- Action: Action_Type;
-    -- Step_Output: Step_Return_Type;
-    -- I: Integer;
-    -- Total_Reward: Float := 0.0;
 
     package Frozenlake_Child is new RL.Envs.Frozenlake.Child(Map_Info => Get_Map_Info(Map_4x4));
     DP_Model : Discrete_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Slippery => False));
