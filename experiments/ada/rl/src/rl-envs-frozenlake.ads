@@ -1,6 +1,6 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Numerics;
-with Ada.Numerics.Float_Random; -- use Ada.Numerics.Float_Random;
+with Ada.Numerics.Float_Random;
 
 package RL.Envs.Frozenlake is
    package Float_Random renames Ada.Numerics.Float_Random;
@@ -23,7 +23,9 @@ package RL.Envs.Frozenlake is
       Slippery : Boolean;
    end record;
 
-   -- type Map_Element is private;
+   -- Can't use the following as we would need default values for Rows and Cols
+   -- so that the private type is definite.
+   -- type Environment_State is limited private;
    type Environment_State(Rows: Positive; Cols: Positive) is limited private;
 
    type Observation_Type is record
