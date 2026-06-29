@@ -1,0 +1,21 @@
+name = "reinforcement_learning_tests"
+description = "Tests for the Reinforcement_Learning package"
+version = "0.1.0-dev"
+
+authors = ["Justin Smith"]
+maintainers = ["Justin Smith <jvstinian@gmail.com>"]
+maintainers-logins = ["jvstinian"]
+licenses = "BSD-3-Clause"
+website = ""
+tags = ["tests"]
+
+executables = ["reinforcement_learning_tests"]
+
+[[depends-on]]
+aunit = "^25.0.0"
+
+[[depends-on]]
+reinforcement_learning = "*"
+
+[[pins]]
+reinforcement_learning = { path='..' }
