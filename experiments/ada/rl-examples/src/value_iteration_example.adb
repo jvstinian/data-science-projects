@@ -1,7 +1,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 -- with Ada.Float_Text_IO;
-with Frozen_Lake; use Frozen_Lake;
-with Frozen_Lake.Child;
+with RL.Envs.Frozenlake; use RL.Envs.Frozenlake;
+with RL.Envs.Frozenlake.Child;
 with Ada.Numerics.Discrete_Random;
 
 procedure Value_Iteration_Example is
@@ -10,7 +10,7 @@ procedure Value_Iteration_Example is
     package Action_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
     Action_Gen: Action_Random.Generator;
     
-    package Frozen_Lake_Child is new Frozen_Lake.Child(Map_Info => Get_Map_Info(Map_4x4));
+    package Frozen_Lake_Child is new RL.Envs.Frozenlake.Child(Map_Info => Get_Map_Info(Map_4x4));
     -- TODO: Use Alt_Discrete_State_Type instead of the following
     type Precise_State_Type is new Integer range 0 .. (Frozen_Lake_Child.Num_Rows * Frozen_Lake_Child.Num_Cols - 1);
     type Precise_Model_Type is array (Precise_State_Type, Action_Type, Precise_State_Type) of Transition_Probability_Type;
