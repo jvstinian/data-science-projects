@@ -2,9 +2,9 @@ name = "reinforcement_learning"
 description = "Reinforcement learning environments and algorithms"
 version = "0.1.0-dev"
 
-authors = ["Justin"]
-maintainers = ["Justin <jvstinian@gmail.com>"]
+authors = ["Justin Smith"]
+maintainers = ["Justin Smith <jvstinian@gmail.com>"]
 maintainers-logins = ["jvstinian"]
 licenses = "BSD-3-Clause"
-website = ""
-tags = []
+website = "https://github.com/jvstinian/data-science-projects"
+tags = ["rl", "algorithms"]
