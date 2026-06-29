@@ -1,7 +1,6 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Numerics;
 with Ada.Numerics.Float_Random;
-with RL.Envs.Step_Return;
 
 package RL.Envs.Frozenlake is
    package Float_Random renames Ada.Numerics.Float_Random;
@@ -33,14 +32,12 @@ package RL.Envs.Frozenlake is
       Position_Index : Natural;
    end record;
     
-   -- type Step_Return_Type is record
-   --    State: Observation_Type; -- TODO: Change variable name to Observation
-   --    Reward: Float;
-   --    Terminated: Boolean;
-   --    Done: Boolean; -- TODO: Change variable name to Truncated to match Python implementation
-   -- end record;
-   package Frozenlake_Step_Return is new RL.Envs.Step_Return (Observation_Type => Observation_Type);
-   subtype Step_Return_Type is Frozenlake_Step_Return.Step_Return_Type;
+   type Step_Return_Type is record
+      State: Observation_Type; -- TODO: Change variable name to Observation
+      Reward: Float;
+      Terminated: Boolean;
+      Done: Boolean; -- TODO: Change variable name to Truncated to match Python implementation
+   end record;
     
    function Make(config: Environment_Config) return Environment_State;
    -- TODO: Add argument for seed
