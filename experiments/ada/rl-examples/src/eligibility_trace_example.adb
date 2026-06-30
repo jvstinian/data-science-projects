@@ -67,7 +67,7 @@ procedure Eligibility_Trace_Example is
             while not Terminated loop
                 Action := Policy(S);
                 Step_Result := Step(Env, Action);
-                Obs := Step_Result.State;
+                Obs := Step_Result.Observation;
                 S1 := Precise_State_Type(Obs.Position_Index);
                 Put_Line("Action " & Action_Type'Image(Action) & " takes state " & Precise_State_Type'Image(S) & " to state " & Precise_State_Type'Image(S1));
                 TD_Error := Step_Result.Reward + ET_Config.Gamma * Value_Function (S1) - Value_Function (S);
@@ -196,7 +196,7 @@ procedure Eligibility_Trace_Example is
 
             while not Terminated loop
                Step_Result := Step(Env, A);
-               Obs := Step_Result.State;
+               Obs := Step_Result.Observation;
                S1 := Precise_State_Type(Obs.Position_Index);
                A1 := Choose_Action_Epsilon_Greedy(Epsilon, Action_Value_Function, S1);
                Put_Line("Action " & Action_Type'Image(A) & " takes state " & Precise_State_Type'Image(S) & " to state " & Precise_State_Type'Image(S1) & " and action " & Action_Type'Image(A1) & " in on-policy SARSA");
@@ -324,7 +324,7 @@ procedure Eligibility_Trace_Example is
 
             while not Terminated loop
                Step_Result := Step(Env, A);
-               Obs := Step_Result.State;
+               Obs := Step_Result.Observation;
                S1 := Precise_State_Type(Obs.Position_Index);
                A1 := Choose_Action_Epsilon_Greedy(Epsilon, Action_Value_Function, S1);
                A_Best := Best_Action_For_State(Action_Value_Function, S1);  -- TODO: Just get best value for state

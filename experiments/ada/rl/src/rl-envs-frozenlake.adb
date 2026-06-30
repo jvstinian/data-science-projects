@@ -152,6 +152,7 @@ package body RL.Envs.Frozenlake is
    end Make;
 
    function Reset(Env : in out Environment_State) return Observation_Type is
+      -- TODO: No need to have a Result variable
       Result : Observation_Type;
    begin
       Float_Random.Reset(Gen);
@@ -205,7 +206,6 @@ package body RL.Envs.Frozenlake is
       Env.Agent_Position := Transition.Position;
       return Result;
    end Step;
-    
 
    procedure Render_Text(Env : Environment_State) is
    begin

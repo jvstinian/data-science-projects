@@ -2,81 +2,67 @@ with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Numerics;
 with Ada.Numerics.Float_Random;
 
---  Frozen lake involves crossing a frozen lake from Start(S) to Goal(G) without falling into any Holes(H)
---     by walking over the Frozen(F) lake.
---     The agent may not always move in the intended direction due to the slippery nature of the frozen lake.
+--  The Frozen lake environments involves crossing a Frozen(F) lake from
+--  Start(S) to Goal(G) without falling into any Holes(H).
+--  The agent may not always move in the intended direction due to the
+--  slippery nature of the frozen lake.
 -- 
---     ### Action Space
---     Actions represent moving in one of four directions, namely
---     Left, Down, Right, or Up.
+--  ## Action Space
+--  Actions represent moving in one of four directions, namely
+--  Left, Down, Right, or Up.
 -- 
---     ### Observation Space
---     The observation is a value representing the agent's current position as
---     current_row * nrows + current_col (where both the row and col start at 0).
---     For example, the goal position in the 4x4 map can be calculated as follows: 3 * 4 + 3 = 15.
---     The number of possible observations is dependent on the size of the map.
---     For example, the 4x4 map has 16 possible observations.
+--  ## Observation Space
+--  The observation is a value representing the agent's current position as
+--  current_row * nrows + current_col (where both the row and col start at 0).
+--  The number of possible observations is dependent on the size of the map.
+--  For example, the 4x4 map has 16 possible observations.
+--
+--  Note that in the private environment below that we actually store the
+--  position in 1-based coordinates (row and column), but the public
+--  observation type is the flattened 0-based position index.
 -- 
---     ### Rewards
+--  ## Rewards
+--  Reward schedule:
+--    - Reach goal(G): +1
+--    - Reach hole(H): 0
+--    - Reach frozen(F): 0
 -- 
---     Reward schedule:
---     - Reach goal(G): +1
---     - Reach hole(H): 0
---     - Reach frozen(F): 0
+--  ## Environment Configuration
+--  There are two supported configuration options:
+--    - Map name, which can be either 4x4 or 8x8, and
+--    - Slippery, which can be true or false.
+--   
+--  Depending on map name, the maps are as follows.
+--    4x4:
+--         SFFF
+--         FHFH
+--         FFFH
+--         HFFG
 -- 
---     ### Arguments
+--    8x8:
+--         SFFFFFFF
+--         FFFFFFFF
+--         FFFHFFFF
+--         FFFFFHFF
+--         FFFHFFFF
+--         FHHFFFHF
+--         FHFFHFHF
+--         FFFHFFFG
 -- 
---     ```
---     gym.make('FrozenLake-v1', desc=None, map_name="4x4", is_slippery=True)
---     ```
+--  Is_Slippery can be True or False. If True will move in intended direction
+--  with probability of 1/3 else will move in either perpendicular direction
+--  with equal probability of 1/3 in both directions.
 -- 
---     `desc`: Used to specify custom map for frozen lake. For example,
--- 
---         desc=["SFFF", "FHFH", "FFFH", "HFFG"].
--- 
---         A random generated map can be specified by calling the function `generate_random_map`. For example,
--- 
---         ```
---         from gym.envs.toy_text.frozen_lake import generate_random_map
--- 
---         gym.make('FrozenLake-v1', desc=generate_random_map(size=8))
---         ```
--- 
---     `map_name`: ID to use any of the preloaded maps.
--- 
---         "4x4":[
---             "SFFF",
---             "FHFH",
---             "FFFH",
---             "HFFG"
---             ]
--- 
---         "8x8": [
---             "SFFFFFFF",
---             "FFFFFFFF",
---             "FFFHFFFF",
---             "FFFFFHFF",
---             "FFFHFFFF",
---             "FHHFFFHF",
---             "FHFFHFHF",
---             "FFFHFFFG",
---         ]
--- 
---     `is_slippery`: True/False. If True will move in intended direction with
---     probability of 1/3 else will move in either perpendicular direction with
---     equal probability of 1/3 in both directions.
--- 
---         For example, if action is left and is_slippery is True, then:
---         - P(move left)=1/3
---         - P(move up)=1/3
---         - P(move down)=1/3
+--  For example, if action is left and is_slippery is True, then:
+--    - P(move left)=1/3
+--    - P(move up)=1/3
+--    - P(move down)=1/3
 --
 -- Some differences with the Python Gymnasium implementation include:
 -- * the Python version returns probability info (e.g., {"prob": 1})
 --   in the reset and step methods, whereas this implementation
 --   omits this info
 -- * this implementation does not support randomly generated maps.
---
 package RL.Envs.Frozenlake is
    package Float_Random renames Ada.Numerics.Float_Random;
 
@@ -92,12 +78,9 @@ package RL.Envs.Frozenlake is
 
    type Environment_Config is record
       Map_Name: Map_Type;
-      Slippery : Boolean;
+      Slippery : Boolean;  -- TODO: Change to Is_Slippery
    end record;
 
-   -- Can't use the following as we would need default values for Rows and Cols
-   -- so that the private type is definite.
-   -- type Environment_State is limited private;
    type Environment_State(Rows: Positive; Cols: Positive) is limited private;
 
    type Observation_Type is record
@@ -151,7 +134,6 @@ private
        Terminated: Boolean;
    end record;
 
-   -- type Transition_Probabilities_Type is array (Natural range <>) of Transition_Type;
    type Action_Transition_Type is array (Action_Type, Action_Type) of Transition_Type;
 
    type Map_Transitions is array (Positive range <>, Positive range <>) of Action_Transition_Type;
