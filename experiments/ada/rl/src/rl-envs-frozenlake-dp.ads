@@ -14,6 +14,6 @@ package RL.Envs.Frozenlake.DP is
 
    type DP_Model_Type is array (State_Type, Action_Type, State_Type) of Transition_Probability_Type;
 
-   function Get_Model(Config: Environment_Config) return DP_Model_Type
+   function Get_Model(Config: Config_Type) return DP_Model_Type
       with Pre => Config.Map_Name = Map_Name;
 end RL.Envs.Frozenlake.DP;

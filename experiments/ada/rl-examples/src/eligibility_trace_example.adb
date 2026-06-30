@@ -26,8 +26,8 @@ procedure Eligibility_Trace_Example is
         Lambda : Float;
     end record;
 
-    function ET_Iterative_Policy_Evaluation(Env_Config: Environment_Config; ET_Config: ET_Config_Type; Policy : Policy_Type) return Value_Function_Type is
-        Env : Environment_State := Make (Env_Config);
+    function ET_Iterative_Policy_Evaluation(Env_Config: Config_Type; ET_Config: ET_Config_Type; Policy : Policy_Type) return Value_Function_Type is
+        Env : Environment_Type := Make (Env_Config);
 
         type Eligibility_Trace_Type is array (State_Type) of Float;
         E : Eligibility_Trace_Type := (others => 0.0);
@@ -104,8 +104,8 @@ procedure Eligibility_Trace_Example is
       Episodes_To_Minimum_Epsilon: Natural;
    end record;
 
-   function ET_SARSA_On_Policy(Env_Config: Environment_Config; SARSA_Config: SARSA_Config_Type) return Action_Value_Function_Type is
-      Env : Environment_State := Make (Env_Config);
+   function ET_SARSA_On_Policy(Env_Config: Config_Type; SARSA_Config: SARSA_Config_Type) return Action_Value_Function_Type is
+      Env : Environment_Type := Make (Env_Config);
 
       package Action_Unif_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
       package Float_Unif_Random renames Ada.Numerics.Float_Random;
@@ -231,8 +231,8 @@ procedure Eligibility_Trace_Example is
         return Action_Value_Function;
     end ET_SARSA_On_Policy;
 
-   function Watkins_Q_Iteration(Env_Config: Environment_Config; SARSA_Config: SARSA_Config_Type) return Action_Value_Function_Type is
-      Env : Environment_State := Make (Env_Config);
+   function Watkins_Q_Iteration(Env_Config: Config_Type; SARSA_Config: SARSA_Config_Type) return Action_Value_Function_Type is
+      Env : Environment_Type := Make (Env_Config);
 
       package Action_Unif_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
       package Float_Unif_Random renames Ada.Numerics.Float_Random;
@@ -365,7 +365,7 @@ procedure Eligibility_Trace_Example is
         return Action_Value_Function;
     end Watkins_Q_Iteration;
 
-    Frozen_Lake_Config : Environment_Config := (Map_Name => Map_4x4, Is_Slippery => False);
+    Frozen_Lake_Config : Config_Type := (Map_Name => Map_4x4, Is_Slippery => False);
     ET_Config : ET_Config_Type := (Alpha => 0.1, Gamma => 0.9, Lambda => 0.6);
     P : Policy_Type := (others => Down);
     Local_Value_Function : Value_Function_Type;

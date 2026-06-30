@@ -2,7 +2,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 
 package body RL.Envs.Frozenlake.DP is
    -- TODO: Remove
-   -- function Get_Model(Config: Environment_Config) return Precise_Model_Type is
+   -- function Get_Model(Config: Config_Type) return Precise_Model_Type is
    --    DP_Model : Discrete_Model_Type := Get_Model(Config);
    --    Precise_DP_Model : Precise_Model_Type;
    -- begin
@@ -16,9 +16,9 @@ package body RL.Envs.Frozenlake.DP is
    --    return Precise_DP_Model;
    -- end Get_Model;
 
-   function Get_Model(Config: Environment_Config) return DP_Model_Type is
+   function Get_Model(Config: Config_Type) return DP_Model_Type is
       Res : DP_Model_Type := (others => (others => (others => (Probability => 0.0, Reward => 0.0))));
-      Env : Environment_State := Make(Config);
+      Env : Environment_Type := Make(Config);
       Prev_State : State_Type;
       Next_State : State_Type;
 
