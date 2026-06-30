@@ -1,7 +1,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Numerics.Elementary_Functions; use Ada.Numerics.Elementary_Functions;
 
-package body Cartpole is
+package body RL.Envs.Cartpole is
     function Get_Sutton_Barto_Reward return Boolean is
     begin
         return Sutton_Barto_Reward;
@@ -143,5 +143,5 @@ package body Cartpole is
         Return_Value := Step_Return_Type'(State => Output_State, Reward => Reward, Terminated => Terminated, Done => False);
         return Return_Value;
     end Step;
-end Cartpole;
+end RL.Envs.Cartpole;
 

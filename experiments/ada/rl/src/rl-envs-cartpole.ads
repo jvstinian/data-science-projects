@@ -1,7 +1,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Numerics;
 with Ada.Numerics.Float_Random;
-with RL; use RL;  -- TODO: Not needed once the package is renamed
+-- with RL; use RL;  -- TODO: Not needed once the package is renamed
 
 -- This package provides an implementation of the cart-pole environment described
 -- by Barto, Sutton, and Anderson in
@@ -14,7 +14,7 @@ with RL; use RL;  -- TODO: Not needed once the package is renamed
 --   Gymnasium allows the bounds used to determine the new random state to
 --   be changed, 
 -- * we omit the steps_beyond_terminated variable
-package Cartpole is
+package RL.Envs.Cartpole is
     package Float_Random renames Ada.Numerics.Float_Random;
 
     -- Position and angle thresholds at which to fail the episode.
@@ -97,5 +97,5 @@ private
        State : Observation_Type;
     end record;
 
-end Cartpole;
+end RL.Envs.Cartpole;
 
