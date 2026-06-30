@@ -94,8 +94,7 @@ package RL.Envs.Frozenlake is
    end record;
     
    function Make(Config: Config_Type) return Environment_Type;
-   -- TODO: Add argument for seed
-   function Reset(Env : in out Environment_Type) return Observation_Type;
+   function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type) return Observation_Type;
    function Step(Env : in out Environment_Type; action: Action_Type) return Step_Return_Type;
    -- Render_Text loosely follows the Python implementation, except that we use
    -- an "A" to indicate the position of the agent rather than highlighting the
