@@ -1,5 +1,6 @@
 with Ada.Text_IO; use Ada.Text_IO;
 -- with Ada.Float_Text_IO;
+with RL; use RL;  -- Transition_Probability_Type
 with RL.Envs.Frozenlake; use RL.Envs.Frozenlake;
 with RL.Envs.Frozenlake.DP;
 with Ada.Numerics.Discrete_Random;
