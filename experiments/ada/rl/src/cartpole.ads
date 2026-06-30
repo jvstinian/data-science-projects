@@ -1,6 +1,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Numerics;
 with Ada.Numerics.Float_Random;
+with RL; use RL;  -- TODO: Not needed once the package is renamed
 
 -- This package provides an implementation of the cart-pole environment described
 -- by Barto, Sutton, and Anderson in
@@ -35,6 +36,8 @@ package Cartpole is
     type Threshold_Type is new Float range X_Threshold_Lower .. X_Threshold_Upper;
     type Theta_Threshold_Type is new Float range Theta_Threshold_Lower .. Theta_Threshold_Upper;
 
+    type Config_Type is null record;
+
     -- TODO: We will need an environment and observation type
     type Observation_Type is record
         X: Threshold_Type;
@@ -42,6 +45,8 @@ package Cartpole is
         Theta: Theta_Threshold_Type;
         Theta_Dot: Float;
     end record;
+    
+    type Environment_Type is limited private;
     
     type Step_Return_Type is record
         State: Observation_Type;  -- TODO: Change name to Observation
@@ -58,6 +63,9 @@ package Cartpole is
     procedure Set_Kinematics_Integrator (K: Kinematics_Integrator_Type);
 
     -- Environment Methods
+    function Make(Config: Config_Type) return Environment_Type;
+    function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type) return Observation_Type;
+    function Step(Env : in out Environment_Type; action: Action_Type) return Step_Return_Type;
     -- TODO: We will need to be able to specify a seed for the reset method
     function Reset return Observation_Type;
     -- TODO: After defining an Environment type, we will need to pass it as an in out parameter
@@ -82,6 +90,12 @@ private
 
     -- RNG
     Gen: Float_Random.Generator;
+
+    type Environment_Type is limited record
+       Config : Config_Type;
+       Gen : Float_Random.Generator;
+       State : Observation_Type;
+    end record;
 
 end Cartpole;
 

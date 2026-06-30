@@ -22,6 +22,45 @@ package body Cartpole is
         Kinematics_Integrator := K;
     end Set_Kinematics_Integrator;
 
+    function Make(Config: Config_Type) return Environment_Type is
+    begin
+      return Environment_Type'(
+         Config => Config,
+         Gen => <>,
+         State => Observation_Type'(
+            X => 0.0, X_Dot => 0.0, Theta => 0.0, Theta_Dot => 0.0
+         )
+      );
+    end Make;
+
+   function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type) return Observation_Type is
+      Low: constant Float := -0.05;
+      High: constant Float := 0.05;
+      High_Low_Diff: constant Float := High - Low;
+   begin
+      case Seed_Reset.Kind is
+         when Set_Default => Float_Random.Reset(Env.Gen);
+         when No_Set      => null;
+         when Set_Seed    => Float_Random.Reset(Env.Gen, Seed_Reset.Seed);
+      end case;
+      Env.State := Observation_Type'(
+            X => Threshold_Type(Low + High_Low_Diff * Float_Random.Random(Env.Gen)),
+            X_Dot => Low + High_Low_Diff * Float_Random.Random(Env.Gen),
+            Theta => Theta_Threshold_Type(Low + High_Low_Diff * Float_Random.Random(Env.Gen)),
+            Theta_Dot => Low + High_Low_Diff * Float_Random.Random(Env.Gen)
+      );
+      return Env.State;
+   end Reset;
+    
+   function Step(Env : in out Environment_Type; action: Action_Type) return Step_Return_Type is
+      -- Just apply the original step method as applying an action is deterministic
+      Res : Step_Return_Type := Step(Env.State, action);
+   begin
+      -- Update the state before returning
+      Env.State := Res.State;
+      return Res;
+   end Step;
+
     function Reset return Observation_Type is
         Low: constant Float := -0.05;
         High: constant Float := 0.05;
