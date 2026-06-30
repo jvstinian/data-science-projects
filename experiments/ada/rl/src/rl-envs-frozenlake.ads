@@ -76,11 +76,13 @@ package RL.Envs.Frozenlake is
    end record;
    function Get_Map_Info(Map_Name: Map_Type) return Map_Info_Type;
 
+   -- TODO: Change Environment_Config to Config_Type
    type Environment_Config is record
       Map_Name: Map_Type;
       Is_Slippery : Boolean;
    end record;
 
+   -- TODO: Change Environment_State to Environment_Type
    type Environment_State(Rows: Positive; Cols: Positive) is limited private;
 
    type Observation_Type is record
@@ -102,13 +104,14 @@ package RL.Envs.Frozenlake is
    -- cell type abbreviation in red.
    procedure Render_Text(Env : Environment_State);
 
-   type Discrete_State_Type is new Natural range 0 .. 63; -- Allow for 8x8 map.
-   type Transition_Probability_Type is record
-       Probability : Float;
-       Reward : Float;
-   end record;
-   type Discrete_Model_Type is array (Discrete_State_Type, Action_Type, Discrete_State_Type) of Transition_Probability_Type;
-   function Get_Model(Config: Environment_Config) return Discrete_Model_Type;
+   -- TODO: We move the DP model to a child package
+   -- type Discrete_State_Type is new Natural range 0 .. 63; -- Allow for 8x8 map.
+   -- type Transition_Probability_Type is record
+   --     Probability : Float;
+   --     Reward : Float;
+   -- end record;
+   -- type Discrete_Model_Type is array (Discrete_State_Type, Action_Type, Discrete_State_Type) of Transition_Probability_Type;
+   -- function Get_Model(Config: Environment_Config) return Discrete_Model_Type;
 
 private
    type Map_Element is (S, F, H, G);

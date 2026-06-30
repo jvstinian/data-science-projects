@@ -1,27 +1,28 @@
 with Ada.Text_IO; use Ada.Text_IO;
 -- with Ada.Float_Text_IO;
 with RL.Envs.Frozenlake; use RL.Envs.Frozenlake;
-with RL.Envs.Frozenlake.Child;
+with RL.Envs.Frozenlake.DP;
 with Ada.Numerics.Discrete_Random;
 
 procedure Policy_Iteration_Example is
-    DP_Model : Discrete_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Is_Slippery => False));
-    
     package Action_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
     Action_Gen: Action_Random.Generator;
     
-    package Frozen_Lake_Child is new RL.Envs.Frozenlake.Child(Map_Info => Get_Map_Info(Map_4x4));
+    package Frozen_Lake_DP is new RL.Envs.Frozenlake.DP(Map_Name => Map_4x4);
+    use Frozen_Lake_DP;
+    DP_Model : DP_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Is_Slippery => False));
+    
     -- TODO: Use Alt_Discrete_State_Type instead of the following
-    type Precise_State_Type is new Integer range 0 .. (Frozen_Lake_Child.Num_Rows * Frozen_Lake_Child.Num_Cols - 1);
-    type Precise_Model_Type is array (Precise_State_Type, Action_Type, Precise_State_Type) of Transition_Probability_Type;
-    Precise_DP_Model : Precise_Model_Type;
+    -- type Precise_State_Type is new Integer range 0 .. (Frozen_Lake_DP.Num_Rows * Frozen_Lake_DP.Num_Cols - 1);
+    -- type Precise_Model_Type is array (Precise_State_Type, Action_Type, Precise_State_Type) of Transition_Probability_Type;
+    -- Precise_DP_Model : Precise_Model_Type;
 
     subtype Probability_Type is Float range 0.0 .. 1.0;
-    type Policy_Type is array (Precise_State_Type) of Action_Type;
+    type Policy_Type is array (State_Type) of Action_Type;
 
-    type Value_Function_Type is array (Precise_State_Type) of Float;
+    type Value_Function_Type is array (State_Type) of Float;
 
-    function Iterative_Policy_Evaluation(Model : Precise_Model_Type; Policy : Policy_Type; Discount_Factor : Float; Value_Estimate : Value_Function_Type) return Value_Function_Type is
+    function Iterative_Policy_Evaluation(Model : DP_Model_Type; Policy : Policy_Type; Discount_Factor : Float; Value_Estimate : Value_Function_Type) return Value_Function_Type is
         Value_Function: Value_Function_Type := Value_Estimate;
         
         A : Action_Type;
@@ -38,11 +39,11 @@ procedure Policy_Iteration_Example is
             Put_Line("Iteration " & Iteration_Count'Image);
 
             Local_Delta := 0.0;
-            for S in Precise_State_Type loop
+            for S in State_Type loop
                 Prev_Value := Value_Function(S);
                 A := Policy(S);
                 New_Value := 0.0;
-                for S1 in Precise_State_Type loop
+                for S1 in State_Type loop
                     New_Value := New_Value + Model(S, A, S1).Probability * (Model(S, A, S1).Reward + Discount_Factor * Value_Function(S1));
                 end loop;
                 Value_Function(S) := New_Value;
@@ -55,12 +56,12 @@ procedure Policy_Iteration_Example is
 
     procedure Print_Policy(Policy : Policy_Type) is
     begin
-        for S in Precise_State_Type loop
+        for S in State_Type loop
             Put_Line("Initial Policy for State " & S'Image & ": " & Policy(S)'Image);
         end loop;
     end Print_Policy;
 
-    function Policy_Iteration(Model : Precise_Model_Type; Discount_Factor : Float) return Policy_Type is
+    function Policy_Iteration(Model : DP_Model_Type; Discount_Factor : Float) return Policy_Type is
         type Action_Value_Array_Type is array (Action_Type) of Float;
 
         function Arg_Max(Action_Values : Action_Value_Array_Type) return Action_Type is
@@ -89,11 +90,11 @@ procedure Policy_Iteration_Example is
             Value_Function := Iterative_Policy_Evaluation(Model, Policy, Discount_Factor, Value_Function);
     
             Stable := True;
-            for S in Precise_State_Type loop
+            for S in State_Type loop
                 -- For state S, record the value of each action in Action_Values.
                 for A in Action_Type loop
                     Action_Values(A) := 0.0;
-                    for S1 in Precise_State_Type loop
+                    for S1 in State_Type loop
                         Action_Values(A) := Action_Values(A) + Model(S, A, S1).Probability * (Model(S, A, S1).Reward + Discount_Factor * Value_Function(S1));
                     end loop;
                 end loop;
@@ -115,11 +116,10 @@ procedure Policy_Iteration_Example is
 begin
     Action_Random.Reset(Action_Gen);
 
-    Put_Line("Frozen Lake Child Get_Map_Rows: " & Frozen_Lake_Child.Num_Rows'Image);
-    Frozen_Lake_Child.Dummy_Method;
-    for Current_State in Discrete_State_Type loop
+    Put_Line("Frozen Lake DP Get_Map_Rows: " & Frozen_Lake_DP.Num_Rows'Image);
+    for Current_State in State_Type loop
         for Current_Action in Action_Type loop
-            for Next_State in Discrete_State_Type loop
+            for Next_State in State_Type loop
                 declare
                     Transition : Transition_Probability_Type := DP_Model(Current_State, Current_Action, Next_State);
                 begin
@@ -134,16 +134,16 @@ begin
     end loop;
     
     -- Initialize Precise_DP_Model 
-    for S0 in Precise_State_Type loop
-        for A in Action_Type loop
-            for S1 in Precise_State_Type loop
-                Precise_DP_Model(S0, A, S1) := DP_Model(Discrete_State_Type(S0), A, Discrete_State_Type(S1));
-            end loop;
-        end loop;
-    end loop;
+    -- for S0 in Precise_State_Type loop
+    --     for A in Action_Type loop
+    --         for S1 in Precise_State_Type loop
+    --             Precise_DP_Model(S0, A, S1) := DP_Model(Discrete_State_Type(S0), A, Discrete_State_Type(S1));
+    --         end loop;
+    --     end loop;
+    -- end loop;
 
     Put_Line("First float: " & Float'First'Image);
-    Optimal_Policy := Policy_Iteration(Precise_DP_Model, 0.9);
+    Optimal_Policy := Policy_Iteration(DP_Model, 0.9);
     Print_Policy(Optimal_Policy);
     -- Local_Value_Function := Iterative_Policy_Evaluation(Precise_DP_Model, Local_Random_Policy, 0.9);
     -- for S in Precise_State_Type loop

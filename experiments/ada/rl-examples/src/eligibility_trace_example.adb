@@ -1,23 +1,24 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Float_Text_IO;
 with RL.Envs.Frozenlake; use RL.Envs.Frozenlake;
-with RL.Envs.Frozenlake.Child;
+with RL.Envs.Frozenlake.DP;
 with Ada.Numerics.Discrete_Random;
 with Ada.Numerics.Float_Random;
 
 procedure Eligibility_Trace_Example is
-    package Frozen_Lake_Child is new RL.Envs.Frozenlake.Child(Map_Info => Get_Map_Info(Map_4x4));
+    package Frozen_Lake_DP is new RL.Envs.Frozenlake.DP(Map_Name => Map_4x4);
+    use Frozen_Lake_DP;
     -- TODO: Use Alt_Discrete_State_Type instead of the following
-    type Precise_State_Type is new Integer range 0 .. (Frozen_Lake_Child.Num_Rows * Frozen_Lake_Child.Num_Cols - 1);
+    -- type Precise_State_Type is new Integer range 0 .. (Frozen_Lake_DP.Num_Rows * Frozen_Lake_DP.Num_Cols - 1);
     -- type Precise_Model_Type is array (Precise_State_Type, Action_Type, Precise_State_Type) of Transition_Probability_Type;
     -- Precise_DP_Model : Precise_Model_Type;
 
     subtype Probability_Type is Float range 0.0 .. 1.0;
-    type Policy_Type is array (Precise_State_Type) of Action_Type;
+    type Policy_Type is array (State_Type) of Action_Type;
 
-    type Value_Function_Type is array (Precise_State_Type) of Float;
+    type Value_Function_Type is array (State_Type) of Float;
 
-    type Action_Value_Function_Type is array (Precise_State_Type, Action_Type) of Float;
+    type Action_Value_Function_Type is array (State_Type, Action_Type) of Float;
 
     type ET_Config_Type is record
         Alpha : Float;
@@ -28,13 +29,13 @@ procedure Eligibility_Trace_Example is
     function ET_Iterative_Policy_Evaluation(Env_Config: Environment_Config; ET_Config: ET_Config_Type; Policy : Policy_Type) return Value_Function_Type is
         Env : Environment_State := Make (Env_Config);
 
-        type Eligibility_Trace_Type is array (Precise_State_Type) of Float;
+        type Eligibility_Trace_Type is array (State_Type) of Float;
         E : Eligibility_Trace_Type := (others => 0.0);
         TD_Error : Float;
 
         Obs : Observation_Type;
-        S : Precise_State_Type;
-        S1 : Precise_State_Type;
+        S : State_Type;
+        S1 : State_Type;
         Step_Result : Step_Return_Type;
         Action : Action_Type;
         Terminated : Boolean := False;
@@ -60,7 +61,7 @@ procedure Eligibility_Trace_Example is
             -- TODO: From the text of the book and the book errata, E needs to be set to 0
             --       at the beginning of an episode.
             Obs := Reset(Env);
-            S := Precise_State_Type(Obs.Position_Index);
+            S := State_Type(Obs.Position_Index);
             Step_Index := 0;
             Terminated := False;
 
@@ -68,11 +69,11 @@ procedure Eligibility_Trace_Example is
                 Action := Policy(S);
                 Step_Result := Step(Env, Action);
                 Obs := Step_Result.Observation;
-                S1 := Precise_State_Type(Obs.Position_Index);
-                Put_Line("Action " & Action_Type'Image(Action) & " takes state " & Precise_State_Type'Image(S) & " to state " & Precise_State_Type'Image(S1));
+                S1 := State_Type(Obs.Position_Index);
+                Put_Line("Action " & Action_Type'Image(Action) & " takes state " & State_Type'Image(S) & " to state " & State_Type'Image(S1));
                 TD_Error := Step_Result.Reward + ET_Config.Gamma * Value_Function (S1) - Value_Function (S);
                 E(S) := E(S) + 1.0;
-                for S2 in Precise_State_Type loop
+                for S2 in State_Type loop
                     Value_Function(S2) := Value_Function(S2) + ET_Config.Alpha * TD_Error * E(S2);
                     E(S2) := ET_Config.Gamma * ET_Config.Lambda * E(S2);
                 end loop;
@@ -85,7 +86,7 @@ procedure Eligibility_Trace_Example is
             Local_Delta := 0.0;
             -- NOTE: We exit when the max value function change falls below a threshold.
             --       This differs from the textbook algorithm.
-            for S in Precise_State_Type loop
+            for S in State_Type loop
                 Local_Delta := Float'Max(Local_Delta, abs(Value_Function (S) - Prev_Value_Function (S)));
             end loop;
             exit when Local_Delta < Theta;
@@ -114,7 +115,7 @@ procedure Eligibility_Trace_Example is
       Float_Unif_Gen : Float_Unif_Random.Generator;
 
       -- NOTE: This function is identical to the one in the TD example
-      function Best_Action_For_State(Q : Action_Value_Function_Type; S: Precise_State_Type) return Action_Type is
+      function Best_Action_For_State(Q : Action_Value_Function_Type; S: State_Type) return Action_Type is
          Max_Value : Float := Float'First;
          Best_Action : Action_Type := Action_Type'First;
       begin
@@ -128,7 +129,7 @@ procedure Eligibility_Trace_Example is
       end Best_Action_For_State;
 
       -- NOTE: This function is identical to the one in the TD example
-      function Choose_Action_Epsilon_Greedy (Epsilon: Float; Q : Action_Value_Function_Type; S: Precise_State_Type) return Action_Type is
+      function Choose_Action_Epsilon_Greedy (Epsilon: Float; Q : Action_Value_Function_Type; S: State_Type) return Action_Type is
          U : Float := Float_Unif_Random.Random(Float_Unif_Gen);
       begin
          if U < Epsilon then
@@ -138,13 +139,13 @@ procedure Eligibility_Trace_Example is
          end if;
       end Choose_Action_Epsilon_Greedy;
 
-      type Eligibility_Trace_Type is array (Precise_State_Type, Action_Type) of Float;
+      type Eligibility_Trace_Type is array (State_Type, Action_Type) of Float;
       E : Eligibility_Trace_Type := (others => (others => 0.0));
       TD_Error : Float;
 
       Obs : Observation_Type;
-      S : Precise_State_Type;
-      S1 : Precise_State_Type;
+      S : State_Type;
+      S1 : State_Type;
       Step_Result : Step_Return_Type;
       A : Action_Type;
       A1 : Action_Type;
@@ -189,7 +190,7 @@ procedure Eligibility_Trace_Example is
             -- TODO: From the text of the book and the book errata, E needs to be set to 0
             --       at the beginning of an episode.
             Obs := Reset(Env);
-            S := Precise_State_Type(Obs.Position_Index);
+            S := State_Type(Obs.Position_Index);
             A := Choose_Action_Epsilon_Greedy(Epsilon, Action_Value_Function, S);
             Step_Index := 0;
             Terminated := False;
@@ -197,12 +198,12 @@ procedure Eligibility_Trace_Example is
             while not Terminated loop
                Step_Result := Step(Env, A);
                Obs := Step_Result.Observation;
-               S1 := Precise_State_Type(Obs.Position_Index);
+               S1 := State_Type(Obs.Position_Index);
                A1 := Choose_Action_Epsilon_Greedy(Epsilon, Action_Value_Function, S1);
-               Put_Line("Action " & Action_Type'Image(A) & " takes state " & Precise_State_Type'Image(S) & " to state " & Precise_State_Type'Image(S1) & " and action " & Action_Type'Image(A1) & " in on-policy SARSA");
+               Put_Line("Action " & Action_Type'Image(A) & " takes state " & State_Type'Image(S) & " to state " & State_Type'Image(S1) & " and action " & Action_Type'Image(A1) & " in on-policy SARSA");
                TD_Error := Step_Result.Reward + SARSA_Config.Gamma * Action_Value_Function (S1, A1) - Action_Value_Function (S, A);
                E(S, A) := E(S, A) + 1.0;
-               for S2 in Precise_State_Type loop
+               for S2 in State_Type loop
                   for A2 in Action_Type loop
                       Action_Value_Function(S2, A2) := Action_Value_Function(S2, A2) + SARSA_Config.Alpha * TD_Error * E(S2, A2);
                       E(S2, A2) := SARSA_Config.Gamma * SARSA_Config.Lambda * E(S2, A2);
@@ -220,7 +221,7 @@ procedure Eligibility_Trace_Example is
             --       This differs from the textbook algorithm.
             Local_Delta := 0.0;
             -- TODO: Decide whether to reintroduce something like the following condition before exiting
-            for S0 in Precise_State_Type loop
+            for S0 in State_Type loop
                for A0 in Action_Type loop
                   Local_Delta := Float'Max(Local_Delta, abs(Action_Value_Function (S0, A0) - Prev_Action_Value_Function (S0, A0)));
                end loop;
@@ -241,7 +242,7 @@ procedure Eligibility_Trace_Example is
       Float_Unif_Gen : Float_Unif_Random.Generator;
 
       -- NOTE: This function is identical to the one in the TD example
-      function Best_Action_For_State(Q : Action_Value_Function_Type; S: Precise_State_Type) return Action_Type is
+      function Best_Action_For_State(Q : Action_Value_Function_Type; S: State_Type) return Action_Type is
          Max_Value : Float := Float'First;
          Best_Action : Action_Type := Action_Type'First;
       begin
@@ -255,7 +256,7 @@ procedure Eligibility_Trace_Example is
       end Best_Action_For_State;
 
       -- NOTE: This function is identical to the one in the TD example
-      function Choose_Action_Epsilon_Greedy (Epsilon: Float; Q : Action_Value_Function_Type; S: Precise_State_Type) return Action_Type is
+      function Choose_Action_Epsilon_Greedy (Epsilon: Float; Q : Action_Value_Function_Type; S: State_Type) return Action_Type is
          U : Float := Float_Unif_Random.Random(Float_Unif_Gen);
       begin
          if U < Epsilon then
@@ -265,13 +266,13 @@ procedure Eligibility_Trace_Example is
          end if;
       end Choose_Action_Epsilon_Greedy;
 
-      type Eligibility_Trace_Type is array (Precise_State_Type, Action_Type) of Float;
+      type Eligibility_Trace_Type is array (State_Type, Action_Type) of Float;
       E : Eligibility_Trace_Type := (others => (others => 0.0));
       TD_Error : Float;
 
       Obs : Observation_Type;
-      S : Precise_State_Type;
-      S1 : Precise_State_Type;
+      S : State_Type;
+      S1 : State_Type;
       Step_Result : Step_Return_Type;
       A : Action_Type;
       A1 : Action_Type;
@@ -317,7 +318,7 @@ procedure Eligibility_Trace_Example is
             -- TODO: From the text of the book and the book errata, E needs to be set to 0
             --       at the beginning of an episode.
             Obs := Reset(Env);
-            S := Precise_State_Type(Obs.Position_Index);
+            S := State_Type(Obs.Position_Index);
             A := Choose_Action_Epsilon_Greedy(Epsilon, Action_Value_Function, S);
             Step_Index := 0;
             Terminated := False;
@@ -325,13 +326,13 @@ procedure Eligibility_Trace_Example is
             while not Terminated loop
                Step_Result := Step(Env, A);
                Obs := Step_Result.Observation;
-               S1 := Precise_State_Type(Obs.Position_Index);
+               S1 := State_Type(Obs.Position_Index);
                A1 := Choose_Action_Epsilon_Greedy(Epsilon, Action_Value_Function, S1);
                A_Best := Best_Action_For_State(Action_Value_Function, S1);  -- TODO: Just get best value for state
-               Put_Line("Action " & Action_Type'Image(A) & " takes state " & Precise_State_Type'Image(S) & " to state " & Precise_State_Type'Image(S1) & " in Watkin's Q algorithm (off-policy SARSA usingn Eligibility Trace)");
+               Put_Line("Action " & Action_Type'Image(A) & " takes state " & State_Type'Image(S) & " to state " & State_Type'Image(S1) & " in Watkin's Q algorithm (off-policy SARSA usingn Eligibility Trace)");
                TD_Error := Step_Result.Reward + SARSA_Config.Gamma * Action_Value_Function (S1, A_Best) - Action_Value_Function (S, A);
                E(S, A) := E(S, A) + 1.0;
-               for S2 in Precise_State_Type loop
+               for S2 in State_Type loop
                   for A2 in Action_Type loop
                       Action_Value_Function(S2, A2) := Action_Value_Function(S2, A2) + SARSA_Config.Alpha * TD_Error * E(S2, A2);
                       -- IN PROGRESS: Is the following correct?  Based on the text, I think so.
@@ -354,7 +355,7 @@ procedure Eligibility_Trace_Example is
             --       This differs from the textbook algorithm.
             Local_Delta := 0.0;
             -- TODO: Decide whether to reintroduce something like the following condition before exiting
-            for S0 in Precise_State_Type loop
+            for S0 in State_Type loop
                for A0 in Action_Type loop
                   Local_Delta := Float'Max(Local_Delta, abs(Action_Value_Function (S0, A0) - Prev_Action_Value_Function (S0, A0)));
                end loop;
@@ -384,7 +385,7 @@ begin
     P (14) := Right;
 
     Local_Value_Function := ET_Iterative_Policy_Evaluation(Frozen_Lake_Config, ET_Config, P);
-    for S in Precise_State_Type loop
+    for S in State_Type loop
         -- (S, F, F, F),
         -- (F, H, F, H),
         -- (F, F, F, H),
@@ -396,7 +397,7 @@ begin
 
     Put_Line("Running on-policy Eligibility Trace SARSA");
     Local_Action_Value_Function := ET_SARSA_On_Policy(Frozen_Lake_Config, SARSA_Config);
-    for S in Precise_State_Type loop
+    for S in State_Type loop
        for A in Action_Type loop
          Put("Value of (" & S'Image & ", " & Action_Type'Image(A) & "): ");
          Ada.Float_Text_IO.Put(Item => Local_Action_Value_Function(S, A), Fore => 1, Aft => 4, Exp => 0);
@@ -406,7 +407,7 @@ begin
 
     Put_Line("Running Watkins Q Control Method");
     Local_Action_Value_Function := Watkins_Q_Iteration(Frozen_Lake_Config, SARSA_Config);
-    for S in Precise_State_Type loop
+    for S in State_Type loop
        for A in Action_Type loop
          Put("Value of (" & S'Image & ", " & Action_Type'Image(A) & "): ");
          Ada.Float_Text_IO.Put(Item => Local_Action_Value_Function(S, A), Fore => 1, Aft => 4, Exp => 0);
