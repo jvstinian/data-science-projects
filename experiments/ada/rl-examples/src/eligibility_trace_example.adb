@@ -364,7 +364,7 @@ procedure Eligibility_Trace_Example is
         return Action_Value_Function;
     end Watkins_Q_Iteration;
 
-    Frozen_Lake_Config : Environment_Config := (Map_Name => Map_4x4, Slippery => False);
+    Frozen_Lake_Config : Environment_Config := (Map_Name => Map_4x4, Is_Slippery => False);
     ET_Config : ET_Config_Type := (Alpha => 0.1, Gamma => 0.9, Lambda => 0.6);
     P : Policy_Type := (others => Down);
     Local_Value_Function : Value_Function_Type;

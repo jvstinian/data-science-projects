@@ -4,7 +4,7 @@ with RL.Envs.Frozenlake; use RL.Envs.Frozenlake;
 with RL.Envs.Frozenlake.Child;
 
 procedure Iterative_Policy_Evaluation_Example is
-    DP_Model : Discrete_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Slippery => False));
+    DP_Model : Discrete_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Is_Slippery => False));
     
     package Frozen_Lake_Child is new RL.Envs.Frozenlake.Child(Map_Info => Get_Map_Info(Map_4x4));
     -- TODO: Use Alt_Discrete_State_Type instead of the following

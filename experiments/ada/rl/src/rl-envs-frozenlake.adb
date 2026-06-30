@@ -119,7 +119,7 @@ package body RL.Envs.Frozenlake is
                for A in Action_Type loop
                   for A_Actual in Action_Type loop
                      Temp_Partial_Transition := Update_Probability_Matrix(Map, (Row => I, Col => J), A_Actual);
-                     if Config.Slippery then
+                     if Config.Is_Slippery then
                         if Can_Slip(A, A_Actual) then
                            Temp_Probability := 1.0 / 3.0;
                         else 

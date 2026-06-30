@@ -6,7 +6,7 @@ with Ada.Numerics.Discrete_Random;
 with Ada.Numerics.Float_Random;
 
 procedure TD_Example is
-    DP_Model : Discrete_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Slippery => False));
+    DP_Model : Discrete_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Is_Slippery => False));
     
     package Frozen_Lake_Child is new RL.Envs.Frozenlake.Child(Map_Info => Get_Map_Info(Map_4x4));
     -- TODO: Use Alt_Discrete_State_Type instead of the following
@@ -316,7 +316,7 @@ procedure TD_Example is
         return Action_Value_Function;
     end SARSA_Off_Policy;
 
-    Frozen_Lake_Config : Environment_Config := (Map_Name => Map_4x4, Slippery => False);
+    Frozen_Lake_Config : Environment_Config := (Map_Name => Map_4x4, Is_Slippery => False);
     TD_Config : TD_Config_Type := (Alpha => 0.1, Gamma => 0.9);
     P : Policy_Type := (others => Down);
     Local_Value_Function : Value_Function_Type;

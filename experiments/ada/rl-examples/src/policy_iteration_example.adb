@@ -5,7 +5,7 @@ with RL.Envs.Frozenlake.Child;
 with Ada.Numerics.Discrete_Random;
 
 procedure Policy_Iteration_Example is
-    DP_Model : Discrete_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Slippery => False));
+    DP_Model : Discrete_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Is_Slippery => False));
     
     package Action_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
     Action_Gen: Action_Random.Generator;

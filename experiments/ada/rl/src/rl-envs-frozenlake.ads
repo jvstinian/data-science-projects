@@ -78,7 +78,7 @@ package RL.Envs.Frozenlake is
 
    type Environment_Config is record
       Map_Name: Map_Type;
-      Slippery : Boolean;  -- TODO: Change to Is_Slippery
+      Is_Slippery : Boolean;
    end record;
 
    type Environment_State(Rows: Positive; Cols: Positive) is limited private;
