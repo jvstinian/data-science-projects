@@ -1,5 +1,4 @@
 with Ada.Text_IO; use Ada.Text_IO;
--- with Ada.Numerics;
 
 generic
    Map_Info : Map_Info_Type;

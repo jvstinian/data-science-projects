@@ -10,7 +10,7 @@ procedure Main is
     package Frozenlake_Child is new RL.Envs.Frozenlake.Child(Map_Info => Get_Map_Info(Map_4x4));
     DP_Model : Discrete_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Slippery => False));
    
-   function Get_Observation (Step_Return : Step_Return_Type) return Observation_Type is (Step_Return.State);
+   function Get_Observation (Step_Return : Step_Return_Type) return Observation_Type is (Step_Return.Observation);
    function Get_Reward(Step_Return : Step_Return_Type) return Float is (Step_Return.Reward);
    function Get_Terminated_Flag(Step_Return : Step_Return_Type) return Boolean is (Step_Return.Terminated);
    
