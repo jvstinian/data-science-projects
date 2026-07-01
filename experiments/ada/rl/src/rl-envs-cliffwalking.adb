@@ -1,3 +1,4 @@
+with Ada.Text_IO; use Ada.Text_IO;
 -- from gymnasium import Env, spaces
 -- from gymnasium.envs.toy_text.utils import categorical_sample
 
@@ -185,23 +186,24 @@ package body RL.Envs.Cliffwalking is
       Result : Step_Return_Type := (
          Observation => To_S(Env.Map, Transition.Position),
          Reward => Transition.Reward,
-         Terminated => Transition.Terminated,
-         Truncated => False
+         Terminated => Transition.Terminated
       );
    begin
       -- Update the Agent's position based on the transition
       Env.Agent_Position := Transition.Position;
-      -- TODO: Consider whether to return info {"prob": p}
       return Result;
    end Step;
 
-   function Reset(Env : in out Environment_State) return Observation_Type is
+   function Reset(Env : in out Environment_State; Seed_Reset : Seed_Reset_Type) return Observation_Type is
       Result : Observation_Type;
    begin
-      Float_Random.Reset(Gen);
+      case Seed_Reset.Kind is
+         when Set_Default => Float_Random.Reset(Gen);
+         when No_Set      => null;
+         when Set_Seed    => Float_Random.Reset(Gen, Seed_Reset.Seed);
+      end case;
       Env.Agent_Position := Get_Start_Position(Env.Map);
       Result := To_S(Env.Map, Env.Agent_Position);
-      -- TODO: In the Python version, the info returned is {"prob": 1}
       return Result;
    end Reset;
 
