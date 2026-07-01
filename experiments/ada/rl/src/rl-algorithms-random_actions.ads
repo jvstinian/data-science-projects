@@ -1,4 +1,3 @@
-
 generic
    type Config_Type is private;
    type Environment_Type (<>) is limited private;
@@ -7,7 +6,7 @@ generic
    type Step_Return_Type is private;
    
    with function Make(Config: Config_Type) return Environment_Type;
-   with function Reset(Env : in out Environment_Type) return Observation_Type;
+   with function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type) return Observation_Type;
    with function Step(Env : in out Environment_Type; action: Action_Type) return Step_Return_Type;
    
    with function Get_Observation (Step_Return : Step_Return_Type) return Observation_Type;
