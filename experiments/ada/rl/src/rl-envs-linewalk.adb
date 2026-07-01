@@ -78,4 +78,55 @@ package body RL.Envs.LineWalk is
             Put_Line ("Terminal state with reward: " & Integer'Image(Integer(State.Reward)));
         end if;
     end Print_State;
+   
+   function Make(Config: Config_Type) return Environment_Type is
+      pragma Unreferenced (Config);
+   begin
+        return Environment_Type((N + 1) / 2);
+   end Make;
+
+   function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type) return Observation_Type is
+      -- Seed_Reset is not used since state transitions are deterministic
+      pragma Unreferenced (Seed_Reset);
+      Observation : Observation_Type;
+   begin
+      Env := Environment_Type((N + 1) / 2);
+      Observation := Observation_Type(Env);
+      return Observation;
+   end Reset;
+
+   function Step(Env : in out Environment_Type; action: Action_Type) return Step_Return_Type is
+      New_State : Integer := Integer(Env);
+      Reward : Float;
+      Terminated : Boolean;
+   begin
+      if New_State > 0 and New_State < (N + 1) then
+         case Action is
+            when MoveLeft =>
+               New_State := New_State - 1;
+            when MoveRight =>
+               New_State := New_State + 1;
+         end case;
+      end if;
+
+      if New_State < 1 then
+         Terminated := True;
+         Reward := -1.0;
+      elsif New_State > N then
+         Terminated := True;
+         Reward := 1.0;
+      else 
+         Terminated := False;
+         Reward := 0.0;
+      end if;
+
+      -- Update Env
+      Env := Environment_Type(New_State);
+      return Step_Return_Type'(
+         Observation => Observation_Type(New_State),
+         Reward => Reward,
+         Terminated => Terminated
+      );
+   end Step;
+
 end RL.Envs.LineWalk;

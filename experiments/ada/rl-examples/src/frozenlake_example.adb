@@ -1,51 +1,49 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Float_Text_IO;
+with RL; use RL;  -- Transition_Probability_Type
 with RL.Envs.Frozenlake; use RL.Envs.Frozenlake;
-with RL.Envs.Frozenlake.Child;
+with RL.Envs.Frozenlake.DP;
 with RL.Algorithms.Random_Actions;
--- with RL.Envs.Step_Return;
 
 procedure Main is
-    Config: Environment_Config := Environment_Config'(Map_Name => Map_4x4, Slippery => False);
+   Config: Config_Type := Config_Type'(Map_Name => Map_4x4, Is_Slippery => False);
 
-    package Frozenlake_Child is new RL.Envs.Frozenlake.Child(Map_Info => Get_Map_Info(Map_4x4));
-    DP_Model : Discrete_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Slippery => False));
+   -- package Frozenlake_Child is new RL.Envs.Frozenlake.Child(Map_Info => Get_Map_Info(Map_4x4));
+   package Frozenlake_DP is new RL.Envs.Frozenlake.DP(Map_Name => Map_4x4);
+   use Frozenlake_DP;
+   DP_Model : DP_Model_Type := Get_Model(Config_Type'(Map_Name => Map_4x4, Is_Slippery => False));
    
-   -- function Get_Observation (Step_Return : Step_Return_Type) return Observation_Type is (Step_Return.State);
-   -- function Get_Reward(Step_Return : Step_Return_Type) return Float is (Step_Return.Reward);
-   -- function Get_Terminated_Flag(Step_Return : Step_Return_Type) return Boolean is (Step_Return.Terminated);
-   -- package SR2 is new RL.Envs.Step_Return (Observation_Type => Observation_Type);
+   function Get_Observation (Step_Return : Step_Return_Type) return Observation_Type is (Step_Return.Observation);
+   function Get_Reward(Step_Return : Step_Return_Type) return Float is (Step_Return.Reward);
+   function Get_Terminated_Flag(Step_Return : Step_Return_Type) return Boolean is (Step_Return.Terminated);
+   
    package Frozenlake_Random_Actions is new RL.Algorithms.Random_Actions(
-       Config_Type => Environment_Config,
-       Environment_Type => Environment_State,
+       Config_Type => Config_Type,
+       Environment_Type => Environment_Type,
        Observation_Type => Observation_Type,
        Action_Type => Action_Type,
        Step_Return_Type => Step_Return_Type,
        Make => Make,
        Reset => Reset,
-       -- This is from RL.Envs.Frozenlake, must use the same package
-       -- used to define Step_Return_Type
-       SR => Frozenlake_Step_Return, 
-       Step => Step -- ,
-       -- Get_Observation => Get_Observation,
-       -- Get_Reward => Get_Reward,
-       -- Get_Terminated_Flag => Get_Terminated_Flag
+       Step => Step,
+       Get_Observation => Get_Observation,
+       Get_Reward => Get_Reward,
+       Get_Terminated_Flag => Get_Terminated_Flag
     );
     Sim_Summary : Frozenlake_Random_Actions.Simulation_Summary;
 
 begin
    Sim_Summary := Frozenlake_Random_Actions.Uniform_Random_Actions (Config, True);
-   Put_Line("Simulation summary using generic package and step return template:");
+   Put_Line("Simulation summary using generic package:");
    Put_Line("  Number of steps: " & Natural'Image (Sim_Summary.Num_Steps));
    Put("  Total reward: ");
    Ada.Float_Text_IO.Put(Item => Sim_Summary.Total_Reward, Fore => 2, Aft => 2, Exp => 0);
    New_Line;
 
-    Put_Line("Frozen Lake Child Get_Map_Rows: " & Frozenlake_Child.Num_Rows'Image);
-    Frozenlake_Child.Dummy_Method;
-    for Current_State in Discrete_State_Type loop
+    Put_Line("Frozen Lake Child Get_Map_Rows: " & Frozenlake_DP.Num_Rows'Image);
+    for Current_State in State_Type loop
         for Current_Action in Action_Type loop
-            for Next_State in Discrete_State_Type loop
+            for Next_State in State_Type loop
                 declare
                     Transition : Transition_Probability_Type := DP_Model(Current_State, Current_Action, Next_State);
                 begin
