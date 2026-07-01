@@ -6,7 +6,7 @@ project Reinforcement_Learning_Examples is
    for Create_Missing_Dirs use "True";
    for Exec_Dir use "bin";
    for Main use (
-      "rl_examples.adb", "frozenlake_example.adb", "iterative_policy_evaluation_example.adb",
+      "rl_examples.adb", "frozenlake_example.adb",
       "policy_iteration_example.adb", "value_iteration_example.adb",
       "td_example.adb", "eligibility_trace_example.adb",
       "cartpole_main.adb"
@@ -15,7 +15,6 @@ project Reinforcement_Learning_Examples is
    package Builder is
       for Executable ("rl_examples.adb") use "rl-examples";
       for Executable ("frozenlake_example.adb") use "frozenlake-example";
-      for Executable ("iterative_policy_evaluation_example.adb") use "frozenlake-ipe-example";
       for Executable ("cartpole_main.adb") use "cartpole-main";
    end Builder;
 

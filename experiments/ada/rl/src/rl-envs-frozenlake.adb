@@ -151,9 +151,13 @@ package body RL.Envs.Frozenlake is
       );
    end Make;
 
-   function Reset(Env : in out Environment_Type) return Observation_Type is
+   function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type) return Observation_Type is
    begin
-      Float_Random.Reset(Gen);
+      case Seed_Reset.Kind is
+         when Set_Default => Float_Random.Reset(Gen);
+         when No_Set      => null;
+         when Set_Seed    => Float_Random.Reset(Gen, Seed_Reset.Seed);
+      end case;
       Env.Agent_Position := Get_Start_Position(Env.Map);
       return Observation_Type'(Position_Index => To_S(Env.Map, Env.Agent_Position));
    end Reset;

@@ -1,5 +1,6 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Float_Text_IO;
+with RL; use RL;
 with RL.Envs.Frozenlake; use RL.Envs.Frozenlake;
 with RL.Envs.Frozenlake.DP;
 with Ada.Numerics.Discrete_Random;
@@ -28,6 +29,7 @@ procedure TD_Example is
 
     function TD_Iterative_Policy_Evaluation(Env_Config: Config_Type; TD_Config: TD_Config_Type; Policy : Policy_Type) return Value_Function_Type is
         Env : Environment_Type := Make (Env_Config);
+        Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default);
 
         Obs : Observation_Type;
         S : State_Type;
@@ -58,7 +60,7 @@ procedure TD_Example is
             Prev_Value_Function := Value_Function;
             Local_Delta := 0.0;
 
-            Obs := Reset(Env);
+            Obs := Reset(Env, Seed_Reset);
             S := State_Type(Obs.Position_Index);
             Step_Index := 0;
             Terminated := False;
@@ -96,6 +98,7 @@ procedure TD_Example is
 
    function SARSA_On_Policy(Env_Config: Config_Type; SARSA_Config: SARSA_Config_Type) return Action_Value_Function_Type is
       Env : Environment_Type := Make (Env_Config);
+      Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default);
 
       package Action_Unif_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
       package Float_Unif_Random renames Ada.Numerics.Float_Random;
@@ -170,7 +173,7 @@ procedure TD_Example is
 
             Prev_Action_Value_Function := Action_Value_Function;
 
-            Obs := Reset(Env);
+            Obs := Reset(Env, Seed_Reset);
             S := State_Type(Obs.Position_Index);
             A := Choose_Action_Epsilon_Greedy(Epsilon, Action_Value_Function, S);
             Step_Index := 0;
@@ -207,6 +210,7 @@ procedure TD_Example is
    
     function SARSA_Off_Policy(Env_Config: Config_Type; SARSA_Config: SARSA_Config_Type) return Action_Value_Function_Type is
       Env : Environment_Type := Make (Env_Config);
+      Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default);
 
       package Action_Unif_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
       package Float_Unif_Random renames Ada.Numerics.Float_Random;
@@ -281,7 +285,7 @@ procedure TD_Example is
 
             Prev_Action_Value_Function := Action_Value_Function;
 
-            Obs := Reset(Env);
+            Obs := Reset(Env, Seed_Reset);
             S := State_Type(Obs.Position_Index);
             Step_Index := 0;
             Terminated := False;
