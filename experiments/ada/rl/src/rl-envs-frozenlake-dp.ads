@@ -7,10 +7,11 @@ package RL.Envs.Frozenlake.DP is
    
    type State_Type is new Natural range 0 .. (Num_Rows * Num_Cols - 1);
 
-   type Transition_Probability_Type is record
-       Probability : Float;
-       Reward : Float;
-   end record;
+   -- Now defined in RL;
+   -- type Transition_Probability_Type is record
+   --     Probability : Float;
+   --     Reward : Float;
+   -- end record;
 
    type DP_Model_Type is array (State_Type, Action_Type, State_Type) of Transition_Probability_Type;
 
