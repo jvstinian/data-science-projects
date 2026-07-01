@@ -1,37 +1,39 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Float_Text_IO;
+with RL; use RL;
 with RL.Envs.Frozenlake; use RL.Envs.Frozenlake;
-with RL.Envs.Frozenlake.Child;
+with RL.Envs.Frozenlake.DP;
 with Ada.Numerics.Discrete_Random;
 with Ada.Numerics.Float_Random;
 
 procedure TD_Example is
-    DP_Model : Discrete_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Is_Slippery => False));
-    
-    package Frozen_Lake_Child is new RL.Envs.Frozenlake.Child(Map_Info => Get_Map_Info(Map_4x4));
+    package Frozen_Lake_DP is new RL.Envs.Frozenlake.DP(Map_Name => Map_4x4);
+    use Frozen_Lake_DP;
+    DP_Model : DP_Model_Type := Get_Model(Config_Type'(Map_Name => Map_4x4, Is_Slippery => False));
     -- TODO: Use Alt_Discrete_State_Type instead of the following
-    type Precise_State_Type is new Integer range 0 .. (Frozen_Lake_Child.Num_Rows * Frozen_Lake_Child.Num_Cols - 1);
+    -- type Precise_State_Type is new Integer range 0 .. (Frozen_Lake_DP.Num_Rows * Frozen_Lake_DP.Num_Cols - 1);
     -- type Precise_Model_Type is array (Precise_State_Type, Action_Type, Precise_State_Type) of Transition_Probability_Type;
     -- Precise_DP_Model : Precise_Model_Type;
 
     subtype Probability_Type is Float range 0.0 .. 1.0;
-    type Policy_Type is array (Precise_State_Type) of Action_Type;
+    type Policy_Type is array (State_Type) of Action_Type;
 
-    type Value_Function_Type is array (Precise_State_Type) of Float;
+    type Value_Function_Type is array (State_Type) of Float;
     
-    type Action_Value_Function_Type is array (Precise_State_Type, Action_Type) of Float;
+    type Action_Value_Function_Type is array (State_Type, Action_Type) of Float;
 
     type TD_Config_Type is record
         Alpha : Float;
         Gamma : Float;
     end record;
 
-    function TD_Iterative_Policy_Evaluation(Env_Config: Environment_Config; TD_Config: TD_Config_Type; Policy : Policy_Type) return Value_Function_Type is
-        Env : Environment_State := Make (Env_Config);
+    function TD_Iterative_Policy_Evaluation(Env_Config: Config_Type; TD_Config: TD_Config_Type; Policy : Policy_Type) return Value_Function_Type is
+        Env : Environment_Type := Make (Env_Config);
+        Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default);
 
         Obs : Observation_Type;
-        S : Precise_State_Type;
-        S1 : Precise_State_Type;
+        S : State_Type;
+        S1 : State_Type;
         Step_Result : Step_Return_Type;
         Action : Action_Type;
         Terminated : Boolean := False;
@@ -58,8 +60,8 @@ procedure TD_Example is
             Prev_Value_Function := Value_Function;
             Local_Delta := 0.0;
 
-            Obs := Reset(Env);
-            S := Precise_State_Type(Obs.Position_Index);
+            Obs := Reset(Env, Seed_Reset);
+            S := State_Type(Obs.Position_Index);
             Step_Index := 0;
             Terminated := False;
 
@@ -67,8 +69,8 @@ procedure TD_Example is
                 Action := Policy(S);
                 Step_Result := Step(Env, Action);
                 Obs := Step_Result.Observation;
-                S1 := Precise_State_Type(Obs.Position_Index);
-                Put_Line("Action " & Action_Type'Image(Action) & " takes state " & Precise_State_Type'Image(S) & " to state " & Precise_State_Type'Image(S1));
+                S1 := State_Type(Obs.Position_Index);
+                Put_Line("Action " & Action_Type'Image(Action) & " takes state " & State_Type'Image(S) & " to state " & State_Type'Image(S1));
                 Value_Function(S) := Value_Function(S) + TD_Config.Alpha * (Step_Result.Reward + TD_Config.Gamma * Value_Function (S1) - Value_Function (S) );
                 -- Update to next state
                 S := S1;
@@ -78,7 +80,7 @@ procedure TD_Example is
 
             -- NOTE: We exit when the max value function change falls below a threshold.
             --       This differs from the textbook algorithm.
-            for S in Precise_State_Type loop
+            for S in State_Type loop
                 Local_Delta := Float'Max(Local_Delta, abs(Value_Function (S) - Prev_Value_Function (S)));
             end loop;
             exit when Local_Delta < Theta;
@@ -94,8 +96,9 @@ procedure TD_Example is
       Episodes_To_Minimum_Epsilon: Natural;
    end record;
 
-   function SARSA_On_Policy(Env_Config: Environment_Config; SARSA_Config: SARSA_Config_Type) return Action_Value_Function_Type is
-      Env : Environment_State := Make (Env_Config);
+   function SARSA_On_Policy(Env_Config: Config_Type; SARSA_Config: SARSA_Config_Type) return Action_Value_Function_Type is
+      Env : Environment_Type := Make (Env_Config);
+      Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default);
 
       package Action_Unif_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
       package Float_Unif_Random renames Ada.Numerics.Float_Random;
@@ -104,7 +107,7 @@ procedure TD_Example is
       Action_Unif_Gen : Action_Unif_Random.Generator;
       Float_Unif_Gen : Float_Unif_Random.Generator;
 
-      function Best_Action_For_State(Q : Action_Value_Function_Type; S: Precise_State_Type) return Action_Type is
+      function Best_Action_For_State(Q : Action_Value_Function_Type; S: State_Type) return Action_Type is
          Max_Value : Float := Float'First;
          Best_Action : Action_Type := Action_Type'First;
       begin
@@ -117,7 +120,7 @@ procedure TD_Example is
          return Best_Action;
       end Best_Action_For_State;
 
-      function Choose_Action_Epsilon_Greedy (Epsilon: Float; Q : Action_Value_Function_Type; S: Precise_State_Type) return Action_Type is
+      function Choose_Action_Epsilon_Greedy (Epsilon: Float; Q : Action_Value_Function_Type; S: State_Type) return Action_Type is
          U : Float := Float_Unif_Random.Random(Float_Unif_Gen);
       begin
          if U < Epsilon then
@@ -128,8 +131,8 @@ procedure TD_Example is
       end Choose_Action_Epsilon_Greedy;
 
       Obs : Observation_Type;
-      S : Precise_State_Type;
-      S1 : Precise_State_Type;
+      S : State_Type;
+      S1 : State_Type;
       Step_Result : Step_Return_Type;
       A : Action_Type;
       A1 : Action_Type;
@@ -170,8 +173,8 @@ procedure TD_Example is
 
             Prev_Action_Value_Function := Action_Value_Function;
 
-            Obs := Reset(Env);
-            S := Precise_State_Type(Obs.Position_Index);
+            Obs := Reset(Env, Seed_Reset);
+            S := State_Type(Obs.Position_Index);
             A := Choose_Action_Epsilon_Greedy(Epsilon, Action_Value_Function, S);
             Step_Index := 0;
             Terminated := False;
@@ -179,9 +182,9 @@ procedure TD_Example is
             while not Terminated loop
                Step_Result := Step(Env, A);
                Obs := Step_Result.Observation;
-               S1 := Precise_State_Type(Obs.Position_Index);
+               S1 := State_Type(Obs.Position_Index);
                A1 := Choose_Action_Epsilon_Greedy(Epsilon, Action_Value_Function, S1);
-               Put_Line("Action " & Action_Type'Image(A) & " takes state " & Precise_State_Type'Image(S) & " to state " & Precise_State_Type'Image(S1) & " and action " & Action_Type'Image(A1) & " in on-policy SARSA");
+               Put_Line("Action " & Action_Type'Image(A) & " takes state " & State_Type'Image(S) & " to state " & State_Type'Image(S1) & " and action " & Action_Type'Image(A1) & " in on-policy SARSA");
                Action_Value_Function(S, A) := Action_Value_Function(S, A) + SARSA_Config.Alpha * (Step_Result.Reward + SARSA_Config.Gamma * Action_Value_Function (S1, A1) - Action_Value_Function (S, A) );
                 -- Update to next state
                S := S1;
@@ -195,7 +198,7 @@ procedure TD_Example is
             --       This differs from the textbook algorithm.
             Local_Delta := 0.0;
             -- TODO: Decide whether to reintroduce something like the following condition before exiting
-            for S0 in Precise_State_Type loop
+            for S0 in State_Type loop
                for A0 in Action_Type loop
                   Local_Delta := Float'Max(Local_Delta, abs(Action_Value_Function (S0, A0) - Prev_Action_Value_Function (S0, A0)));
                end loop;
@@ -205,8 +208,9 @@ procedure TD_Example is
         return Action_Value_Function;
     end SARSA_On_Policy;
    
-    function SARSA_Off_Policy(Env_Config: Environment_Config; SARSA_Config: SARSA_Config_Type) return Action_Value_Function_Type is
-      Env : Environment_State := Make (Env_Config);
+    function SARSA_Off_Policy(Env_Config: Config_Type; SARSA_Config: SARSA_Config_Type) return Action_Value_Function_Type is
+      Env : Environment_Type := Make (Env_Config);
+      Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default);
 
       package Action_Unif_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
       package Float_Unif_Random renames Ada.Numerics.Float_Random;
@@ -215,7 +219,7 @@ procedure TD_Example is
       Action_Unif_Gen : Action_Unif_Random.Generator;
       Float_Unif_Gen : Float_Unif_Random.Generator;
 
-      function Best_Action_For_State(Q : Action_Value_Function_Type; S: Precise_State_Type) return Action_Type is
+      function Best_Action_For_State(Q : Action_Value_Function_Type; S: State_Type) return Action_Type is
          Max_Value : Float := Float'First;
          Best_Action : Action_Type := Action_Type'First;
       begin
@@ -228,7 +232,7 @@ procedure TD_Example is
          return Best_Action;
       end Best_Action_For_State;
 
-      function Choose_Action_Epsilon_Greedy (Epsilon: Float; Q : Action_Value_Function_Type; S: Precise_State_Type) return Action_Type is
+      function Choose_Action_Epsilon_Greedy (Epsilon: Float; Q : Action_Value_Function_Type; S: State_Type) return Action_Type is
          U : Float := Float_Unif_Random.Random(Float_Unif_Gen);
       begin
          if U < Epsilon then
@@ -239,8 +243,8 @@ procedure TD_Example is
       end Choose_Action_Epsilon_Greedy;
 
       Obs : Observation_Type;
-      S : Precise_State_Type;
-      S1 : Precise_State_Type;
+      S : State_Type;
+      S1 : State_Type;
       Step_Result : Step_Return_Type;
       A : Action_Type;
       A1 : Action_Type;
@@ -281,8 +285,8 @@ procedure TD_Example is
 
             Prev_Action_Value_Function := Action_Value_Function;
 
-            Obs := Reset(Env);
-            S := Precise_State_Type(Obs.Position_Index);
+            Obs := Reset(Env, Seed_Reset);
+            S := State_Type(Obs.Position_Index);
             Step_Index := 0;
             Terminated := False;
 
@@ -291,9 +295,9 @@ procedure TD_Example is
                A := Choose_Action_Epsilon_Greedy(Epsilon, Action_Value_Function, S);
                Step_Result := Step(Env, A);
                Obs := Step_Result.Observation;
-               S1 := Precise_State_Type(Obs.Position_Index);
+               S1 := State_Type(Obs.Position_Index);
                A1 := Best_Action_For_State(Action_Value_Function, S1);  -- TODO: Just get best value for state
-               Put_Line("Action " & Action_Type'Image(A) & " takes state " & Precise_State_Type'Image(S) & " to state " & Precise_State_Type'Image(S1) & " in off-policy SARSA");
+               Put_Line("Action " & Action_Type'Image(A) & " takes state " & State_Type'Image(S) & " to state " & State_Type'Image(S1) & " in off-policy SARSA");
                Action_Value_Function(S, A) := Action_Value_Function(S, A) + SARSA_Config.Alpha * (Step_Result.Reward + SARSA_Config.Gamma * Action_Value_Function (S1, A1) - Action_Value_Function (S, A) );
                 -- Update to next state
                S := S1;
@@ -306,7 +310,7 @@ procedure TD_Example is
             --       This differs from the textbook algorithm.
             Local_Delta := 0.0;
             -- TODO: Decide whether to reintroduce something like the following condition before exiting
-            for S0 in Precise_State_Type loop
+            for S0 in State_Type loop
                for A0 in Action_Type loop
                   Local_Delta := Float'Max(Local_Delta, abs(Action_Value_Function (S0, A0) - Prev_Action_Value_Function (S0, A0)));
                end loop;
@@ -316,7 +320,7 @@ procedure TD_Example is
         return Action_Value_Function;
     end SARSA_Off_Policy;
 
-    Frozen_Lake_Config : Environment_Config := (Map_Name => Map_4x4, Is_Slippery => False);
+    Frozen_Lake_Config : Config_Type := (Map_Name => Map_4x4, Is_Slippery => False);
     TD_Config : TD_Config_Type := (Alpha => 0.1, Gamma => 0.9);
     P : Policy_Type := (others => Down);
     Local_Value_Function : Value_Function_Type;
@@ -335,7 +339,7 @@ begin
     P (14) := Right;
     
     Local_Value_Function := TD_Iterative_Policy_Evaluation(Frozen_Lake_Config, TD_Config, P);
-    for S in Precise_State_Type loop
+    for S in State_Type loop
         -- (S, F, F, F),
         -- (F, H, F, H),
         -- (F, F, F, H),
@@ -347,7 +351,7 @@ begin
 
     Put_Line("Running on-policy SARSA");
     Local_Action_Value_Function := SARSA_On_Policy(Frozen_Lake_Config, SARSA_Config);
-    for S in Precise_State_Type loop
+    for S in State_Type loop
        for A in Action_Type loop
          Put("Value of (" & S'Image & ", " & Action_Type'Image(A) & "): ");
          Ada.Float_Text_IO.Put(Item => Local_Action_Value_Function(S, A), Fore => 1, Aft => 4, Exp => 0);
@@ -357,7 +361,7 @@ begin
     
     Put_Line("Running off-policy SARSA");
     Local_Action_Value_Function := SARSA_Off_Policy(Frozen_Lake_Config, SARSA_Config);
-    for S in Precise_State_Type loop
+    for S in State_Type loop
        for A in Action_Type loop
          Put("Value of (" & S'Image & ", " & Action_Type'Image(A) & "): ");
          Ada.Float_Text_IO.Put(Item => Local_Action_Value_Function(S, A), Fore => 1, Aft => 4, Exp => 0);

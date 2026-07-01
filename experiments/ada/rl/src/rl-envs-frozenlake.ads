@@ -76,12 +76,12 @@ package RL.Envs.Frozenlake is
    end record;
    function Get_Map_Info(Map_Name: Map_Type) return Map_Info_Type;
 
-   type Environment_Config is record
+   type Config_Type is record
       Map_Name: Map_Type;
       Is_Slippery : Boolean;
    end record;
 
-   type Environment_State(Rows: Positive; Cols: Positive) is limited private;
+   type Environment_Type(Rows: Positive; Cols: Positive) is limited private;
 
    type Observation_Type is record
       Position_Index : Natural;
@@ -93,22 +93,22 @@ package RL.Envs.Frozenlake is
       Terminated: Boolean;
    end record;
     
-   function Make(config: Environment_Config) return Environment_State;
-   -- TODO: Add argument for seed
-   function Reset(Env : in out Environment_State) return Observation_Type;
-   function Step(Env : in out Environment_State; action: Action_Type) return Step_Return_Type;
+   function Make(Config: Config_Type) return Environment_Type;
+   function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type) return Observation_Type;
+   function Step(Env : in out Environment_Type; action: Action_Type) return Step_Return_Type;
    -- Render_Text loosely follows the Python implementation, except that we use
    -- an "A" to indicate the position of the agent rather than highlighting the
    -- cell type abbreviation in red.
-   procedure Render_Text(Env : Environment_State);
+   procedure Render_Text(Env : Environment_Type);
 
-   type Discrete_State_Type is new Natural range 0 .. 63; -- Allow for 8x8 map.
-   type Transition_Probability_Type is record
-       Probability : Float;
-       Reward : Float;
-   end record;
-   type Discrete_Model_Type is array (Discrete_State_Type, Action_Type, Discrete_State_Type) of Transition_Probability_Type;
-   function Get_Model(Config: Environment_Config) return Discrete_Model_Type;
+   -- TODO: We move the DP model to a child package
+   -- type Discrete_State_Type is new Natural range 0 .. 63; -- Allow for 8x8 map.
+   -- type Transition_Probability_Type is record
+   --     Probability : Float;
+   --     Reward : Float;
+   -- end record;
+   -- type Discrete_Model_Type is array (Discrete_State_Type, Action_Type, Discrete_State_Type) of Transition_Probability_Type;
+   -- function Get_Model(Config: Config_Type) return Discrete_Model_Type;
 
 private
    type Map_Element is (S, F, H, G);
@@ -138,7 +138,7 @@ private
 
    type Map_Transitions is array (Positive range <>, Positive range <>) of Action_Transition_Type;
 
-   type Environment_State(Rows: Positive; Cols: Positive) is record
+   type Environment_Type(Rows: Positive; Cols: Positive) is record
       Map: Map_Array(1 .. Rows, 1 .. Cols);
       P : Map_Transitions(1 .. Rows, 1 .. Cols);
       Agent_Position: Position_Type;
