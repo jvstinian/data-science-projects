@@ -7,6 +7,7 @@ package body RL.Algorithms.Random_Actions is
    function Uniform_Random_Actions (Config : Config_Type; Verbose : Boolean) return Simulation_Summary is
       package Action_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
       Gen: Action_Random.Generator;
+      Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default);
       Env : Environment_Type := Make(Config);
       Obs: Observation_Type;
       Action: Action_Type;
@@ -16,7 +17,7 @@ package body RL.Algorithms.Random_Actions is
    begin
       Action_Random.Reset(Gen);
 
-      Obs:= Reset(Env);
+      Obs:= Reset(Env, Seed_Reset);
       I := 0;
       loop
          Action := Action_Random.Random(Gen);
