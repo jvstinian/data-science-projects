@@ -1,7 +1,7 @@
 -- from gymnasium import Env, spaces
 -- from gymnasium.envs.toy_text.utils import categorical_sample
 
-package body Cliff_Walking is
+package body RL.Envs.Cliffwalking is
 
    -- The following is identical to the version in Frozen_Lake
    function Position_Inc(Rows : Positive; Cols : Positive; Position: Position_Type; Action: Action_Type) return Position_Type is
@@ -236,4 +236,4 @@ package body Cliff_Walking is
       end loop;
    end Render_Text;
    
-end Cliff_Walking;
+end RL.Envs.Cliffwalking;

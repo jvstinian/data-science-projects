@@ -2,7 +2,7 @@ with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Numerics;
 with Ada.Numerics.Float_Random; -- use Ada.Numerics.Float_Random;
 
-package Cliff_Walking is
+package RL.Envs.Cliffwalking is
    --  Cliff walking involves crossing a gridworld from start to goal while avoiding falling off a cliff.
    -- 
    --  ## Description
@@ -172,5 +172,5 @@ private
    function Update_Probability_Matrix(Map : Map_Array; Position: Position_Type; Action : Action_Type) return Partial_Transition_Type;
    function To_S(Map: Map_Array; Position: Position_Type) return Observation_Type;
    function Get_Start_Position(Map: Map_Array) return Position_Type;
-end Cliff_Walking;
+end RL.Envs.Cliffwalking;
 
