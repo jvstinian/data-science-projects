@@ -1,5 +1,6 @@
 with Ada.Text_IO; use Ada.Text_IO;
 -- with Ada.Float_Text_IO;
+with RL; use RL;  -- Transition_Probability_Type
 with RL.Envs.Frozenlake; use RL.Envs.Frozenlake;
 with RL.Envs.Frozenlake.DP;
 with Ada.Numerics.Discrete_Random;
@@ -10,7 +11,7 @@ procedure Value_Iteration_Example is
     
     package Frozen_Lake_DP is new RL.Envs.Frozenlake.DP(Map_Name => Map_4x4);
     use Frozen_Lake_DP;
-    DP_Model : DP_Model_Type := Get_Model(Environment_Config'(Map_Name => Map_4x4, Is_Slippery => False));
+    DP_Model : DP_Model_Type := Get_Model(Config_Type'(Map_Name => Map_4x4, Is_Slippery => False));
     -- TODO: Use Alt_Discrete_State_Type instead of the following
     -- type Precise_State_Type is new Integer range 0 .. (Frozen_Lake_DP.Num_Rows * Frozen_Lake_DP.Num_Cols - 1);
     -- type Precise_Model_Type is array (Precise_State_Type, Action_Type, Precise_State_Type) of Transition_Probability_Type;
@@ -121,31 +122,14 @@ procedure Value_Iteration_Example is
 begin
     Action_Random.Reset(Action_Gen);
 
-    Put_Line("Frozen Lake DP Get_Map_Rows: " & Frozen_Lake_DP.Num_Rows'Image);
-    for Current_State in State_Type loop
-        for Current_Action in Action_Type loop
-            for Next_State in State_Type loop
-                declare
-                    Transition : Transition_Probability_Type := DP_Model(Current_State, Current_Action, Next_State);
-                begin
-                    if Transition.Probability > 0.0 then
-                        Put_Line("From State " & Current_State'Image & " taking Action " & Current_Action'Image &
-                                 " to State " & Next_State'Image & " has transition probability " &
-                                 Transition.Probability'Image & " and reward " & Transition.Reward'Image);
-                    end if;
-                end;
-            end loop;
-        end loop;
-    end loop;
-    
-    -- Initialize Precise_DP_Model 
-    for S0 in State_Type loop
-        for A in Action_Type loop
-            for S1 in State_Type loop
-                DP_Model(S0, A, S1) := DP_Model(State_Type(S0), A, State_Type(S1));
-            end loop;
-        end loop;
-    end loop;
+    -- -- Initialize Precise_DP_Model 
+    -- for S0 in State_Type loop
+    --     for A in Action_Type loop
+    --         for S1 in State_Type loop
+    --             DP_Model(S0, A, S1) := DP_Model(State_Type(S0), A, State_Type(S1));
+    --         end loop;
+    --     end loop;
+    -- end loop;
 
     Put_Line("First float: " & Float'First'Image);
     Optimal_Policy := Value_Iteration(DP_Model, 0.9);
