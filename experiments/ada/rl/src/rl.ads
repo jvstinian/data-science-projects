@@ -9,4 +9,9 @@ package RL is
             null;
       end case;
    end record;
+   
+   type Transition_Probability_Type is record
+       Probability : Float;
+       Reward : Float;
+   end record;
 end RL;
