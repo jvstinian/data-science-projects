@@ -62,7 +62,6 @@ struct LineWalkStepReturn linewalk_step(struct LineWalkEnvironment* env, enum Ac
 void linewalk_deinit(struct LineWalkEnvironment* env);
 void linewalk_close(struct LineWalkEnvironment* env);
 
-void take_random_action(const LineWalkConfig* config, unsigned int max_steps);
 void linewalk_mctsenv_uniform_random_actions(const LineWalkConfig* config, unsigned int max_steps);
 
 
