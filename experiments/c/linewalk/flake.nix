@@ -45,6 +45,7 @@
           ctags cscope
           valgrind
         ];
+        shellHook = "export PS1='\\[\\e[1;34m\\]rl-c > \\[\\e[0m\\]'";
       };
       packages = {
         default = pkgs.line_walk;

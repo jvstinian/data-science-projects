@@ -37,6 +37,7 @@ Player get_player(LineWalkState state);
 LineWalkState step(LineWalkState state, Action action);
 float reward(Player player, LineWalkState state);
 unsigned int get_available_actions (LineWalkState state, Action *available_actions, unsigned int* num_actions);
+enum Action linewalk_mctsenv_get_random_action(LineWalkState state);
 void print_state(LineWalkState state);
 
 /* RL Interface */
@@ -62,14 +63,13 @@ void linewalk_deinit(struct LineWalkEnvironment* env);
 void linewalk_close(struct LineWalkEnvironment* env);
 
 void take_random_action(const LineWalkConfig* config, unsigned int max_steps);
+void linewalk_mctsenv_uniform_random_actions(const LineWalkConfig* config, unsigned int max_steps);
 
 
 struct SimulationSummary {
     size_t num_steps;
     float total_reward;
 };
-
-struct SimulationSummary uniform_random_actions(struct LineWalkConfig config, Boolean verbose);
 
 enum Action linewalk_get_random_action(struct LineWalkEnvironment* env);
 struct SimulationSummary linewalk_uniform_random_actions(struct LineWalkConfig config, Boolean verbose);
