@@ -74,11 +74,11 @@ package RL.Envs.Cliffwalking is
    Num_Rows : constant Positive := 4;
    Num_Cols : constant Positive := 12;
 
-   type Environment_Config is record
+   type Config_Type is record
       Is_Slippery : Boolean;
    end record;
 
-   type Environment_State is limited private;
+   type Environment_Type is limited private;
 
    type Observation_Type is new Natural range 0 .. (Num_Rows * Num_Cols - 1);
    
@@ -88,12 +88,12 @@ package RL.Envs.Cliffwalking is
       Terminated: Boolean;
    end record;
    
-   function Make(config: Environment_Config) return Environment_State;
-   function Reset(Env : in out Environment_State; Seed_Reset : Seed_Reset_Type) return Observation_Type;
-   function Step(Env : in out Environment_State; action: Action_Type) return Step_Return_Type;
+   function Make(config: Config_Type) return Environment_Type;
+   function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type) return Observation_Type;
+   function Step(Env : in out Environment_Type; action: Action_Type) return Step_Return_Type;
    -- Render_Text loosely follows the Python implementation, except that we use
    -- an "A" to indicate the position of the agent rather than an "x".
-   procedure Render_Text(Env : Environment_State);
+   procedure Render_Text(Env : Environment_Type);
 
    -- type Discrete_State_Type is new Natural range 0 .. 63; -- Allow for 8x8 map.
    -- type Transition_Probability_Type is record
@@ -101,7 +101,7 @@ package RL.Envs.Cliffwalking is
    --     Reward : Float;
    -- end record;
    -- type Discrete_Model_Type is array (Discrete_State_Type, Action_Type, Discrete_State_Type) of Transition_Probability_Type;
-   -- function Get_Model(config: Environment_Config) return Discrete_Model_Type;
+   -- function Get_Model(config: Config_Type) return Discrete_Model_Type;
 
 private
    -- Map elements: S is Start, C is Cliff, G is Goal, and
@@ -134,7 +134,7 @@ private
    type Action_Transition_Type is array (Action_Type, Action_Type) of Transition_Type;
    type Map_Transitions is array (1 .. Num_Rows, 1 .. Num_Cols) of Action_Transition_Type;
 
-   type Environment_State is record
+   type Environment_Type is record
       Map: Map_Array;
       P : Map_Transitions;
       Agent_Position: Position_Type;
@@ -146,9 +146,9 @@ private
    -- or the methods of the same name in the Frozen Lake environment with the necessary
    -- adjustments for the different rules of Cliff Walking.
    -- We make these private since they are not intended to be used directly.
-   function Position_Inc(Rows : Positive; Cols : Positive; Position: Position_Type; Action: Action_Type) return Position_Type;
+   function Position_Inc(Position: Position_Type; Action: Action_Type) return Position_Type;
    function Update_Probability_Matrix(Map : Map_Array; Position: Position_Type; Action : Action_Type) return Partial_Transition_Type;
-   function To_S(Map: Map_Array; Position: Position_Type) return Observation_Type;
+   function To_S(Position: Position_Type) return Observation_Type;
    function Get_Start_Position(Map: Map_Array) return Position_Type;
 end RL.Envs.Cliffwalking;
 
