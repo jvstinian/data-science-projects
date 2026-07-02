@@ -112,9 +112,9 @@ package body RL.Envs.Cliffwalking is
                for A in Action_Type loop
                   for A_Act in Action_Type loop
                      if A = A_Act then
-                        P(I, J)(A, A_Act) := (Probability => 1.0, Position => (Row => I, Col => J), Reward => 0.0, Terminated => True);
+                        P(I, J, A, A_Act) := (Probability => 1.0, Position => (Row => I, Col => J), Reward => 0.0, Terminated => True);
                      else
-                        P(I, J)(A, A_Act) := (Probability => 0.0, Position => (Row => I, Col => J), Reward => 0.0, Terminated => True);
+                        P(I, J, A, A_Act) := (Probability => 0.0, Position => (Row => I, Col => J), Reward => 0.0, Terminated => True);
                      end if;
                   end loop;
                end loop;
@@ -135,7 +135,7 @@ package body RL.Envs.Cliffwalking is
                            Temp_Probability := 0.0;
                         end if;
                      end if;
-                     P(I, J)(A, A_Actual) := (
+                     P(I, J, A, A_Actual) := (
                         Probability => Temp_Probability,
                         Position => Temp_Partial_Transition.Position,
                         Reward => Temp_Partial_Transition.Reward,
@@ -165,7 +165,7 @@ package body RL.Envs.Cliffwalking is
          Temp_Cumulative_Probability : Float := 0.0;
       begin
          for A_Act in Action_Type loop
-            Cumulative_Probability(A_Act) := P(I, J)(Action, A_Act).Probability + Temp_Cumulative_Probability;
+            Cumulative_Probability(A_Act) := P(I, J, Action, A_Act).Probability + Temp_Cumulative_Probability;
             Temp_Cumulative_Probability := Cumulative_Probability(A_Act);
          end loop;
          return Cumulative_Probability;
@@ -177,11 +177,11 @@ package body RL.Envs.Cliffwalking is
       begin
          for A_Act in Action_Type loop
             if Rand <= Cumulative_Probability(A_Act) then
-               return P(Position.Row, Position.Col)(Action, A_Act);
+               return P(Position.Row, Position.Col, Action, A_Act);
             end if;
          end loop;
          -- The following should never be reached as the cumulative probabilities should sum to 1.0
-         return P(Position.Row, Position.Col)(Action, Action_Type'First);
+         return P(Position.Row, Position.Col, Action, Action_Type'First);
       end Get_Random_Transition;
 
       -- Sample to obtain the transition based on the current position and the action taken by the Agent
