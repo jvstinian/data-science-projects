@@ -129,9 +129,9 @@ private
        Terminated: Boolean;
    end record;
 
-   -- TODO: Given we have a fixed number of rows and columns, do we need Action_Transition_Type?
-   -- Can we just extend the indices of Map_Transitions?
-   -- type Action_Transition_Type is array (Action_Type, Action_Type) of Transition_Type;
+   -- In Frozenlake we had an intermediate Action_Transition_Type, but for
+   -- this environment we simple extend Map_Transitions to have indices for the
+   -- actions.
    type Map_Transitions is array (1 .. Num_Rows, 1 .. Num_Cols, Action_Type, Action_Type) of Transition_Type;
 
    type Environment_Type is record
