@@ -33,8 +33,8 @@ int main() {
             printf("MOVE_RIGHT, ");
         }
     }
-   
-    take_random_action2(&config, 20);
+  
+    linewalk_mctsenv_uniform_random_actions(&config, 20);
 
     struct SimulationSummary simsum = linewalk_uniform_random_actions(config, TRUE);
     printf("Simulation Summary: Steps = %lu, Total Reward = %5.2f\n", simsum.num_steps, simsum.total_reward);

@@ -67,6 +67,11 @@ unsigned int get_available_actions (LineWalkState state, Action *available_actio
     return count;
 }
 
+enum Action linewalk_mctsenv_get_random_action(LineWalkState state) {
+    (void)state;
+    return (enum Action) rand() % 2;
+}
+
 void print_state(LineWalkState state) {
     if (state.kind == ACTIVE) {
         printf("Current position: %u\n", state.position);
@@ -154,84 +159,21 @@ void linewalk_close(struct LineWalkEnvironment* env) {
 }
 
 
+#define ENVIRONMENT_PREFIX linewalk
 #define CONFIG_TYPE LineWalkConfig
 #define STATE_TYPE LineWalkState
 #define ACTION_TYPE enum Action
 #define STEP_METHOD step
-#include "random_action_c.inc"
+#define RANDOM_ACTION_METHOD linewalk_mctsenv_get_random_action
+#define IS_TERMINAL_METHOD is_terminal
+#include "mctsenv_uniform_random_actions_c.inc"
+#undef IS_TERMINAL_METHOD
+#undef RANDOM_ACTION_METHOD 
 #undef STEP_METHOD
 #undef ACTION_TYPE
 #undef STATE_TYPE
 #undef CONFIG_TYPE
-
-void take_random_action(const LineWalkConfig* config, unsigned int max_steps) {
-    LineWalkState state = initial_state(*config);
-    size_t i;
-    enum Action action;
-    Boolean terminated = FALSE;
-
-    srand(123);
-    
-    for(i = 0; i < max_steps; i++) {
-        action = (enum Action) rand() % 2;
-        if (action == MOVE_LEFT) {
-            printf("Moving left\n");
-        } else if (action == MOVE_RIGHT) {
-            printf("Moving right\n");
-        }
-        state = step(state, action);
-        if ((terminated = is_terminal(state))) {
-            break;
-        }
-    }
-
-    if (terminated) {
-        printf("Terminated\n");
-    } else {
-        printf("Environment stopped after %u steps\n", max_steps);
-    }
-    printf("Reward: %f", reward(PLAYER1, state));
-}
-
-struct SimulationSummary uniform_random_actions(struct LineWalkConfig config, Boolean verbose) {
-    struct LineWalkEnvironment* env = linewalk_make(config);
-    if (env == NULL) {
-        fprintf(stderr, "uniform_random_actions: failed to create LineWalkEnvironment\n");
-        return (struct SimulationSummary) { 0, 0.0f };
-    }
-
-    /* Other declarations */
-    struct LineWalkObservation obs;
-    enum Action action;
-    struct LineWalkStepReturn step_output;
-    size_t i;
-    float total_reward = 0.0f;
-
-    /* Set seed and initialize environment */
-    srand(123);
-    obs = linewalk_reset(env);
-    (void)obs; /* Suppress unused variable warning */
-
-    i = 0;
-    while (1) {
-        action = (enum Action) rand() % 2;
-        step_output = linewalk_step(env, action);
-        obs = step_output.observation;
-        total_reward += step_output.reward;
-        i++;
-        if (verbose) {
-            printf("Step %lu, Action %d, Reward: %5.2f\n", i, action, step_output.reward);
-        }
-        if (step_output.terminated) {
-            if (verbose) {
-                printf("Total Reward: %5.2f\n", total_reward);
-            }
-            break;
-        }
-    }
-    linewalk_close(env);
-    return (struct SimulationSummary) { i, total_reward };
-}
+#undef ENVIRONMENT_PREFIX
 
 enum Action linewalk_get_random_action(struct LineWalkEnvironment* env) {
     (void)env;
