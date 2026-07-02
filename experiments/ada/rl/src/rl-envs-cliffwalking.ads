@@ -15,7 +15,7 @@ with Ada.Numerics.Float_Random;
 -- 
 --  Adapted from Example 6.6 (page 132) from
 --  Reinforcement Learning: An Introduction
---  by Sutton and Barto [<a href="#cliffwalk_ref">1</a>].
+--  by Sutton and Barto.
 -- 
 --  The cliff can be chosen to be slippery (disabled by default) so the player
 --  may move perpendicular to the intended direction sometimes.
@@ -28,16 +28,15 @@ with Ada.Numerics.Float_Random;
 --  Left, Down, Right, or Up.
 -- 
 --  ## Observation Space
---  There are 3 x 12 + 1 possible states. The player cannot be at the cliff, nor at
---  the goal as the latter results in the end of the episode. What remains are all
---  the positions of the first 3 rows plus the bottom-left cell.
+--  There are 3 x 12 + 1 possible states. The player cannot be at the cliff,
+--  nor at the goal as the latter results in the end of the episode. What
+--  remains are all the positions of the first 3 rows plus the bottom-left cell.
 -- 
 --  The observation is a value representing the player's current position as
 --  current_row * ncols + current_col (where both the row and col start at 0).
 -- 
---  For example, the starting position can be calculated as follows: 3 * 12 + 0 = 36.
--- 
---  The observation is returned as an `int()`.
+--  For example, the starting position can be calculated as follows:
+--  3 * 12 + 0 = 36.
 -- 
 --  ## Starting State
 --  The episode starts with the player in state `36` (location (3, 0)).
@@ -49,11 +48,6 @@ with Ada.Numerics.Float_Random;
 --  ## Episode End
 --  The episode terminates when the player enters state `47` (location (3, 11)).
 -- 
---  ## Information
--- 
---  `step()` and `reset()` return a dict with the following keys:
---  - "p" - transition proability for the state.
--- 
 --  As cliff walking is not stochastic, the transition probability returned always 1.0.
 -- 
 --  ## References
@@ -64,6 +58,14 @@ with Ada.Numerics.Float_Random;
 --  * the Python version returns probability info (e.g., {"prob": 1})
 --    in the reset and step methods, whereas this implementation
 --    omits this info
+--  * contrary to the description above, in this Ada implementation the
+--    position of the agent is represented using a 1-based index for the row
+--    and column, but the public observation type is the flattened 0-based
+--    position index (the description above is taken from the Python 
+--    implementation with a few adjustments, and we decided to keep the
+--    explanation that consistently uses the 0-based indices to avoid
+--    confusion, particularly since the use of 1-based indices is 
+--    only used in the private part of the specification)
 package RL.Envs.Cliffwalking is
    package Float_Random renames Ada.Numerics.Float_Random;
 
