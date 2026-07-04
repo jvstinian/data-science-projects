@@ -1,7 +1,8 @@
+with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Numerics.Generic_Elementary_Functions;
 
 
-package body Car_Rental is
+package body RL.Envs.Carrental is
    package Math is new Ada.Numerics.Generic_Elementary_Functions(Float);
 
    function Poisson_PMF(Lambda : Float; N : Natural) return Float is
@@ -492,5 +493,4 @@ package body Car_Rental is
       return Calculate_Transition_Probability2(Config, Cars_After_Action.Cars_Moved, Cars_Count1);
    end Get_Transition_Values2;
 
-end Car_Rental;
-
+end RL.Envs.Carrental;
