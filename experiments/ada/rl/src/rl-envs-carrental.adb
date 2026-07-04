@@ -58,7 +58,7 @@ package body RL.Envs.Carrental is
    -- end Update_Probability_Matrix;
 
    -- TODO: The following is not currently used.
-   function To_Obs(Env : Environment_State) return Natural is
+   function To_Obs(Env : Environment_Type) return Natural is
    begin
       return Env.Lot_A_Cars * (Lot_Size + 1) + Env.Lot_B_Cars;
    end To_Obs;
@@ -88,9 +88,9 @@ package body RL.Envs.Carrental is
    --    return Start_Position;
    -- end Get_Start_Position;
 
-   function Make(Config: Environment_Config) return Environment_State is
+   function Make(Config: Config_Type) return Environment_Type is
    begin
-      return Environment_State'(
+      return Environment_Type'(
          Gen => <>,
          Config => Config,
          Lot_A_Cars => Config.Lot_A_Init_Cars,
@@ -98,7 +98,7 @@ package body RL.Envs.Carrental is
       );
    end Make;
 
-   function Reset(Env : in out Environment_State) return Observation_Type is
+   function Reset(Env : in out Environment_Type) return Observation_Type is
       Result : Observation_Type;
    begin
       Float_Random.Reset(Gen); -- TODO: Keep this or the following?
@@ -121,7 +121,7 @@ package body RL.Envs.Carrental is
    --  --     self.lastaction = None
    --  --     return int(self.s), {"prob": 1}
 
-   function Step(Env : in out Environment_State; Action: Action_Type) return Step_Return_Type is
+   function Step(Env : in out Environment_Type; Action: Action_Type) return Step_Return_Type is
       -- Helper functions
       function U_Env_Random return Float is
       begin
@@ -195,13 +195,13 @@ package body RL.Envs.Carrental is
    --  --         self.render()
    --  --     return (int(s), r, t, False, {"prob": p})
    
-   procedure Render_Text(Env : Environment_State) is
+   procedure Render_Text(Env : Environment_Type) is
    begin
       Put_Line("Lot A Cars: " & Env.Lot_A_Cars'Image & ", Lot B Cars: " & Env.Lot_B_Cars'Image);
    end Render_Text;
 
    function Calculate_Transition_Probability (
-      Config : Environment_Config;
+      Config : Config_Type;
       Cars_Moved : Natural;
       Prev_Cars : Cars_Per_Lot_Type;
       Next_Cars : Cars_Per_Lot_Type
@@ -342,9 +342,9 @@ package body RL.Envs.Carrental is
       return Float_Random.Random(Gen);
    end Rando;
 
-   function Get_Model(Config: Environment_Config) return Discrete_Model_Access_Type is
-      Res : Discrete_Model_Access_Type := new Discrete_Model_Type'(others => (others => (others => (Probability => 0.0, Reward => 0.0))));
-      Env : Environment_State := Make(Config);
+   function Get_Model(Config: Config_Type) return DP_Model_Access_Type is
+      Res : DP_Model_Access_Type := new DP_Model_Type'(others => (others => (others => (Probability => 0.0, Reward => 0.0))));
+      Env : Environment_Type := Make(Config);
 
       Cars_Count0 : Cars_Per_Lot_Type;
       Cars_After_Action : Cars_After_Action_Type;
@@ -374,7 +374,7 @@ package body RL.Envs.Carrental is
       return Res;
    end Get_Model;
    
-   function Get_Transition_Values (Config: Environment_Config; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type is
+   function Get_Transition_Values (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type is
       Res : Transition_Array_Type := (others => (Probability => 0.0, Reward => 0.0));
       
       Cars_Count0 : Cars_Per_Lot_Type;
@@ -396,7 +396,7 @@ package body RL.Envs.Carrental is
    -- for Calculate_Transition_Probability2.
    -- Some benchmarking might be beneficial though.
    function Calculate_Transition_Probability2 (
-      Config : Environment_Config;
+      Config : Config_Type;
       Cars_Moved : Natural;
       Prev_Cars : Cars_Per_Lot_Type
    ) return Transition_Array_Type is
@@ -480,7 +480,7 @@ package body RL.Envs.Carrental is
       return Res;
    end Calculate_Transition_Probability2;
    
-   function Get_Transition_Values2 (Config: Environment_Config; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type is
+   function Get_Transition_Values2 (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type is
       -- Res : Transition_Array_Type := (others => (Probability => 0.0, Reward => 0.0));
       
       Cars_Count0 : Cars_Per_Lot_Type;
