@@ -115,37 +115,25 @@ package RL.Envs.Carrental is
       Observation: Observation_Type;
       Reward: Float;
       Terminated: Boolean;
-      Truncated: Boolean;
    end record;
     
    function Make(Config: Config_Type) return Environment_Type;
-   -- TODO: Add argument for seed
-   function Reset(Env : in out Environment_Type) return Observation_Type;
+   function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type) return Observation_Type;
    function Step(Env : in out Environment_Type; Action: Action_Type) return Step_Return_Type;
    procedure Render_Text(Env : Environment_Type);
 
    type Discrete_State_Type is new Natural range 0 .. ((Lot_Size + 1) * (Lot_Size + 1) - 1);
-   -- TODO: The following is in package RL.
-   type Transition_Probability_Type is record
-       Probability : Float;
-       Reward : Float;
-   end record;
    type DP_Model_Type is array (Discrete_State_Type, Action_Type, Discrete_State_Type) of Transition_Probability_Type;
    type DP_Model_Access_Type is access DP_Model_Type;
    DM_Pool : System.Pool_Local.Unbounded_Reclaim_Pool;
    for DP_Model_Access_Type'Storage_Pool use DM_Pool;
    function Get_Model(Config: Config_Type) return DP_Model_Access_Type;
-   -- function Get_Model_Access(Config: Config_Type) return DP_Model_Access_Type;
 
    type Transition_Array_Type is array (Discrete_State_Type) of Transition_Probability_Type;
    function Get_Transition_Values (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type;
    function Get_Transition_Values2 (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type;
 
 private
-   Gen: Float_Random.Generator;
-   function Rando return Float;
-   function Poisson is new GRF.Poisson(U => Rando);
-
    type Environment_Type is record
       Gen: Float_Random.Generator;
       Config : Config_Type;
@@ -168,9 +156,10 @@ private
    function Poisson_SF(Lambda : Float; N : Natural) return Float;  -- Survival function, i.e., 1 - CDF
    -- These functions follow similar methods in the Python implementation of FrozenLakeEnv.
    -- We make these private since they are not intended to be used directly.
-   function To_Obs(Env : Environment_Type) return Natural;
    function To_Discrete_State(Cars_Per_Lot : Cars_Per_Lot_Type) return Discrete_State_Type;
    function From_Discrete_State (D : Discrete_State_Type) return Cars_Per_Lot_Type;
+   -- The following are for calculating the transition probabilities for the
+   -- dynamic programming model.
    function Calculate_Transition_Probability (Config : Config_Type; Cars_Moved : Natural; Prev_Cars : Cars_Per_Lot_Type; Next_Cars : Cars_Per_Lot_Type) return Transition_Probability_Type;
    function Step_Cars(Cars_Count : Cars_Per_Lot_Type; Action : Action_Type) return Cars_After_Action_Type;
    function Calculate_Transition_Probability2 (Config : Config_Type; Cars_Moved : Natural; Prev_Cars : Cars_Per_Lot_Type) return Transition_Array_Type;

@@ -54,14 +54,8 @@ package body RL.Envs.Carrental is
    --    Terminated : Boolean := (New_Letter = H) or else (New_Letter = G);
    --    Reward : Float := Float(Boolean'Pos(New_Letter = G)); -- Is 1.0 if New_Letter = G else 0.0
    -- begin
-   --    return (Position => New_Position, Reward => Reward, Truncated => Terminated);
+   --    return (Position => New_Position, Reward => Reward, Terminated => Terminated);
    -- end Update_Probability_Matrix;
-
-   -- TODO: The following is not currently used.
-   function To_Obs(Env : Environment_Type) return Natural is
-   begin
-      return Env.Lot_A_Cars * (Lot_Size + 1) + Env.Lot_B_Cars;
-   end To_Obs;
 
    function To_Discrete_State(Cars_Per_Lot : Cars_Per_Lot_Type) return Discrete_State_Type is
    begin
@@ -98,11 +92,14 @@ package body RL.Envs.Carrental is
       );
    end Make;
 
-   function Reset(Env : in out Environment_Type) return Observation_Type is
+   function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type) return Observation_Type is
       Result : Observation_Type;
    begin
-      Float_Random.Reset(Gen); -- TODO: Keep this or the following?
-      Float_Random.Reset(Env.Gen);
+      case Seed_Reset.Kind is
+         when Set_Default => Float_Random.Reset(Env.Gen);
+         when No_Set      => null;
+         when Set_Seed    => Float_Random.Reset(Env.Gen, Seed_Reset.Seed);
+      end case;
       Env.Lot_A_Cars := Env.Config.Lot_A_Init_Cars;
       Env.Lot_B_Cars := Env.Config.Lot_B_Init_Cars;
       return Observation_Type'(
@@ -180,8 +177,7 @@ package body RL.Envs.Carrental is
       return Step_Return_Type'(
          Observation => Observation_Type'(Lot_A_Cars => Env.Lot_A_Cars, Lot_B_Cars => Env.Lot_B_Cars),
          Reward => 10.0*Float(Lot_A_Rented_Cars + Lot_B_Rented_Cars) - 2.0 * Float(Local_Cars_Moved),
-         Terminated => False,
-         Truncated => False
+         Terminated => False
       );
    end Step;
    --  -- def step(self, a):
@@ -335,12 +331,6 @@ package body RL.Envs.Carrental is
          Cars_Moved => Cars_Moved
       );
    end;
-
-   -- TODO: Remove the following 
-   function Rando return Float is
-   begin
-      return Float_Random.Random(Gen);
-   end Rando;
 
    function Get_Model(Config: Config_Type) return DP_Model_Access_Type is
       Res : DP_Model_Access_Type := new DP_Model_Type'(others => (others => (others => (Probability => 0.0, Reward => 0.0))));
