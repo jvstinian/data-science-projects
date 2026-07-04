@@ -59,7 +59,7 @@ with System.Pool_Local;
 --  convert coordinates in other environments to a single
 --  position index.  If the number of cars is given by a tuple
 --  (a, b), then the corresponding discrete state value is given
---  by a * 21 + b.  TODO: Check this is accurate
+--  by a * 21 + b.
 --
 --  ## Rewards
 --  The owner makes a profit of $10 dollars for each car rented,
