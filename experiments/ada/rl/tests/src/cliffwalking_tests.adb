@@ -14,6 +14,8 @@ package body Cliffwalking_Tests is
    begin
       Register_Routine
         (T, Test_Cliffwalking_Random_Actions'Access, "Test Cliffwalking environment terminates eventually with random actions");
+      Register_Routine
+        (T, Test_Cliffwalking_DP_Model'Access, "Test Cliffwalking DP model transition probabilities");
    end Register_Tests;
 
    procedure Test_Cliffwalking_Random_Actions (T : in out Test_Cases.Test_Case'Class) is
@@ -48,4 +50,29 @@ package body Cliffwalking_Tests is
         Assert (Sim_Summary.Total_Reward <= -Float(Sim_Summary.Num_Steps), "Reward exceeds negative of number of steps");
     end Test_Cliffwalking_Random_Actions;
    
+    procedure Test_Cliffwalking_DP_Model (T : in out Test_Case'Class) is
+        Config: Config_Type := Config_Type'(Is_Slippery => False);
+        DP_Model : DP_Model_Type := Get_Model(Config);
+        
+        Total_Transition_Prob : Float;
+
+        function Is_Approx_Equal(X, Y : Float; Epsilon : Float := 1.0e-6) return Boolean is
+        begin
+            return abs(X - Y) <= Epsilon;
+        end Is_Approx_Equal;
+    begin 
+        for S in State_Type loop
+            for A in Action_Type loop
+                Total_Transition_Prob := 0.0;
+                for S1 in State_Type loop
+                    Total_Transition_Prob := Total_Transition_Prob + DP_Model(S, A, S1).Probability;
+                end loop;
+                Assert (
+                    Is_Approx_Equal(Total_Transition_Prob, 1.0),
+                    "Transition probabilities for State " & S'Image
+                    & " and Action " & A'Image & " do not sum to 1.0"
+                );
+            end loop;
+        end loop;
+    end Test_Cliffwalking_DP_Model;
 end Cliffwalking_Tests;

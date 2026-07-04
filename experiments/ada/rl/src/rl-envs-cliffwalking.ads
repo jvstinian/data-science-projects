@@ -95,13 +95,9 @@ package RL.Envs.Cliffwalking is
    -- an "A" to indicate the position of the agent rather than an "x".
    procedure Render_Text(Env : Environment_Type);
 
-   -- type Discrete_State_Type is new Natural range 0 .. 63; -- Allow for 8x8 map.
-   -- type Transition_Probability_Type is record
-   --     Probability : Float;
-   --     Reward : Float;
-   -- end record;
-   -- type Discrete_Model_Type is array (Discrete_State_Type, Action_Type, Discrete_State_Type) of Transition_Probability_Type;
-   -- function Get_Model(config: Config_Type) return Discrete_Model_Type;
+   type State_Type is new Natural range 0 .. (Num_Rows * Num_Cols - 1);
+   type DP_Model_Type is array (State_Type, Action_Type, State_Type) of Transition_Probability_Type;
+   function Get_Model(Config: Config_Type) return DP_Model_Type;
 
 private
    -- Map elements: S is Start, C is Cliff, G is Goal, and
@@ -134,13 +130,12 @@ private
    -- actions.
    type Map_Transitions is array (1 .. Num_Rows, 1 .. Num_Cols, Action_Type, Action_Type) of Transition_Type;
 
-   type Environment_Type is record
+   type Environment_Type is limited record
+      Gen: Float_Random.Generator;
       Map: Map_Array;
       P : Map_Transitions;
       Agent_Position: Position_Type;
    end record;
-   
-   Gen: Float_Random.Generator;
 
    -- These functions follow similar methods in the Python implementation of CliffWalkingEnv,
    -- or the methods of the same name in the Frozen Lake environment with the necessary
