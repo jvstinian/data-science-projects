@@ -50,7 +50,7 @@ generic
 
   type Real is digits <> ;
 
-package Generic_Random_Functions is
+package Mathpaqs.Generic_Random_Functions is
 
   ---------------------------------------------------------------------------------
   --   =======================================================================   --
@@ -109,4 +109,4 @@ package Generic_Random_Functions is
 
   function Pareto_CDF (x, threshold, alpha: Real) return Real;
 
-end Generic_Random_Functions;
+end Mathpaqs.Generic_Random_Functions;
