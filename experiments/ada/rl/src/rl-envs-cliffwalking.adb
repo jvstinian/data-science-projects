@@ -1,16 +1,19 @@
+with Ada.Text_IO; use Ada.Text_IO;
 -- from gymnasium import Env, spaces
 -- from gymnasium.envs.toy_text.utils import categorical_sample
 
 package body RL.Envs.Cliffwalking is
 
-   -- The following is identical to the version in Frozen_Lake
-   function Position_Inc(Rows : Positive; Cols : Positive; Position: Position_Type; Action: Action_Type) return Position_Type is
+   -- The following is similar to the version in Frozen_Lake,
+   -- except that we don't need to provide the number of rows
+   -- and columns as inputs as they are constants in Cliff Walking.
+   function Position_Inc(Position: Position_Type; Action: Action_Type) return Position_Type is
       New_Position : Position_Type := Position;
    begin
       case Action is
          when Left => New_Position.Col := Positive'Max(New_Position.Col - 1, 1);
-         when Down => New_Position.Row := Positive'Min(New_Position.Row + 1, Rows);
-         when Right => New_Position.Col := Positive'Min(New_Position.Col + 1, Cols);
+         when Down => New_Position.Row := Positive'Min(New_Position.Row + 1, Num_Rows);
+         when Right => New_Position.Col := Positive'Min(New_Position.Col + 1, Num_Cols);
          when Up => New_Position.Row := Positive'Max(New_Position.Row - 1, 1);
       end case;
       return New_Position;
@@ -18,7 +21,7 @@ package body RL.Envs.Cliffwalking is
 
    -- The following is adapted from Frozen_Lake with the changes noted in the comments.
    function Update_Probability_Matrix(Map : Map_Array; Position: Position_Type; Action : Action_Type) return Partial_Transition_Type is
-      New_Position : Position_Type := Position_Inc(Map'Length(1), Map'Length(2), Position, Action);
+      New_Position : Position_Type := Position_Inc(Position, Action);
       New_Letter : Map_Element := Map(New_Position.Row, New_Position.Col);
       -- Terminated differs from the approach in Frozen_Lake.  If the agent falls off the cliff,
       -- the agent is sent back to the start with a reward of -100 for the step rather than
@@ -38,15 +41,17 @@ package body RL.Envs.Cliffwalking is
    
    -- We use the approach from Frozen_Lake, except we return an Observation_Type
    -- rather than a Natural, as the Observation_Type is a new Natural.
+   -- We don't provide the Map as an input in Cliff Walking, as in the Frozen Lake
+   -- environment that was used for the number of columns, which is a constant
+   -- in Cliff Walking and is read directly from the package variable.
    -- Note the following is different from the Python implementation as internally we
    -- track the Agent's position using 1-based indexing.
    -- To keep the observations consistent with the Python implementation,
    -- we convert the position to a 0-based index.
-   function To_S(Map: Map_Array; Position: Position_Type) return Observation_Type is
+   function To_S(Position: Position_Type) return Observation_Type is
       Row : Positive := Position.Row;
       Col : Positive := Position.Col;
-      Num_Col : Positive := Map'Length(2);
-      Position_Index : Natural := (Row - 1) * Num_Col + (Col - 1);
+      Position_Index : Natural := (Row - 1) * Num_Cols + (Col - 1);
    begin
       return Observation_Type(Position_Index);
    end To_S;
@@ -77,7 +82,7 @@ package body RL.Envs.Cliffwalking is
       return Start_Position;
    end Get_Start_Position;
 
-   function Make(config: Environment_Config) return Environment_State is
+   function Make(config: Config_Type) return Environment_Type is
       Map : Map_Array := Map_Array'(
                1 .. 3 => (P, P, P, P, P, P, P, P, P, P, P, P),
                4      => (S, C, C, C, C, C, C, C, C, C, C, G));
@@ -107,9 +112,9 @@ package body RL.Envs.Cliffwalking is
                for A in Action_Type loop
                   for A_Act in Action_Type loop
                      if A = A_Act then
-                        P(I, J)(A, A_Act) := (Probability => 1.0, Position => (Row => I, Col => J), Reward => 0.0, Terminated => True);
+                        P(I, J, A, A_Act) := (Probability => 1.0, Position => (Row => I, Col => J), Reward => 0.0, Terminated => True);
                      else
-                        P(I, J)(A, A_Act) := (Probability => 0.0, Position => (Row => I, Col => J), Reward => 0.0, Terminated => True);
+                        P(I, J, A, A_Act) := (Probability => 0.0, Position => (Row => I, Col => J), Reward => 0.0, Terminated => True);
                      end if;
                   end loop;
                end loop;
@@ -130,7 +135,7 @@ package body RL.Envs.Cliffwalking is
                            Temp_Probability := 0.0;
                         end if;
                      end if;
-                     P(I, J)(A, A_Actual) := (
+                     P(I, J, A, A_Actual) := (
                         Probability => Temp_Probability,
                         Position => Temp_Partial_Transition.Position,
                         Reward => Temp_Partial_Transition.Reward,
@@ -143,11 +148,11 @@ package body RL.Envs.Cliffwalking is
       end loop;
       
       return (
-         Map => Map, P => P, Agent_Position => Start_Position
+         Map => Map, P => P, Agent_Position => Start_Position, Gen => <>
       );
    end Make;
    
-   function Step(Env : in out Environment_State; Action: Action_Type) return Step_Return_Type is
+   function Step(Env : in out Environment_Type; Action: Action_Type) return Step_Return_Type is
       -- Helper functions
       type Cumulative_Probability_Type is array (Action_Type) of Float;
       
@@ -160,52 +165,53 @@ package body RL.Envs.Cliffwalking is
          Temp_Cumulative_Probability : Float := 0.0;
       begin
          for A_Act in Action_Type loop
-            Cumulative_Probability(A_Act) := P(I, J)(Action, A_Act).Probability + Temp_Cumulative_Probability;
+            Cumulative_Probability(A_Act) := P(I, J, Action, A_Act).Probability + Temp_Cumulative_Probability;
             Temp_Cumulative_Probability := Cumulative_Probability(A_Act);
          end loop;
          return Cumulative_Probability;
       end Get_Cumulative_Probability;
       
-      function Get_Random_Transition(P : Map_Transitions; Position : Position_Type; Action : Action_Type) return Transition_Type is
+      function Get_Random_Transition(Env: in out Environment_Type; Action : Action_Type) return Transition_Type is
+         P : Map_Transitions := Env.P;
+         Position : Position_Type := Env.Agent_Position;
          Cumulative_Probability : Cumulative_Probability_Type := Get_Cumulative_Probability(P, Position, Action);
-         Rand : Float := Float_Random.Random(Gen);
+         Rand : Float := Float_Random.Random(Env.Gen);
       begin
          for A_Act in Action_Type loop
             if Rand <= Cumulative_Probability(A_Act) then
-               return P(Position.Row, Position.Col)(Action, A_Act);
+               return P(Position.Row, Position.Col, Action, A_Act);
             end if;
          end loop;
          -- The following should never be reached as the cumulative probabilities should sum to 1.0
-         return P(Position.Row, Position.Col)(Action, Action_Type'First);
+         return P(Position.Row, Position.Col, Action, Action_Type'First);
       end Get_Random_Transition;
 
       -- Sample to obtain the transition based on the current position and the action taken by the Agent
-      Transition : Transition_Type := Get_Random_Transition(Env.P, Env.Agent_Position, Action);
-
-      Result : Step_Return_Type := (
-         Observation => To_S(Env.Map, Transition.Position),
-         Reward => Transition.Reward,
-         Terminated => Transition.Terminated,
-         Truncated => False
-      );
+      Transition : Transition_Type := Get_Random_Transition(Env, Action);
    begin
       -- Update the Agent's position based on the transition
       Env.Agent_Position := Transition.Position;
-      -- TODO: Consider whether to return info {"prob": p}
-      return Result;
+      return Step_Return_Type'(
+         Observation => To_S(Transition.Position),
+         Reward => Transition.Reward,
+         Terminated => Transition.Terminated
+      );
    end Step;
 
-   function Reset(Env : in out Environment_State) return Observation_Type is
+   function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type) return Observation_Type is
       Result : Observation_Type;
    begin
-      Float_Random.Reset(Gen);
+      case Seed_Reset.Kind is
+         when Set_Default => Float_Random.Reset(Env.Gen);
+         when No_Set      => null;
+         when Set_Seed    => Float_Random.Reset(Env.Gen, Seed_Reset.Seed);
+      end case;
       Env.Agent_Position := Get_Start_Position(Env.Map);
-      Result := To_S(Env.Map, Env.Agent_Position);
-      -- TODO: In the Python version, the info returned is {"prob": 1}
+      Result := To_S(Env.Agent_Position);
       return Result;
    end Reset;
 
-   procedure Render_Text(Env : Environment_State) is
+   procedure Render_Text(Env : Environment_Type) is
    begin
       for I in Env.Map'Range(1) loop
          for J in Env.Map'Range(2) loop
@@ -235,5 +241,60 @@ package body RL.Envs.Cliffwalking is
          New_Line;
       end loop;
    end Render_Text;
-   
+
+   -- We follow the approach used for Frozenlake
+   function Get_Model(Config: Config_Type) return DP_Model_Type is
+      Res : DP_Model_Type := (others => (others => (others => (Probability => 0.0, Reward => 0.0))));
+      Env : Environment_Type := Make(Config);
+      Prev_State : State_Type;
+      Next_State : State_Type;
+
+      type Expected_Reward_Type is record
+         Probability_Weighted_Reward : Float := 0.0;
+         Total_Probability : Float := 0.0;
+      end record;
+      type Expected_Rewards_Type is array (State_Type) of Expected_Reward_Type;
+
+      Temp_Expected_Rewards : Expected_Rewards_Type;
+
+      Temp_Probability : Float;
+      Temp_Reward : Float;
+   begin
+      for I in Env.P'Range(1) loop
+         for J in Env.P'Range(2) loop
+            Prev_State := State_Type(To_S(Position_Type'(Row => I, Col => J)));
+            for A in Action_Type loop
+               -- When the cliff is slippery, an action can lead to state transitions
+               -- with different probabilities.
+               -- This can be seen when in a corner cell of the map, in which case
+               -- an action that would take you off the board (if there was no slipping)
+               -- will result in arriving at the same cell 2/3 of the time.
+               -- To obtain the correct values, we calculate the conditional expectation for
+               -- the state transitions.
+               -- This should also generalize if we were to consider state transitions with
+               -- non-uniform probabilities.
+               Temp_Expected_Rewards := (others => (Probability_Weighted_Reward => 0.0, Total_Probability => 0.0));
+
+               for A_Act in Action_Type loop
+                  Next_State := State_Type(To_S(Env.P(I, J, A, A_Act).Position));
+                  Temp_Probability := Env.P(I, J, A, A_Act).Probability;
+                  Temp_Reward := Env.P(I, J, A, A_Act).Reward;
+                  Temp_Expected_Rewards(Next_State).Probability_Weighted_Reward := Temp_Expected_Rewards(Next_State).Probability_Weighted_Reward + Temp_Probability * Temp_Reward;
+                  Temp_Expected_Rewards(Next_State).Total_Probability := Temp_Expected_Rewards(Next_State).Total_Probability + Temp_Probability;
+               end loop;
+               -- Now that we've processed the possible transitions and their probabilities for a given action,
+               -- we calculate the discrete transition probabilities and conditional rewards
+               for Next_State in Temp_Expected_Rewards'Range loop
+                  if Temp_Expected_Rewards(Next_State).Total_Probability > 0.0 then
+                     Res(Prev_State, A, Next_State) := (
+                        Probability => Temp_Expected_Rewards(Next_State).Total_Probability,
+                        Reward => Temp_Expected_Rewards(Next_State).Probability_Weighted_Reward / Temp_Expected_Rewards(Next_State).Total_Probability
+                     );
+                  end if;
+               end loop;
+            end loop;
+         end loop;
+      end loop;
+      return Res;
+   end Get_Model;
 end RL.Envs.Cliffwalking;

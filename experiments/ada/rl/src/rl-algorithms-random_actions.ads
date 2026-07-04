@@ -12,6 +12,8 @@ generic
    with function Get_Observation (Step_Return : Step_Return_Type) return Observation_Type;
    with function Get_Reward(Step_Return : Step_Return_Type) return Float;
    with function Get_Terminated_Flag(Step_Return : Step_Return_Type) return Boolean;
+
+   Seed_Reset : Seed_Reset_Type := (Kind => Set_Default);
 package RL.Algorithms.Random_Actions is
 
    type Simulation_Summary is record
