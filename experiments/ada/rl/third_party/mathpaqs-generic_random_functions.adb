@@ -1,7 +1,7 @@
 with Ada.Numerics;                      use Ada.Numerics;
 with Ada.Numerics.Generic_Elementary_Functions;
 
-package body Generic_Random_Functions is
+package body Mathpaqs.Generic_Random_Functions is
 
   -- Ada 95 Quality and Style Guide, 7.2.7:
   -- Tests for
@@ -59,4 +59,4 @@ package body Generic_Random_Functions is
     return 1.0 - (threshold / x) ** alpha;
   end Pareto_CDF;
 
-end Generic_Random_Functions;
+end Mathpaqs.Generic_Random_Functions;
