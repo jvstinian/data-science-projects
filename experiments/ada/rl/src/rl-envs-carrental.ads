@@ -1,12 +1,11 @@
-with Ada.Text_IO; use Ada.Text_IO;
-with Ada.Numerics;
-with Ada.Numerics.Float_Random; -- use Ada.Numerics.Float_Random;
-with Generic_Random_Functions;
+-- with Ada.Numerics;
+with Ada.Numerics.Float_Random;
+with Mathpaqs.Generic_Random_Functions;
 with System.Pool_Local;
 
-package Car_Rental is
+package RL.Envs.Carrental is
    package Float_Random renames Ada.Numerics.Float_Random;
-   package GRF is new Generic_Random_Functions(Real => Float);
+   package GRF is new Mathpaqs.Generic_Random_Functions(Real => Float);
 
    Lot_Size : constant Positive := 20;
    Max_Move : constant Positive := 5;
@@ -130,5 +129,5 @@ private
    function Step_Cars(Cars_Count : Cars_Per_Lot_Type; Action : Action_Type) return Cars_After_Action_Type;
    function Calculate_Transition_Probability2 (Config : Environment_Config; Cars_Moved : Natural; Prev_Cars : Cars_Per_Lot_Type) return Transition_Array_Type;
 
-end Car_Rental;
+end RL.Envs.Carrental;
 
