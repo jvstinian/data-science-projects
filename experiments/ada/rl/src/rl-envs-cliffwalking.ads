@@ -130,13 +130,12 @@ private
    -- actions.
    type Map_Transitions is array (1 .. Num_Rows, 1 .. Num_Cols, Action_Type, Action_Type) of Transition_Type;
 
-   type Environment_Type is record
+   type Environment_Type is limited record
+      Gen: Float_Random.Generator;
       Map: Map_Array;
       P : Map_Transitions;
       Agent_Position: Position_Type;
    end record;
-   
-   Gen: Float_Random.Generator;
 
    -- These functions follow similar methods in the Python implementation of CliffWalkingEnv,
    -- or the methods of the same name in the Frozen Lake environment with the necessary

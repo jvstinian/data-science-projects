@@ -148,7 +148,7 @@ package body RL.Envs.Cliffwalking is
       end loop;
       
       return (
-         Map => Map, P => P, Agent_Position => Start_Position
+         Map => Map, P => P, Agent_Position => Start_Position, Gen => <>
       );
    end Make;
    
@@ -171,9 +171,11 @@ package body RL.Envs.Cliffwalking is
          return Cumulative_Probability;
       end Get_Cumulative_Probability;
       
-      function Get_Random_Transition(P : Map_Transitions; Position : Position_Type; Action : Action_Type) return Transition_Type is
+      function Get_Random_Transition(Env: in out Environment_Type; Action : Action_Type) return Transition_Type is
+         P : Map_Transitions := Env.P;
+         Position : Position_Type := Env.Agent_Position;
          Cumulative_Probability : Cumulative_Probability_Type := Get_Cumulative_Probability(P, Position, Action);
-         Rand : Float := Float_Random.Random(Gen);
+         Rand : Float := Float_Random.Random(Env.Gen);
       begin
          for A_Act in Action_Type loop
             if Rand <= Cumulative_Probability(A_Act) then
@@ -185,7 +187,7 @@ package body RL.Envs.Cliffwalking is
       end Get_Random_Transition;
 
       -- Sample to obtain the transition based on the current position and the action taken by the Agent
-      Transition : Transition_Type := Get_Random_Transition(Env.P, Env.Agent_Position, Action);
+      Transition : Transition_Type := Get_Random_Transition(Env, Action);
    begin
       -- Update the Agent's position based on the transition
       Env.Agent_Position := Transition.Position;
@@ -200,9 +202,9 @@ package body RL.Envs.Cliffwalking is
       Result : Observation_Type;
    begin
       case Seed_Reset.Kind is
-         when Set_Default => Float_Random.Reset(Gen);
+         when Set_Default => Float_Random.Reset(Env.Gen);
          when No_Set      => null;
-         when Set_Seed    => Float_Random.Reset(Gen, Seed_Reset.Seed);
+         when Set_Seed    => Float_Random.Reset(Env.Gen, Seed_Reset.Seed);
       end case;
       Env.Agent_Position := Get_Start_Position(Env.Map);
       Result := To_S(Env.Agent_Position);
