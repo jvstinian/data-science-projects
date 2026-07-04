@@ -121,7 +121,7 @@ package RL.Envs.Carrental is
    function Make(Config: Config_Type) return Environment_Type;
    -- TODO: Add argument for seed
    function Reset(Env : in out Environment_Type) return Observation_Type;
-   function Step(Env : in out Environment_Type; action: Action_Type) return Step_Return_Type;
+   function Step(Env : in out Environment_Type; Action: Action_Type) return Step_Return_Type;
    procedure Render_Text(Env : Environment_Type);
 
    type Discrete_State_Type is new Natural range 0 .. ((Lot_Size + 1) * (Lot_Size + 1) - 1);
