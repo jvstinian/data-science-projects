@@ -154,10 +154,12 @@ private
    function Poisson_PMF(Lambda : Float; N : Natural) return Float;
    function Poisson_CDF(Lambda : Float; N : Natural) return Float;
    function Poisson_SF(Lambda : Float; N : Natural) return Float;  -- Survival function, i.e., 1 - CDF
-   -- These functions follow similar methods in the Python implementation of FrozenLakeEnv.
-   -- We make these private since they are not intended to be used directly.
+
+   -- The following convert the observation type to and from the
+   -- discrete representation.
    function To_Discrete_State(Cars_Per_Lot : Cars_Per_Lot_Type) return Discrete_State_Type;
    function From_Discrete_State (D : Discrete_State_Type) return Cars_Per_Lot_Type;
+
    -- The following are for calculating the transition probabilities for the
    -- dynamic programming model.
    function Calculate_Transition_Probability (Config : Config_Type; Cars_Moved : Natural; Prev_Cars : Cars_Per_Lot_Type; Next_Cars : Cars_Per_Lot_Type) return Transition_Probability_Type;

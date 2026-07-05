@@ -36,51 +36,10 @@ package body RL.Envs.Carrental is
       return 1.0 - Poisson_CDF(Lambda, N);
    end Poisson_SF;
 
-   -- function Position_Inc(Rows : Positive; Cols : Positive; Position: Position_Type; Action: Action_Type) return Position_Type is
-   --    New_Position : Position_Type := Position;
-   -- begin
-   --    case Action is
-   --       when Left => New_Position.Col := Positive'Max(New_Position.Col - 1, 1);
-   --       when Down => New_Position.Row := Positive'Min(New_Position.Row + 1, Rows);
-   --       when Right => New_Position.Col := Positive'Min(New_Position.Col + 1, Cols);
-   --       when Up => New_Position.Row := Positive'Max(New_Position.Row - 1, 1);
-   --    end case;
-   --    return New_Position;
-   -- end Position_Inc;
-
-   -- function Update_Probability_Matrix(Map : Map_Array; Position: Position_Type; Action : Action_Type) return Partial_Transition_Type is
-   --    New_Position : Position_Type := Position_Inc(Map'Length(1), Map'Length(2), Position, Action);
-   --    New_Letter : Map_Element := Map(New_Position.Row, New_Position.Col);
-   --    Terminated : Boolean := (New_Letter = H) or else (New_Letter = G);
-   --    Reward : Float := Float(Boolean'Pos(New_Letter = G)); -- Is 1.0 if New_Letter = G else 0.0
-   -- begin
-   --    return (Position => New_Position, Reward => Reward, Terminated => Terminated);
-   -- end Update_Probability_Matrix;
-
    function To_Discrete_State(Cars_Per_Lot : Cars_Per_Lot_Type) return Discrete_State_Type is
    begin
       return Discrete_State_Type(Cars_Per_Lot.Lot_A_Cars * (Lot_Size + 1) + Cars_Per_Lot.Lot_B_Cars);
    end To_Discrete_State;
-
-   -- function Get_Start_Position(Map: Map_Array) return Position_Type is
-   --    Start_Position : Position_Type := (Row => 1, Col => 1);
-   -- begin
-   --    -- Determine the start position
-   --    -- Unlike the Python version, we assume that there is either one start position or no start position
-   --    -- is defined, in which case we take the top left corner as the start position.
-   --    -- The following loop finds the start position if it is provided.  The loop exits
-   --    -- as soon as the start position is found.
-   --    Search_Start_Position:
-   --    for I in Map'Range(1) loop
-   --       for J in Map'Range(2) loop
-   --          if Map(I, J) = S then
-   --             Start_Position := (Row => I, Col => J);
-   --             exit Search_Start_Position;
-   --          end if;
-   --       end loop;
-   --    end loop Search_Start_Position;
-   --    return Start_Position;
-   -- end Get_Start_Position;
 
    function Make(Config: Config_Type) return Environment_Type is
    begin
@@ -93,7 +52,6 @@ package body RL.Envs.Carrental is
    end Make;
 
    function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type) return Observation_Type is
-      Result : Observation_Type;
    begin
       case Seed_Reset.Kind is
          when Set_Default => Float_Random.Reset(Env.Gen);
@@ -107,16 +65,6 @@ package body RL.Envs.Carrental is
          Lot_B_Cars => Env.Lot_B_Cars
       );
    end Reset;
-   --  -- def reset(
-   --  --     self,
-   --  --     *,
-   --  --     seed: Optional[int] = None,
-   --  --     options: Optional[dict] = None,
-   --  -- ):
-   --  --     super().reset(seed=seed)
-   --  --     self.s = categorical_sample(self.initial_state_distrib, self.np_random)
-   --  --     self.lastaction = None
-   --  --     return int(self.s), {"prob": 1}
 
    function Step(Env : in out Environment_Type; Action: Action_Type) return Step_Return_Type is
       -- Helper functions
@@ -162,12 +110,10 @@ package body RL.Envs.Carrental is
       -- Update the number of cars returned.
       Lot_A_Updated_Cars := Natural'Min(
          Env.Lot_A_Cars - Lot_A_Rented_Cars + Lot_A_Returns,
-         -- Natural'Max(Env.Lot_A_Cars - Lot_A_Requests, 0) + Lot_A_Returns,
          Lot_Size
       );
       Lot_B_Updated_Cars := Natural'Min(
          Env.Lot_B_Cars - Lot_B_Rented_Cars + Lot_B_Returns,
-         -- Natural'Max(Env.Lot_B_Cars - Lot_B_Requests, 0) + Lot_B_Returns,
          Lot_Size
       );
 
@@ -180,16 +126,6 @@ package body RL.Envs.Carrental is
          Terminated => False
       );
    end Step;
-   --  -- def step(self, a):
-   --  --     transitions = self.P[self.s][a]
-   --  --     i = categorical_sample([t[0] for t in transitions], self.np_random)
-   --  --     p, s, r, t = transitions[i]
-   --  --     self.s = s
-   --  --     self.lastaction = a
-
-   --  --     if self.render_mode == "human":
-   --  --         self.render()
-   --  --     return (int(s), r, t, False, {"prob": p})
    
    procedure Render_Text(Env : Environment_Type) is
    begin
@@ -383,7 +319,7 @@ package body RL.Envs.Carrental is
    end Get_Transition_Values;
 
    -- TODO: The following is not currently used, but could be used as a replacement
-   -- for Calculate_Transition_Probability2.
+   -- for Calculate_Transition_Probability.
    -- Some benchmarking might be beneficial though.
    function Calculate_Transition_Probability2 (
       Config : Config_Type;
