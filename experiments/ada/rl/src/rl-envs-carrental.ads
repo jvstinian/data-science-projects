@@ -130,9 +130,8 @@ package RL.Envs.Carrental is
    function Get_Model(Config: Config_Type) return DP_Model_Access_Type;
 
    type Transition_Array_Type is array (Discrete_State_Type) of Transition_Probability_Type;
-   function Get_Transition_Values (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type;
-   function Get_Transition_Values2 (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type;
-
+   function Collect_Transition_Values (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type;
+   function Get_Transition_Values_From_State (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type;
 private
    type Environment_Type is record
       Gen: Float_Random.Generator;
@@ -140,7 +139,10 @@ private
       Lot_A_Cars : Natural;
       Lot_B_Cars : Natural;
    end record;
-      
+
+   -- Cars_Per_Lot_Type is the same as Observation_Type, but
+   -- it is kept distinct as it is used in private methods for
+   -- calculating transition probabilities.
    type Cars_Per_Lot_Type is record
       Lot_A_Cars : Natural;
       Lot_B_Cars : Natural;
@@ -162,9 +164,17 @@ private
 
    -- The following are for calculating the transition probabilities for the
    -- dynamic programming model.
-   function Calculate_Transition_Probability (Config : Config_Type; Cars_Moved : Natural; Prev_Cars : Cars_Per_Lot_Type; Next_Cars : Cars_Per_Lot_Type) return Transition_Probability_Type;
    function Step_Cars(Cars_Count : Cars_Per_Lot_Type; Action : Action_Type) return Cars_After_Action_Type;
-   function Calculate_Transition_Probability2 (Config : Config_Type; Cars_Moved : Natural; Prev_Cars : Cars_Per_Lot_Type) return Transition_Array_Type;
-
+   -- There are two methods for calculating transition probabilities, though only one is
+   -- currently used in the discrete model calculations.
+   -- The first method calculates the transition probability between two specific states,
+   -- the "initial" state actually being the state immediately after the action has been applied
+   -- (or more specifically after the cars have been moved between sites overnight
+   -- but before the rental requests and returns that occur the next day).
+   function Calculate_Transition_Probability_Between_States (Config : Config_Type; Cars_Moved : Natural; Prev_Cars : Cars_Per_Lot_Type; Next_Cars : Cars_Per_Lot_Type) return Transition_Probability_Type;
+   -- The second method calculates all the transition probabilities starting from the
+   -- post-action state.  The output is an array of transition probabilities for
+   -- all possible next states.
+   function Calculate_Transition_Probabilities_From_State (Config : Config_Type; Cars_Moved : Natural; Prev_Cars : Cars_Per_Lot_Type) return Transition_Array_Type;
 end RL.Envs.Carrental;
 
