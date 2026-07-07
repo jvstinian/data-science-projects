@@ -1,4 +1,4 @@
-package body Blackjack is
+package body RL.Envs.Blackjack is
    function Draw_Card(Gen : in out Draw_Random.Generator) return Card_Type is
       Card : Card_Type := Draw_Random.Random(Gen);
    begin
@@ -255,7 +255,7 @@ package body Blackjack is
       Put("(" & Env.Dealer_Showing_Card'Image & ")");
       New_Line;
    end Render_Text;
-end Blackjack;
+end RL.Envs.Blackjack;
 
 -- import numpy as np
 -- 
