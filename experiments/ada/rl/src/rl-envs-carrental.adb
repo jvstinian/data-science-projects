@@ -28,7 +28,7 @@ package body RL.Envs.Carrental is
          PMF := PMF * (Lambda / Float(I)); -- PMF(i) = PMF(i-1) * (lambda / i)
          CDF := CDF + PMF;
       end loop;
-      return CDF;
+      return Float'Min(CDF, 1.0);
    end Poisson_CDF;
    
    function Poisson_SF(Lambda : Float; N : Natural) return Float is
@@ -224,10 +224,19 @@ package body RL.Envs.Carrental is
          end loop;
       end loop;
 
-      return Transition_Probability_Type'(
-         Probability => Total_Probability,
-         Reward => (Probability_Weighted_Reward / Total_Probability) - 2.0 * Float(Cars_Moved)
-      );
+      if Total_Probability > 0.0 then
+         return Transition_Probability_Type'(
+            Probability => Total_Probability,
+            Reward => (Probability_Weighted_Reward / Total_Probability) - 2.0 * Float(Cars_Moved)
+         );
+      else
+         -- From testing it does not appear this case is reached,
+         -- but it is included for completeness.
+         return Transition_Probability_Type'(
+            Probability => 0.0,
+            Reward => 0.0
+         );
+      end if;
    end Calculate_Transition_Probability_Between_States;
 
    function Step_Cars(Cars_Count : Cars_Per_Lot_Type; Action : Action_Type) return Cars_After_Action_Type is
@@ -369,7 +378,7 @@ package body RL.Envs.Carrental is
       return Res;
    end Calculate_Transition_Probabilities_From_State;
    
-   function Get_Transition_Values (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type is
+   function Collect_Transition_Values (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type is
       Res : Transition_Array_Type := (others => (Probability => 0.0, Reward => 0.0));
       
       Cars_Count0 : Cars_Per_Lot_Type;
@@ -385,9 +394,9 @@ package body RL.Envs.Carrental is
          Res(S2) := Calculate_Transition_Probability_Between_States (Config, Cars_After_Action.Cars_Moved, Cars_Count1, Cars_Count2);
       end loop;
       return Res;
-   end Get_Transition_Values;
+   end Collect_Transition_Values;
 
-   function Get_Transition_Values2 (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type is
+   function Get_Transition_Values_From_State (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type is
       Cars_Count0 : Cars_Per_Lot_Type;
       Cars_After_Action : Cars_After_Action_Type;
       Cars_Count1 : Cars_Per_Lot_Type;
@@ -396,6 +405,6 @@ package body RL.Envs.Carrental is
       Cars_After_Action := Step_Cars(Cars_Count0, Action);
       Cars_Count1 := Cars_After_Action.Cars_Per_Lot;
       return Calculate_Transition_Probabilities_From_State (Config, Cars_After_Action.Cars_Moved, Cars_Count1);
-   end Get_Transition_Values2;
+   end Get_Transition_Values_From_State;
 
 end RL.Envs.Carrental;
