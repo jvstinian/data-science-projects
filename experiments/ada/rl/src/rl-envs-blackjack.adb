@@ -84,7 +84,8 @@ package body RL.Envs.Blackjack is
          Gen => <>); -- TODO: What to do for the generator?
    end Make;
 
-   function Reset(Env : in out Environment_Type) return Observation_Type is
+   function Reset (Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type)
+      return Observation_Type is
       -- Helper function
       procedure Hit_Till_12(Hand : in out Hand_Type) is
          New_Card : Card_Type;
@@ -100,8 +101,11 @@ package body RL.Envs.Blackjack is
       -- Player_Sum : Integer;
       Usable_Ace : Boolean;
    begin
-      -- TODO: Need to determine how we want to set a seed
-      Draw_Random.Reset(Env.Gen);
+      case Seed_Reset.Kind is
+         when Set_Default => Draw_Random.Reset(Env.Gen);
+         when No_Set      => null;
+         when Set_Seed    => Draw_Random.Reset(Env.Gen, Seed_Reset.Seed);
+      end case;
       -- Reset dealer hand
       Env.Dealer_Hand := (others => 0);
       Dealer_Card := Draw_Card(Env.Gen);

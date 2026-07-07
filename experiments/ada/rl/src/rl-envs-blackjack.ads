@@ -160,7 +160,8 @@ package RL.Envs.Blackjack is
    
    function Make(Config: Config_Type) return Environment_Type;
    -- TODO: Update seed logic
-   function Reset(Env : in out Environment_Type) return Observation_Type;
+   function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type)
+      return Observation_Type;
    function Step(Env : in out Environment_Type; Action : Action_Type) return Step_Return_Type;
    procedure Render_Text(Env : Environment_Type);
 private
