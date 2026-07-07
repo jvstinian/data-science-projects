@@ -28,7 +28,7 @@ package body RL.Envs.Carrental is
          PMF := PMF * (Lambda / Float(I)); -- PMF(i) = PMF(i-1) * (lambda / i)
          CDF := CDF + PMF;
       end loop;
-      return CDF;
+      return Float'Min(CDF, 1.0);
    end Poisson_CDF;
    
    function Poisson_SF(Lambda : Float; N : Natural) return Float is
@@ -36,59 +36,17 @@ package body RL.Envs.Carrental is
       return 1.0 - Poisson_CDF(Lambda, N);
    end Poisson_SF;
 
-   -- function Position_Inc(Rows : Positive; Cols : Positive; Position: Position_Type; Action: Action_Type) return Position_Type is
-   --    New_Position : Position_Type := Position;
-   -- begin
-   --    case Action is
-   --       when Left => New_Position.Col := Positive'Max(New_Position.Col - 1, 1);
-   --       when Down => New_Position.Row := Positive'Min(New_Position.Row + 1, Rows);
-   --       when Right => New_Position.Col := Positive'Min(New_Position.Col + 1, Cols);
-   --       when Up => New_Position.Row := Positive'Max(New_Position.Row - 1, 1);
-   --    end case;
-   --    return New_Position;
-   -- end Position_Inc;
-
-   -- function Update_Probability_Matrix(Map : Map_Array; Position: Position_Type; Action : Action_Type) return Partial_Transition_Type is
-   --    New_Position : Position_Type := Position_Inc(Map'Length(1), Map'Length(2), Position, Action);
-   --    New_Letter : Map_Element := Map(New_Position.Row, New_Position.Col);
-   --    Terminated : Boolean := (New_Letter = H) or else (New_Letter = G);
-   --    Reward : Float := Float(Boolean'Pos(New_Letter = G)); -- Is 1.0 if New_Letter = G else 0.0
-   -- begin
-   --    return (Position => New_Position, Reward => Reward, Truncated => Terminated);
-   -- end Update_Probability_Matrix;
-
-   -- TODO: The following is not currently used.
-   function To_Obs(Env : Environment_Type) return Natural is
-   begin
-      return Env.Lot_A_Cars * (Lot_Size + 1) + Env.Lot_B_Cars;
-   end To_Obs;
-
    function To_Discrete_State(Cars_Per_Lot : Cars_Per_Lot_Type) return Discrete_State_Type is
    begin
       return Discrete_State_Type(Cars_Per_Lot.Lot_A_Cars * (Lot_Size + 1) + Cars_Per_Lot.Lot_B_Cars);
    end To_Discrete_State;
 
-   -- function Get_Start_Position(Map: Map_Array) return Position_Type is
-   --    Start_Position : Position_Type := (Row => 1, Col => 1);
-   -- begin
-   --    -- Determine the start position
-   --    -- Unlike the Python version, we assume that there is either one start position or no start position
-   --    -- is defined, in which case we take the top left corner as the start position.
-   --    -- The following loop finds the start position if it is provided.  The loop exits
-   --    -- as soon as the start position is found.
-   --    Search_Start_Position:
-   --    for I in Map'Range(1) loop
-   --       for J in Map'Range(2) loop
-   --          if Map(I, J) = S then
-   --             Start_Position := (Row => I, Col => J);
-   --             exit Search_Start_Position;
-   --          end if;
-   --       end loop;
-   --    end loop Search_Start_Position;
-   --    return Start_Position;
-   -- end Get_Start_Position;
-
-   function Make(Config: Config_Type) return Environment_Type is
+   function From_Discrete_State (D : Discrete_State_Type) return Cars_Per_Lot_Type is
+   begin
+      return Cars_Per_Lot_Type'(Lot_A_Cars => Natural(D) / (Lot_Size + 1), Lot_B_Cars => Natural(D) mod (Lot_Size + 1));
+   end From_Discrete_State;
+      
+   function Make (Config: Config_Type) return Environment_Type is
    begin
       return Environment_Type'(
          Gen => <>,
@@ -98,11 +56,13 @@ package body RL.Envs.Carrental is
       );
    end Make;
 
-   function Reset(Env : in out Environment_Type) return Observation_Type is
-      Result : Observation_Type;
+   function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type) return Observation_Type is
    begin
-      Float_Random.Reset(Gen); -- TODO: Keep this or the following?
-      Float_Random.Reset(Env.Gen);
+      case Seed_Reset.Kind is
+         when Set_Default => Float_Random.Reset(Env.Gen);
+         when No_Set      => null;
+         when Set_Seed    => Float_Random.Reset(Env.Gen, Seed_Reset.Seed);
+      end case;
       Env.Lot_A_Cars := Env.Config.Lot_A_Init_Cars;
       Env.Lot_B_Cars := Env.Config.Lot_B_Init_Cars;
       return Observation_Type'(
@@ -110,16 +70,6 @@ package body RL.Envs.Carrental is
          Lot_B_Cars => Env.Lot_B_Cars
       );
    end Reset;
-   --  -- def reset(
-   --  --     self,
-   --  --     *,
-   --  --     seed: Optional[int] = None,
-   --  --     options: Optional[dict] = None,
-   --  -- ):
-   --  --     super().reset(seed=seed)
-   --  --     self.s = categorical_sample(self.initial_state_distrib, self.np_random)
-   --  --     self.lastaction = None
-   --  --     return int(self.s), {"prob": 1}
 
    function Step(Env : in out Environment_Type; Action: Action_Type) return Step_Return_Type is
       -- Helper functions
@@ -148,11 +98,11 @@ package body RL.Envs.Carrental is
          -- Move cars from A to B
          Local_Cars_Moved := Natural'Min(Natural(Action), Env.Lot_A_Cars);
          Lot_A_Updated_Cars := Env.Lot_A_Cars - Local_Cars_Moved;
-         Lot_B_Updated_Cars := Env.Lot_B_Cars + Local_Cars_Moved;  -- TODO: Cap at 20
+         Lot_B_Updated_Cars := Natural'Min(Env.Lot_B_Cars + Local_Cars_Moved, Lot_Size);
       else -- Action < 0
          -- Move cars from B to A
          Local_Cars_Moved := Natural'Min(Natural(-Action), Env.Lot_B_Cars);
-         Lot_A_Updated_Cars := Env.Lot_A_Cars + Local_Cars_Moved;  -- TODO: Cap at 20
+         Lot_A_Updated_Cars := Natural'Min(Env.Lot_A_Cars + Local_Cars_Moved, Lot_Size);
          Lot_B_Updated_Cars := Env.Lot_B_Cars - Local_Cars_Moved;
       end if;
       
@@ -165,12 +115,10 @@ package body RL.Envs.Carrental is
       -- Update the number of cars returned.
       Lot_A_Updated_Cars := Natural'Min(
          Env.Lot_A_Cars - Lot_A_Rented_Cars + Lot_A_Returns,
-         -- Natural'Max(Env.Lot_A_Cars - Lot_A_Requests, 0) + Lot_A_Returns,
          Lot_Size
       );
       Lot_B_Updated_Cars := Natural'Min(
          Env.Lot_B_Cars - Lot_B_Rented_Cars + Lot_B_Returns,
-         -- Natural'Max(Env.Lot_B_Cars - Lot_B_Requests, 0) + Lot_B_Returns,
          Lot_Size
       );
 
@@ -180,27 +128,16 @@ package body RL.Envs.Carrental is
       return Step_Return_Type'(
          Observation => Observation_Type'(Lot_A_Cars => Env.Lot_A_Cars, Lot_B_Cars => Env.Lot_B_Cars),
          Reward => 10.0*Float(Lot_A_Rented_Cars + Lot_B_Rented_Cars) - 2.0 * Float(Local_Cars_Moved),
-         Terminated => False,
-         Truncated => False
+         Terminated => False
       );
    end Step;
-   --  -- def step(self, a):
-   --  --     transitions = self.P[self.s][a]
-   --  --     i = categorical_sample([t[0] for t in transitions], self.np_random)
-   --  --     p, s, r, t = transitions[i]
-   --  --     self.s = s
-   --  --     self.lastaction = a
-
-   --  --     if self.render_mode == "human":
-   --  --         self.render()
-   --  --     return (int(s), r, t, False, {"prob": p})
    
    procedure Render_Text(Env : Environment_Type) is
    begin
       Put_Line("Lot A Cars: " & Env.Lot_A_Cars'Image & ", Lot B Cars: " & Env.Lot_B_Cars'Image);
    end Render_Text;
 
-   function Calculate_Transition_Probability (
+   function Calculate_Transition_Probability_Between_States (
       Config : Config_Type;
       Cars_Moved : Natural;
       Prev_Cars : Cars_Per_Lot_Type;
@@ -250,22 +187,6 @@ package body RL.Envs.Carrental is
       Total_Probability : Float := 0.0;
 
    begin
-      -- DONE: Simplify the following using the commented-out block below
-      -- DONE: The probability associated with returns needs to account for returns
-      --       that would overflow the lot (i.e. result in a number of cars exceeding Lot_Size).
-      --       This can only occur if Next_Cars.Lot_A_Cars = Lot_Size.
-      -- if Prev_Cars.Lot_A_Cars = 0 then
-      --    Probability_Requests_Lot_A(0) := 1.0 * Poisson_PMF(Config.Lot_A_Return_Lambda, Next_Cars.Lot_A_Cars);
-      -- else
-      --    -- Note the following could be an empty loop
-      --    for Lot_A_Requests in Min_Requests_A .. (Prev_Cars.Lot_A_Cars - 1) loop
-      --       Lot_A_Returns := Next_Cars.Lot_A_Cars - (Prev_Cars.Lot_A_Cars - Lot_A_Requests);
-      --       Probability_Requests_Lot_A(Lot_A_Requests) := Poisson_PMF(Config.Lot_A_Request_Lambda, Lot_A_Requests) * Poisson_PMF(Config.Lot_A_Return_Lambda, Lot_A_Returns);
-      --    end loop;
-      --    -- For the value Prev_Cars.Lot_A_Cars, we allow for any number of requests greater than or equal
-      --    -- to the value, as this results in 0 cars remaining before returns are counted.
-      --    Probability_Requests_Lot_A(Prev_Cars.Lot_A_Cars) := Poisson_SF(Config.Lot_A_Request_Lambda, Prev_Cars.Lot_A_Cars - 1) * Poisson_PMF(Config.Lot_A_Return_Lambda, Next_Cars.Lot_A_Cars);
-      -- end if;
       for Lot_A_Requests in Min_Requests_A .. Prev_Cars.Lot_A_Cars loop
          Lot_A_Returns := Next_Cars.Lot_A_Cars - (Prev_Cars.Lot_A_Cars - Lot_A_Requests);
          Prob_Returns := Poisson_PMF(Config.Lot_A_Return_Lambda, Lot_A_Returns);
@@ -303,17 +224,21 @@ package body RL.Envs.Carrental is
          end loop;
       end loop;
 
-      return Transition_Probability_Type'(
-         Probability => Total_Probability,
-         Reward => (Probability_Weighted_Reward / Total_Probability) - 2.0 * Float(Cars_Moved)
-      );
-   end Calculate_Transition_Probability;
-      
-   function From_Discrete_State (D : Discrete_State_Type) return Cars_Per_Lot_Type is
-   begin
-      return Cars_Per_Lot_Type'(Lot_A_Cars => Natural(D) / (Lot_Size + 1), Lot_B_Cars => Natural(D) mod (Lot_Size + 1));
-   end From_Discrete_State;
-      
+      if Total_Probability > 0.0 then
+         return Transition_Probability_Type'(
+            Probability => Total_Probability,
+            Reward => (Probability_Weighted_Reward / Total_Probability) - 2.0 * Float(Cars_Moved)
+         );
+      else
+         -- From testing it does not appear this case is reached,
+         -- but it is included for completeness.
+         return Transition_Probability_Type'(
+            Probability => 0.0,
+            Reward => 0.0
+         );
+      end if;
+   end Calculate_Transition_Probability_Between_States;
+
    function Step_Cars(Cars_Count : Cars_Per_Lot_Type; Action : Action_Type) return Cars_After_Action_Type is
       Cars_Moved : Natural;
       Cars_Per_Lot: Cars_Per_Lot_Type;
@@ -323,11 +248,11 @@ package body RL.Envs.Carrental is
          -- Move cars from A to B
          Cars_Moved := Natural'Min(Natural(Action), Cars_Count.Lot_A_Cars);
          Cars_Per_Lot.Lot_A_Cars := Cars_Count.Lot_A_Cars - Cars_Moved;
-         Cars_Per_Lot.Lot_B_Cars := Cars_Count.Lot_B_Cars + Cars_Moved;  -- TODO: Cap at 20
+         Cars_Per_Lot.Lot_B_Cars := Natural'Min(Cars_Count.Lot_B_Cars + Cars_Moved, Lot_Size);
       else -- Action < 0
          -- Move cars from B to A
          Cars_Moved := Natural'Min(Natural(-Action), Cars_Count.Lot_B_Cars);
-         Cars_Per_Lot.Lot_A_Cars := Cars_Count.Lot_A_Cars + Cars_Moved;  -- TODO: Cap at 20
+         Cars_Per_Lot.Lot_A_Cars := Natural'Min(Cars_Count.Lot_A_Cars + Cars_Moved, Lot_Size);
          Cars_Per_Lot.Lot_B_Cars := Cars_Count.Lot_B_Cars - Cars_Moved;
       end if;
       return Cars_After_Action_Type'(
@@ -335,12 +260,6 @@ package body RL.Envs.Carrental is
          Cars_Moved => Cars_Moved
       );
    end;
-
-   -- TODO: Remove the following 
-   function Rando return Float is
-   begin
-      return Float_Random.Random(Gen);
-   end Rando;
 
    function Get_Model(Config: Config_Type) return DP_Model_Access_Type is
       Res : DP_Model_Access_Type := new DP_Model_Type'(others => (others => (others => (Probability => 0.0, Reward => 0.0))));
@@ -350,12 +269,6 @@ package body RL.Envs.Carrental is
       Cars_After_Action : Cars_After_Action_Type;
       Cars_Count1 : Cars_Per_Lot_Type;
       Cars_Count2 : Cars_Per_Lot_Type;
-
-      --    type Expected_Reward_Type is record
-      --       Probability_Weighted_Reward : Float := 0.0;
-      --       Total_Probability : Float := 0.0;
-      --    end record;
-      --    type Expected_Rewards_Type is array (Discrete_State_Type) of Expected_Reward_Type;
    begin
       for S0 in Discrete_State_Type loop
          Cars_Count0 := From_Discrete_State(S0);
@@ -367,35 +280,22 @@ package body RL.Envs.Carrental is
             for S2 in Discrete_State_Type loop
                Cars_Count2 := From_Discrete_State(S2);
 
-               Res(S0, A, S2) := Calculate_Transition_Probability(Config, Cars_After_Action.Cars_Moved, Cars_Count1, Cars_Count2);
+               Res(S0, A, S2) := Calculate_Transition_Probability_Between_States (
+                  Config, Cars_After_Action.Cars_Moved, Cars_Count1, Cars_Count2
+               );
             end loop;
          end loop;
       end loop;
       return Res;
    end Get_Model;
    
-   function Get_Transition_Values (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type is
-      Res : Transition_Array_Type := (others => (Probability => 0.0, Reward => 0.0));
-      
-      Cars_Count0 : Cars_Per_Lot_Type;
-      Cars_After_Action : Cars_After_Action_Type;
-      Cars_Count1 : Cars_Per_Lot_Type;
-      Cars_Count2 : Cars_Per_Lot_Type;
-   begin
-      Cars_Count0 := From_Discrete_State(State);
-      Cars_After_Action := Step_Cars(Cars_Count0, Action);
-      Cars_Count1 := Cars_After_Action.Cars_Per_Lot;
-      for S2 in Discrete_State_Type loop
-         Cars_Count2 := From_Discrete_State(S2);
-         Res(S2) := Calculate_Transition_Probability(Config, Cars_After_Action.Cars_Moved, Cars_Count1, Cars_Count2);
-      end loop;
-      return Res;
-   end Get_Transition_Values;
-
-   -- TODO: The following is not currently used, but could be used as a replacement
-   -- for Calculate_Transition_Probability2.
-   -- Some benchmarking might be beneficial though.
-   function Calculate_Transition_Probability2 (
+   -- NOTE: The following is not currently used directly, but has
+   --       been added for comparing with
+   --       Calculate_Transition_Probability_Between_States.
+   --       The testing will be done using the collected results
+   --       from Get_Transition_Values and Get_Transition_Values2,
+   --       which use the two different methods.
+   function Calculate_Transition_Probabilities_From_State (
       Config : Config_Type;
       Cars_Moved : Natural;
       Prev_Cars : Cars_Per_Lot_Type
@@ -420,8 +320,6 @@ package body RL.Envs.Carrental is
       Temp_Prob : Float;
       Temp_Reward : Float;
       Temp_Discrete_State : Discrete_State_Type;
-      -- Probability_Weighted_Reward : Float := 0.0;
-      -- Total_Probability : Float := 0.0;
       Interim_Rewards : Expected_Rewards_Type := (others => (Probability_Weighted_Reward => 0.0, Total_Probability => 0.0));
    begin
       for Lot_A_Requests in 0 .. Prev_Cars.Lot_A_Cars loop
@@ -478,11 +376,27 @@ package body RL.Envs.Carrental is
          end if;
       end loop;
       return Res;
-   end Calculate_Transition_Probability2;
+   end Calculate_Transition_Probabilities_From_State;
    
-   function Get_Transition_Values2 (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type is
-      -- Res : Transition_Array_Type := (others => (Probability => 0.0, Reward => 0.0));
+   function Collect_Transition_Values (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type is
+      Res : Transition_Array_Type := (others => (Probability => 0.0, Reward => 0.0));
       
+      Cars_Count0 : Cars_Per_Lot_Type;
+      Cars_After_Action : Cars_After_Action_Type;
+      Cars_Count1 : Cars_Per_Lot_Type;
+      Cars_Count2 : Cars_Per_Lot_Type;
+   begin
+      Cars_Count0 := From_Discrete_State(State);
+      Cars_After_Action := Step_Cars(Cars_Count0, Action);
+      Cars_Count1 := Cars_After_Action.Cars_Per_Lot;
+      for S2 in Discrete_State_Type loop
+         Cars_Count2 := From_Discrete_State(S2);
+         Res(S2) := Calculate_Transition_Probability_Between_States (Config, Cars_After_Action.Cars_Moved, Cars_Count1, Cars_Count2);
+      end loop;
+      return Res;
+   end Collect_Transition_Values;
+
+   function Get_Transition_Values_From_State (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type is
       Cars_Count0 : Cars_Per_Lot_Type;
       Cars_After_Action : Cars_After_Action_Type;
       Cars_Count1 : Cars_Per_Lot_Type;
@@ -490,7 +404,7 @@ package body RL.Envs.Carrental is
       Cars_Count0 := From_Discrete_State(State);
       Cars_After_Action := Step_Cars(Cars_Count0, Action);
       Cars_Count1 := Cars_After_Action.Cars_Per_Lot;
-      return Calculate_Transition_Probability2(Config, Cars_After_Action.Cars_Moved, Cars_Count1);
-   end Get_Transition_Values2;
+      return Calculate_Transition_Probabilities_From_State (Config, Cars_After_Action.Cars_Moved, Cars_Count1);
+   end Get_Transition_Values_From_State;
 
 end RL.Envs.Carrental;
