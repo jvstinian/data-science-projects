@@ -1,7 +1,6 @@
 package RL.Envs.Hex is
    Board_Width : constant Integer := 7;
 
-   subtype Reward_Type is Integer range -1 .. 1;
    type Player_Type is (Player1, Player2);
    type Stone_Color_Type is (Red, Blue);
 
@@ -31,8 +30,7 @@ package RL.Envs.Hex is
    function Is_Terminal (State : State_Type) return Boolean;
    function Get_Player (State : State_Type) return Player_Type;
    function Step (State : State_Type; Action : Action_Type) return State_Type;
-   -- -- TODO: Used Long_Float for other environments, need to decide what to do here
-   function Reward (Player: Player_Type; State : State_Type) return Reward_Type;
+   function Reward (Player: Player_Type; State : State_Type) return Float;
    function Get_Valid_Actions (State : State_Type) return Valid_Actions_Type;
 
    procedure Print_State (State : State_Type);
