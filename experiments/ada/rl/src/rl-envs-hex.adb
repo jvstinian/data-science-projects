@@ -1,7 +1,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Integer_Text_IO; use Ada.Integer_Text_IO;
 
-package body Hex is
+package body RL.Envs.Hex is
    function Initial_State return State_Type is
       Player_Colors : Player_Color_Type := (Player1 => Red, Player2 => Blue);
       Board : Board_Type := (others => (others => No_Mark));
@@ -373,4 +373,4 @@ package body Hex is
    --    end loop;
    --    return Players_Can_Move;
    -- end Can_Move;
-end Hex;
+end RL.Envs.Hex;
