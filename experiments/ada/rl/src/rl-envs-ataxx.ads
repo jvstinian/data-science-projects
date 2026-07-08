@@ -1,6 +1,4 @@
--- with Environment_State; use Environment_State;
-
-package Ataxx is
+package RL.Envs.Ataxx is
     Board_Width : constant Integer := 7;
 
     subtype Reward_Type is Integer range 0 .. Board_Width * Board_Width;
@@ -42,8 +40,7 @@ package Ataxx is
     function Is_Terminal (State : State_Type) return Boolean;
     function Get_Player(State : State_Type) return Player_Type;
     function Step(State : State_Type; Action : Action_Type) return State_Type;
-    -- TODO: Used Long_Float for other environments, need to decide what to do here
-    function Reward(Player: Player_Type; State : State_Type) return Reward_Type;
+    function Reward(Player: Player_Type; State : State_Type) return Float;
     function Get_Valid_Actions (State : State_Type) return Valid_Actions_Type;
 
     procedure Print_State (State : State_Type);
@@ -51,4 +48,4 @@ package Ataxx is
 private
    function Distance(From : Cell_Indices; To : Cell_Indices) return Integer;
    function Can_Move(Board : Board_Type) return Player_Indicator_Type;
-end Ataxx;
+end RL.Envs.Ataxx;
