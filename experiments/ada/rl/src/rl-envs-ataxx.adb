@@ -162,7 +162,7 @@ package body RL.Envs.Ataxx is
       -- game is finished.
       return Float(State.Scores(Player));
    end Reward;
-    
+
    function Get_Valid_Actions (State : State_Type) return Valid_Actions_Type is
       Player : Player_Type := State.Current_Player;
       Player_Mark : Mark := Mark'Val(Player_Type'Pos(Player));
@@ -185,7 +185,10 @@ package body RL.Envs.Ataxx is
                for I_Target in I0 .. I1 loop
                   for J_Target in J0 .. J1 loop
                      if not (I_Target = I and J_Target = J) and State.Board(I_Target, J_Target) = No_Mark then
-                        Valid_Actions(Next_Index) := Action_Type'(Source => Source, Target => (Row => I_Target, Col => J_Target));
+                        Valid_Actions(Next_Index) := Action_Type'(
+                           Source => Source,
+                           Target => (Row => I_Target, Col => J_Target)
+                        );
                         Next_Index := Next_Index + 1;
                      end if;
                   end loop;
