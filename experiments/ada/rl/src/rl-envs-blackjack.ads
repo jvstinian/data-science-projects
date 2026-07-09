@@ -116,37 +116,20 @@ with Ada.Numerics.Discrete_Random;
 --    of the player, which was introduced to facilitate comparison of results
 --    with the Sutton and Barto book.
 package RL.Envs.Blackjack is
-   type Card_Type is (Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King);
-   subtype Card_Value_Type is Integer range 1..10;
-   type Card_Value_Array is array (Card_Type) of Card_Value_Type;
-
-   Card_Values : constant Card_Value_Array := (
-      Ace => 1, Two => 2, Three => 3, Four => 4, Five => 5,
-      Six => 6, Seven => 7, Eight => 8, Nine => 9, Ten => 10,
-      Jack => 10, Queen => 10, King => 10);
-  
-   -- Rather than using a dynamic length array for the hand which
-   -- would require using a discriminant with the environment type, and
-   -- rather than using a fixed length array in combination with a variable
-   -- to track the number of cards in the hand, we instead simply track
-   -- the count of each card type in the hand.
-   -- This is sufficient to compute the sum of the hand and the other required properties.
-   type Hand_Type is array (Card_Type) of Natural;
-
-   package Draw_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Card_Type);
-
-   type Action_Type is (Stick, Hit);
-
    type Natural_Win_Reward_Type is (SAB, Natural_Win, No_Natural_Win);
    type Config_Type is record
       Natural_Win_Reward : Natural_Win_Reward_Type;
       Auto_Hit : Boolean;
    end record;
 
+   type Action_Type is (Stick, Hit);
+
    type Environment_Type is limited private;
 
+   subtype Card_Value_Type is Natural range 1..10;
+   
    type Observation_Type is record
-      Player_Sum : Integer;  -- TODO: Natural?
+      Player_Sum : Natural;
       Dealer_Showing_Card_Value : Card_Value_Type;
       Usable_Ace : Boolean;
    end record;
@@ -155,23 +138,38 @@ package RL.Envs.Blackjack is
       Observation: Observation_Type;
       Reward: Float;
       Terminated: Boolean;
-      Truncated: Boolean;  -- TODO: Remove
    end record;
    
    function Make(Config: Config_Type) return Environment_Type;
-   -- TODO: Update seed logic
-   function Reset(Env : in out Environment_Type) return Observation_Type;
+   function Reset(Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type)
+      return Observation_Type;
    function Step(Env : in out Environment_Type; Action : Action_Type) return Step_Return_Type;
    procedure Render_Text(Env : Environment_Type);
 private
+   type Card_Type is (Ace, Two, Three, Four, Five, Six, Seven, Eight, Nine, Ten, Jack, Queen, King);
+   type Card_Value_Array is array (Card_Type) of Card_Value_Type;
+
+   -- Rather than using a dynamic length array for the hand which
+   -- would require using a discriminant with the environment type, and
+   -- rather than using a fixed length array in combination with a variable
+   -- to track the number of cards in the hand, we instead simply track
+   -- the count of each card type in the hand.
+   -- This is sufficient to compute the sum of the hand and the other required properties.
+   type Hand_Type is array (Card_Type) of Natural;
+
+   Card_Values : constant Card_Value_Array := (
+      Ace => 1, Two => 2, Three => 3, Four => 4, Five => 5,
+      Six => 6, Seven => 7, Eight => 8, Nine => 9, Ten => 10,
+      Jack => 10, Queen => 10, King => 10);
+  
+   package Draw_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Card_Type);
+
    type Hand_Summary_Type is record
-      Hand_Sum : Integer;
+      Hand_Sum : Natural;
       Usable_Ace : Boolean;
    end record;
 
-   -- Note that we omit the dealer_top_card_suit and dealer_top_card_value_str 
    type Environment_Type is record
-      -- Natural_Win_Reward : Natural_Win_Reward_Type;
       Config : Config_Type;
       Gen : Draw_Random.Generator;
       Player_Hand : Hand_Type;
@@ -184,5 +182,4 @@ private
    function Hand_Sum_And_Usable_Ace(Hand : Hand_Type) return Hand_Summary_Type;
    function Sum_Hand(Hand : Hand_Type) return Integer;
    function Get_Obs(Env : Environment_Type) return Observation_Type;
-
 end RL.Envs.Blackjack;
