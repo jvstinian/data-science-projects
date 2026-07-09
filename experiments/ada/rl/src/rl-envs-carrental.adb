@@ -145,8 +145,10 @@ package body RL.Envs.Carrental is
    ) return Transition_Probability_Type is
       type Probability_Type is array (Natural range <>) of Float;
 
-      -- TODO: Switch to using the following method.
-      function Calculate_Lot_Request_Probabilities (Cars_Before : Natural; Cars_After: Natural; Request_Lambda : Float; Return_Lambda : Float) return Probability_Type is
+      function Calculate_Lot_Request_Probabilities (
+         Cars_Before : Natural; Cars_After: Natural;
+         Request_Lambda : Float; Return_Lambda : Float
+      ) return Probability_Type is
          Max_Interim_Cars : Natural := Natural'Min(Cars_Before, Cars_After);
          Min_Requests : Natural := Cars_Before - Max_Interim_Cars;
          Lot_Returns : Natural;
@@ -187,34 +189,18 @@ package body RL.Envs.Carrental is
       Total_Probability : Float := 0.0;
 
    begin
-      for Lot_A_Requests in Min_Requests_A .. Prev_Cars.Lot_A_Cars loop
-         Lot_A_Returns := Next_Cars.Lot_A_Cars - (Prev_Cars.Lot_A_Cars - Lot_A_Requests);
-         Prob_Returns := Poisson_PMF(Config.Lot_A_Return_Lambda, Lot_A_Returns);
-         if Next_Cars.Lot_A_Cars >= Lot_Size then
-            -- If the resulting number of cars is greater than or equal to the lot size,
-            -- then returns exceeding Lot_A_Returns will also result in a full lot.
-            Prob_Returns := Prob_Returns + Poisson_SF(Config.Lot_A_Return_Lambda, Lot_A_Returns);
-         end if;
-         Probability_Requests_Lot_A(Lot_A_Requests) := Poisson_PMF(Config.Lot_A_Request_Lambda, Lot_A_Requests) * Prob_Returns;
-      end loop;
-      -- For the value Prev_Cars.Lot_A_Cars, we allow for any number of requests greater than
-      -- the current number of cars available, as this results in 0 cars remaining before returns are counted.
-      -- Note that we use Prob_Returns defined in the last iteration.
-      Probability_Requests_Lot_A(Prev_Cars.Lot_A_Cars) := Probability_Requests_Lot_A(Prev_Cars.Lot_A_Cars) + Poisson_SF(Config.Lot_A_Request_Lambda, Prev_Cars.Lot_A_Cars) * Prob_Returns;
-
-      for Lot_B_Requests in Min_Requests_B .. Prev_Cars.Lot_B_Cars loop
-         Lot_B_Returns := Next_Cars.Lot_B_Cars - (Prev_Cars.Lot_B_Cars - Lot_B_Requests);
-         Prob_Returns := Poisson_PMF(Config.Lot_B_Return_Lambda, Lot_B_Returns);
-         if Next_Cars.Lot_B_Cars >= Lot_Size then
-            -- If the resulting number of cars is greater than or equal to the lot size,
-            -- then returns exceeding Lot_B_Returns will also result in a full lot.
-            Prob_Returns := Prob_Returns + Poisson_SF(Config.Lot_B_Return_Lambda, Lot_B_Returns);
-         end if;
-         Probability_Requests_Lot_B(Lot_B_Requests) := Poisson_PMF(Config.Lot_B_Request_Lambda, Lot_B_Requests) * Prob_Returns;
-      end loop;
-      -- For the value Prev_Cars.Lot_B_Cars, we allow for any number of requests greater than or equal
-      -- to the value, as this results in 0 cars remaining before returns are counted.
-      Probability_Requests_Lot_B(Prev_Cars.Lot_B_Cars) := Probability_Requests_Lot_B(Prev_Cars.Lot_B_Cars) + Poisson_SF(Config.Lot_B_Request_Lambda, Prev_Cars.Lot_B_Cars) * Prob_Returns;
+      Probability_Requests_Lot_A := Calculate_Lot_Request_Probabilities (
+         Prev_Cars.Lot_A_Cars,
+         Next_Cars.Lot_A_Cars,
+         Config.Lot_A_Request_Lambda,
+         Config.Lot_A_Return_Lambda
+      );
+      Probability_Requests_Lot_B := Calculate_Lot_Request_Probabilities (
+         Prev_Cars.Lot_B_Cars,
+         Next_Cars.Lot_B_Cars,
+         Config.Lot_B_Request_Lambda,
+         Config.Lot_B_Return_Lambda
+      );
 
       for Lot_A_Requests in Probability_Requests_Lot_A'Range loop
          for Lot_B_Requests in Probability_Requests_Lot_B'Range loop
@@ -377,7 +363,7 @@ package body RL.Envs.Carrental is
       end loop;
       return Res;
    end Calculate_Transition_Probabilities_From_State;
-   
+
    function Collect_Transition_Values (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type is
       Res : Transition_Array_Type := (others => (Probability => 0.0, Reward => 0.0));
       

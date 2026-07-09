@@ -130,7 +130,13 @@ package RL.Envs.Carrental is
    function Get_Model(Config: Config_Type) return DP_Model_Access_Type;
 
    type Transition_Array_Type is array (Discrete_State_Type) of Transition_Probability_Type;
+   -- The following uses Calculate_Transition_Probability_Between_States
+   -- to calculate the transition probabilities for all possible next states
+   -- from the given state and action.
    function Collect_Transition_Values (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type;
+   -- The following uses Calculate_Transition_Probabilities_From_State
+   -- to calculate the transition probabilities for all possible next states
+   -- from the given state and action.
    function Get_Transition_Values_From_State (Config: Config_Type; State: Discrete_State_Type; Action: Action_Type) return Transition_Array_Type;
 private
    type Environment_Type is record
