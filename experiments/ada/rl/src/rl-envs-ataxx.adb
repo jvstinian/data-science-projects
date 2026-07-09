@@ -1,11 +1,10 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Integer_Text_IO; use Ada.Integer_Text_IO;
 
-package body Ataxx is
+package body RL.Envs.Ataxx is
    function Initial_State(Config : Config_Type) return State_Type is
        Player_Indicators : Player_Indicator_Type := (others => False);
        Board : Board_Type := (others => (others => No_Mark));
-       -- Status : Game_Status_Type := Active;
        Scores : Game_Score_Type := (others => 0);
    begin
        case Config.Player_Count is
@@ -50,14 +49,17 @@ package body Ataxx is
 
       Players_Can_Move : Player_Indicator_Type := Can_Move(State.Board);
    begin
-      -- TODO: Is the Board_Full check necessary?
+      -- NOTE: The Board_Full check might not be necessary, as
+      --       the Players_Can_Move values should be sufficient, but
+      --       we include it for completeness.
       if Board_Full(State.Board) then
          return True;
       end if;
 
       for P in Player_Type loop
          if State.Player_Indicators(P) and then Players_Can_Move(P) then
-            return False;  -- At least one active player can move, so not terminal
+            -- At least one active player can move, so not terminal
+            return False;  
          end if;
       end loop;
 
@@ -154,13 +156,13 @@ package body Ataxx is
       return Res;
    end Step;
   
-   function Reward(Player: Player_Type; State : State_Type) return Reward_Type is
+   function Reward(Player: Player_Type; State : State_Type) return Float is
    begin
       -- We return the number of occupied cells regardless of whether the
       -- game is finished.
-      return State.Scores(Player);
+      return Float(State.Scores(Player));
    end Reward;
-    
+
    function Get_Valid_Actions (State : State_Type) return Valid_Actions_Type is
       Player : Player_Type := State.Current_Player;
       Player_Mark : Mark := Mark'Val(Player_Type'Pos(Player));
@@ -183,7 +185,10 @@ package body Ataxx is
                for I_Target in I0 .. I1 loop
                   for J_Target in J0 .. J1 loop
                      if not (I_Target = I and J_Target = J) and State.Board(I_Target, J_Target) = No_Mark then
-                        Valid_Actions(Next_Index) := Action_Type'(Source => Source, Target => (Row => I_Target, Col => J_Target));
+                        Valid_Actions(Next_Index) := Action_Type'(
+                           Source => Source,
+                           Target => (Row => I_Target, Col => J_Target)
+                        );
                         Next_Index := Next_Index + 1;
                      end if;
                   end loop;
@@ -286,4 +291,4 @@ package body Ataxx is
       end loop;
       return Players_Can_Move;
    end Can_Move;
-end Ataxx;
+end RL.Envs.Ataxx;
