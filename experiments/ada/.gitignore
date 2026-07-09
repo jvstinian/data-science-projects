@@ -16,6 +16,18 @@ orka
 mathpaqs
 
 # Some local experiments
+ad
 array_example
 ale_example
+ale_experiment
+blackjack
 torch
+controlled_type
+discriminant_subtype
+experiment_discriminant
+linear_example
+multidimensional_arrays
+potential_mcts_implementation
+system_pool_local
+variant_example
+web_server_example

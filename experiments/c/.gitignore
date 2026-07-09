@@ -1,2 +1,5 @@
 # Executables
 main
+
+# Assembly
+**/*.asm
