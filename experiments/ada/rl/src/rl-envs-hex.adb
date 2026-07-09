@@ -1,7 +1,7 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Integer_Text_IO; use Ada.Integer_Text_IO;
 
-package body Hex is
+package body RL.Envs.Hex is
    function Initial_State return State_Type is
       Player_Colors : Player_Color_Type := (Player1 => Red, Player2 => Blue);
       Board : Board_Type := (others => (others => No_Mark));
@@ -19,40 +19,18 @@ package body Hex is
 
    function Get_Player(State : State_Type) return Player_Type is 
    begin
-      return (State.Current_Player);
+      return State.Current_Player;
    end Get_Player;
-   
-   function Step(State : State_Type; Action : Action_Type) return State_Type is
-      -- Helper functions
-   --    function Next_Player_In_Ring(P : Player_Type) return Player_Type is
-   --       Res : Player_Type := P;
-   --    begin
-   --       loop 
-   --          if Res = Player_Type'Last then
-   --             Res := Player_Type'First;
-   --          else
-   --             Res := Player_Type'Succ(Res);
-   --          end if;
 
-   --          exit when State.Player_Indicators(Res);  -- Found the next active player
-   --       end loop;
-   --       return Res;
-   --    end Next_Player_In_Ring;
-
+   function Step (State : State_Type; Action : Action_Type) return State_Type is
       -- Helper values
       Number_Of_Stones : constant Natural := Get_Number_Of_Stones(State);
       Player_Color : Stone_Color_Type;  -- We could set here but instead set below
       Stone : Mark;
 
-   --    -- Local variables
-   --    I0, I1, J0, J1 : Axis_Label;
-   --    Overwritten_Player : Player_Type;
-   --    Next_Player : Player_Type;
-   --    Stop_Player : Player_Type;
-   --    Players_Can_Move : Player_Indicator_Type := (others => False);
-
       -- Return value
-      Res : State_Type := State;  -- Start with a copy of the current state to modify
+      -- Start with a copy of the current state to modify
+      Res : State_Type := State;
    begin
       if Number_Of_Stones = 1 and then Res.Board(Action.Row, Action.Col) = Red then
          -- Swap colors
@@ -72,7 +50,7 @@ package body Hex is
 
          case Res.Current_Player is
             when Player1 =>
-               if Check_Win(Res.Board, Player_Color) then
+               if Check_Win (Res.Board, Player_Color) then
                   Res.Status := Player1_Wins;
                else
                   Res.Current_Player := Player2;  -- Switch player
@@ -87,25 +65,25 @@ package body Hex is
       end if; -- else do nothing if there is already a stone in the target cell
       return Res;
    end Step;
-  
-   function Reward(Player: Player_Type; State : State_Type) return Reward_Type is
+
+   function Reward(Player: Player_Type; State : State_Type) return Float is
    begin
       case State.Status is
          when Player1_Wins =>
             case Player is
-               when Player1 => return 1;
-               when Player2 => return -1;
+               when Player1 => return 1.0;
+               when Player2 => return -1.0;
             end case;
          when Player2_Wins =>
             case Player is 
-               when Player1 => return -1;
-               when Player2 => return 1;
+               when Player1 => return -1.0;
+               when Player2 => return 1.0;
             end case;
          when others =>
-             return 0;  -- Game is still active, so no reward
+             return 0.0;  -- Game is still active, so no reward
       end case;
    end Reward;
- 
+
    function Get_Valid_Actions (State : State_Type) return Valid_Actions_Type is
       function Get_Number_Of_Available_Moves (Number_Of_Stones : Natural) return Natural is
          Board_Size : constant Natural := Board_Width * Board_Width;
@@ -133,7 +111,8 @@ package body Hex is
                   -- Only increment if there is exactly one stone on the board,
                   -- which we are now encountering at (I, J).
                   if Number_Of_Stones = 1 then
-                     Valid_Actions(Next_Index) := Action_Type'(Row => I, Col => J);  -- Allow for Player 2 to swap
+                     -- Allow for Player 2 to swap
+                     Valid_Actions(Next_Index) := Action_Type'(Row => I, Col => J);
                      Next_Index := Next_Index + 1;
                   end if;
                when Blue => null;  -- Can't place on top of existing piece
@@ -152,7 +131,6 @@ package body Hex is
       procedure Print_Board is
          Line_Width : constant Integer := 3 + 3 * Board_Width - 1;
          Line : String(1 .. Line_Width) := (others => ' ');
-         -- Mark_Char : Character;
 
          -- Column for printing character
          Temp_Col : Positive;
@@ -168,13 +146,13 @@ package body Hex is
             Line := (others => ' ');
             Put(Temp_Row_Label_String, I);
             if Temp_Row_Label_String'Length = 1 then
+               -- TODO: Is this branch used?
                -- Put_Line("Temp label is of length 1");
                Line(2) := Temp_Row_Label_String(1);
             elsif Temp_Row_Label_String'Length = 2 then
                -- Put_Line("Temp label is of length 2");
                Line(1 .. 2) := Temp_Row_Label_String;
             end if;
-            -- Put(Temp_Row_Label_String, I);
             Temp_Col := 4 + (Blue_Label'Pos(I) - Blue_Label'Pos(Blue_Label'First));
             for J in Red_Label'Range loop
                -- Put_Line("Temp column is " & Integer'Image(Temp_Col));
@@ -202,7 +180,7 @@ package body Hex is
       Print_Board;
       Print_Game_Status(State);
    end Print_State;
- 
+
    function Get_Number_Of_Stones (State : State_Type) return Natural is
       Count : Natural := 0;
    begin
@@ -216,7 +194,7 @@ package body Hex is
       end loop;
       return Count;
    end Get_Number_Of_Stones;
-   
+
    function Neighboring_Hexagons(I1 : Blue_Label; J1 : Red_Label; I2 : Blue_Label ; J2 : Red_Label) return Boolean is
       Blue_Is_Succ : Boolean := (I1 /= Blue_Label'Last) and then (I2 = Blue_Label'Succ(I1));
       Blue_Is_Prev : Boolean := (I1 /= Blue_Label'First) and then (I2 = Blue_Label'Pred(I1));
@@ -241,7 +219,7 @@ package body Hex is
          when Blue => return Check_Blue_Win(Board);
       end case;
    end Check_Win;
-   
+
    function Check_Red_Win(Board : Board_Type) return Boolean is
       type Connection_Type is array (Red_Label) of Boolean;
       Reachable_Prev : Connection_Type := (others => False);
@@ -286,7 +264,7 @@ package body Hex is
       end loop;
       return False;
    end Check_Red_Win;
-   
+
    function Check_Blue_Win(Board : Board_Type) return Boolean is
       type Connection_Type is array (Blue_Label) of Boolean;
       Reachable_Prev : Connection_Type := (others => False);
@@ -323,7 +301,7 @@ package body Hex is
          end loop;
       end loop;
 
-      -- If any  of the hexagons for the last red label are reachable, then Blue wins
+      -- If any of the hexagons for the last red label are reachable, then Blue wins
       for I in Blue_Label'Range loop
          if Reachable(I) then
             return True;
@@ -331,46 +309,4 @@ package body Hex is
       end loop;
       return False;
    end Check_Blue_Win;
-   
-   -- function Distance(From : Cell_Indices; To : Cell_Indices) return Integer is
-   -- begin
-   --    return Integer'Max(Abs(From.Row - To.Row), Abs(From.Col - To.Col));
-   -- end Distance;
-   --  
-   -- function Can_Move(Board : Board_Type) return Player_Indicator_Type is
-   --    function Available_Move_From(Row : Axis_Label; Col : Axis_Label) return Boolean is
-   --       I0 : Axis_Label := Integer'Max(Board'First(1), Row - 2);
-   --       I1 : Axis_Label := Integer'Min(Board'Last(1), Row + 2);
-   --       J0 : Axis_Label := Integer'Max(Board'First(2), Col - 2);
-   --       J1 : Axis_Label := Integer'Min(Board'Last(2), Col + 2);
-   --    begin
-   --       for I in I0 .. I1 loop
-   --          for J in J0 .. J1 loop
-   --             if not (I = Row and J = Col) and Board(I, J) = No_Mark then
-   --                return True;
-   --             end if;
-   --          end loop;
-   --       end loop;
-   --       return False;
-   --    end Available_Move_From;
-
-   --    Players_Can_Move : Player_Indicator_Type := (others => False);
-   --    Temp_Mark : Mark;
-   -- begin
-   --    for I in Axis_Label loop
-   --       for J in Axis_Label loop
-   --          Temp_Mark := Board(I, J);
-   --          if Temp_Mark in R | B | W | K and then Available_Move_From(I, J) then
-   --             case Temp_Mark is
-   --                when R => Players_Can_Move(R) := True;
-   --                when B => Players_Can_Move(B) := True;
-   --                when W => Players_Can_Move(W) := True;
-   --                when K => Players_Can_Move(K) := True;
-   --                when others => null;
-   --             end case;
-   --          end if;
-   --       end loop;
-   --    end loop;
-   --    return Players_Can_Move;
-   -- end Can_Move;
-end Hex;
+end RL.Envs.Hex;

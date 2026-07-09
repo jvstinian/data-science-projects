@@ -1,11 +1,12 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Integer_Text_IO; use Ada.Integer_Text_IO;
 
-package body Tic_Tac_Toe is
-
+package body RL.Envs.Tic_Tac_Toe is
     function Initial_State return State_Type is
     begin 
-        return State_Type'(Board => (others => (others => No_Mark)), Status => X_Move);
+        return State_Type'(
+           Board => (others => (others => No_Mark)), Status => X_Move
+         );
     end Initial_State;
 
     function Is_Terminal (State : State_Type) return Boolean is
@@ -18,10 +19,12 @@ package body Tic_Tac_Toe is
 
    function Get_Player(State : State_Type) return Player_Type is
    begin
+      -- Returns PlayerX for a draw.  This is an arbitrary choice, and
+      -- should not be used in terminal state
       case State.Status is
          when X_Move | X_Wins => return PlayerX;
          when O_Move | O_Wins => return PlayerO;
-         when Draw => return PlayerX; -- Arbitrary choice since it's a draw, should not be used in terminal state
+         when Draw => return PlayerX; 
       end case;
    end Get_Player;
 
@@ -147,7 +150,7 @@ package body Tic_Tac_Toe is
       return Result;
    end Step;
 
-   function Reward(Player: Player_Type; State : State_Type) return Long_Float is
+   function Reward(Player: Player_Type; State : State_Type) return Float is
    begin
       case State.Status is
          when X_Wins =>
@@ -168,7 +171,8 @@ package body Tic_Tac_Toe is
    end Reward;
 
    function Get_Valid_Actions (State : State_Type) return Valid_Actions_Type is
-      Result : Valid_Actions_Type := (0..8 => (Row => 0, Col => A)); -- Initialize with dummy values, will be overwritten
+      -- Initialize with dummy values, will be overwritten
+      Result : Valid_Actions_Type := (0..8 => (Row => 0, Col => A));
       I : Natural := 0;
    begin 
       for R in Row_Label loop
@@ -189,7 +193,6 @@ package body Tic_Tac_Toe is
       begin
          Put(" ");
          for C in Col_Label loop
-            -- Put(Character(C));
             Put(C'Image);
          end loop;
          New_Line;
@@ -206,6 +209,7 @@ package body Tic_Tac_Toe is
             New_Line;
          end loop;
       end Print_Board;
+
       procedure Print_Game_Status is
       begin
        Put ("Status: ");
@@ -222,5 +226,4 @@ package body Tic_Tac_Toe is
        Print_Board;
        Print_Game_Status;
     end Print_State;
-end Tic_Tac_Toe;
-
+end RL.Envs.Tic_Tac_Toe;
