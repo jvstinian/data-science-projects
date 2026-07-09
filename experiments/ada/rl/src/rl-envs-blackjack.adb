@@ -1,4 +1,4 @@
-package body Blackjack is
+package body RL.Envs.Blackjack is
    function Draw_Card(Gen : in out Draw_Random.Generator) return Card_Type is
       Card : Card_Type := Draw_Random.Random(Gen);
    begin
@@ -37,7 +37,7 @@ package body Blackjack is
    -- Helper to compute both sum with and without ace counted as 11,
    -- and whether the hand has a usable ace.
    function Hand_Sum_And_Usable_Ace(Hand : Hand_Type) return Hand_Summary_Type is
-      Hand_Sum : Integer := 0;
+      Hand_Sum : Natural := 0;
       Res : Hand_Summary_Type;
    begin
       for Card in Card_Type loop
@@ -69,22 +69,17 @@ package body Blackjack is
    end Get_Obs;
 
    function Make(Config: Config_Type) return Environment_Type is
-      -- Env : Environment_Type := (
-      --    Natural_Win_Reward => Config.Natural_Win_Reward,
-      --    Player_Hand => (others => 0),
-      --    Dealer_Hand => (others => 0),
-      --    Dealer_Showing_Card => Ace); -- TODO: What to do for the generator?
    begin
       return Environment_Type'(
          Config => Config,
-         -- Natural_Win_Reward => Config.Natural_Win_Reward,
          Player_Hand => (others => 0),
          Dealer_Hand => (others => 0),
-         Dealer_Showing_Card => Ace,
-         Gen => <>); -- TODO: What to do for the generator?
+         Dealer_Showing_Card => Ace,  -- placeholder till reset is called
+         Gen => <>);
    end Make;
 
-   function Reset(Env : in out Environment_Type) return Observation_Type is
+   function Reset (Env : in out Environment_Type; Seed_Reset : Seed_Reset_Type)
+      return Observation_Type is
       -- Helper function
       procedure Hit_Till_12(Hand : in out Hand_Type) is
          New_Card : Card_Type;
@@ -97,11 +92,13 @@ package body Blackjack is
 
       Dealer_Card : Card_Type;
       Other_Dealer_Card : Card_Type;
-      -- Player_Sum : Integer;
       Usable_Ace : Boolean;
    begin
-      -- TODO: Need to determine how we want to set a seed
-      Draw_Random.Reset(Env.Gen);
+      case Seed_Reset.Kind is
+         when Set_Default => Draw_Random.Reset(Env.Gen);
+         when No_Set      => null;
+         when Set_Seed    => Draw_Random.Reset(Env.Gen, Seed_Reset.Seed);
+      end case;
       -- Reset dealer hand
       Env.Dealer_Hand := (others => 0);
       Dealer_Card := Draw_Card(Env.Gen);
@@ -119,18 +116,6 @@ package body Blackjack is
 
       return Get_Obs(Env);
    end Reset;
---     def reset(
---         self,
---         seed: int | None = None,
---         options: dict | None = None,
---     ):
---         super().reset(seed=seed)
---         self.dealer = draw_hand(self.np_random)
---         self.player = draw_hand(self.np_random)
--- 
---         if self.render_mode == "human":
---             self.render()
---         return self._get_obs(), {}
 
    function Step(Env : in out Environment_Type; Action : Action_Type) return Step_Return_Type is
       -- Helper functions
@@ -164,17 +149,6 @@ package body Blackjack is
       begin
          return Hand(Ace) = 1 and then Has_One_10;
       end Is_Natural;
-      -- The Python code uses a method cmp to assign a reward, which
-      -- function Player_Has_Higher_Score(Env : Environment_Type) return Boolean is
-      --    A : Integer := Score(Env.Player_Hand);
-      --    B : Integer := Score(Env.Dealer_Hand);
-      -- begin
-      --    if A > B then
-      --       return True;
-      --    else
-      --       return False;
-      --    end if;
-      -- end Player_Has_Higher_Score;
 
       -- Temporary variables
       Reward : Float := 0.0;
@@ -201,7 +175,6 @@ package body Blackjack is
             Reward := Cmp(Score(Env.Player_Hand), Score(Env.Dealer_Hand));
             if Env.Config.Natural_Win_Reward = SAB and then Is_Natural(Env.Player_Hand) and then not Is_Natural(Env.Dealer_Hand) then
                -- Player automatically wins. Rules consistent with S&B
-               -- Put_Line("Natural win under SAB rules");
                Reward := 1.0;
             elsif Env.Config.Natural_Win_Reward = Natural_Win and then Is_Natural(Env.Player_Hand) and then Reward = 1.0 then
                -- Natural gives extra points, but doesn't autowin. Legacy implementation
@@ -211,41 +184,10 @@ package body Blackjack is
       return Step_Return_Type'(
          Observation => Get_Obs(Env),
          Reward => Reward,
-         Terminated => Terminated,
-         Truncated => False);
+         Terminated => Terminated
+      );
    end Step;
---     def step(self, action):
---         assert self.action_space.contains(action)
---         if action:  # hit: add a card to players hand and return
---             self.player.append(draw_card(self.np_random))
---             if is_bust(self.player):
---                 terminated = True
---                 reward = -1.0
---             else:
---                 terminated = False
---                 reward = 0.0
---         else:  # stick: play out the dealers hand, and score
---             terminated = True
---             while sum_hand(self.dealer) < 17:
---                 self.dealer.append(draw_card(self.np_random))
---             reward = cmp(score(self.player), score(self.dealer))
---             if self.sab and is_natural(self.player) and not is_natural(self.dealer):
---                 # Player automatically wins. Rules consistent with S&B
---                 reward = 1.0
---             elif (
---                 not self.sab
---                 and self.natural
---                 and is_natural(self.player)
---                 and reward == 1.0
---             ):
---                 # Natural gives extra points, but doesn't autowin. Legacy implementation
---                 reward = 1.5
--- 
---         if self.render_mode == "human":
---             self.render()
---         # truncation=False as the time limit is handled by the `TimeLimit` wrapper added during `make`
---         return self._get_obs(), reward, terminated, False, {}
--- 
+
    procedure Render_Text(Env : Environment_Type) is
       Obs : Observation_Type := Get_Obs(Env);
    begin
@@ -255,41 +197,4 @@ package body Blackjack is
       Put("(" & Env.Dealer_Showing_Card'Image & ")");
       New_Line;
    end Render_Text;
-end Blackjack;
-
--- import numpy as np
--- 
--- def cmp(a, b):
---     return float(a > b) - float(a < b)
--- 
--- 
--- # 1 = Ace, 2-10 = Number cards, Jack/Queen/King = 10
--- deck = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10]
--- 
--- 
--- def draw_hand(np_random):
---     return [draw_card(np_random), draw_card(np_random)]
--- 
--- 
--- def usable_ace(hand):  # Does this hand have a usable ace?
---     return int(1 in hand and sum(hand) + 10 <= 21)
--- 
--- 
--- def sum_hand(hand):  # Return current hand total
---     if usable_ace(hand):
---         return sum(hand) + 10
---     return sum(hand)
---
--- 
--- def is_bust(hand):  # Is this hand a bust?
---     return sum_hand(hand) > 21
--- 
--- 
--- def score(hand):  # What is the score of this hand (0 if bust)
---     return 0 if is_bust(hand) else sum_hand(hand)
--- 
--- 
--- def is_natural(hand):  # Is this hand a natural blackjack?
---     return sorted(hand) == [1, 10]
--- 
--- 
+end RL.Envs.Blackjack;
