@@ -97,6 +97,7 @@ package body RL.Envs.LineWalk is
 
    function Step(Env : in out Environment_Type; action: Action_Type) return Step_Return_Type is
       New_State : Integer := Integer(Env);
+      Ret_Obs: Observation_Type;
       Reward : Float;
       Terminated : Boolean;
    begin
@@ -122,8 +123,9 @@ package body RL.Envs.LineWalk is
 
       -- Update Env
       Env := Environment_Type(New_State);
+      Ret_Obs := Observation_Type(Natural'Max(1, Natural'Min(N, New_State)));
       return Step_Return_Type'(
-         Observation => Observation_Type(New_State),
+         Observation => Ret_Obs,
          Reward => Reward,
          Terminated => Terminated
       );
