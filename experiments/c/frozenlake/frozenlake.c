@@ -4,6 +4,16 @@
 #include <string.h> /* memset */
 #include <alloca.h>
 #include <time.h> /* For setting the RNG */
+#include <math.h> /* abs */
+
+#if defined(__STDC__) && !defined(__STDC_VERSION__)
+    float fmaxf(float x, float y) {
+        return (x > y) ? x : y;
+    }
+    float fabsf(float x) {
+        return (float) fabs((double) x);
+    }
+#endif
 
 float rand_float() {
     return (float)rand() / (float)RAND_MAX;
@@ -392,6 +402,50 @@ void frozenlake_model_destroy(const struct DiscreteModelType* model){
     free(model->transition_probabilities);
 }
 
+int iterative_policy_evaluation(struct DiscreteModelType* model, float (*policy)[ACTION_COUNT], float df, float *value_array) {
+    unsigned int num_states = model->num_states;
+
+    /* Set the value function to 0 */
+    memset(value_array, 0, sizeof(float) * num_states);
+    float theta = 1.0e-6; /* Convergence threshold */
+    float local_delta = 0.0;
+
+    float prev_value;
+    float transition_value;
+    float new_value;
+
+    unsigned int s, s1;
+    enum ActionType a;
+    struct TransitionProbabilityType trprob;
+
+    int iteration_count = 0;
+
+    while (1) {
+        iteration_count += 1;
+        /* printf("Iteration %d\n", iteration_count); */
+
+        local_delta = 0.0;
+        for (s = 0; s < num_states;  s++) {
+            prev_value = value_array[s];
+            new_value = 0.0;
+            for (a = 0; a < ACTION_COUNT; a++) {
+                transition_value = 0.0;
+                for (s1 = 0; s1 < num_states;  s1++) {
+                    trprob = frozenlake_get_transition(model, s, a, s1);
+                    transition_value += trprob.probability * (trprob.reward + df * value_array[s1]);
+                }
+                new_value += policy[s][a] * transition_value;
+            }
+            value_array[s] = new_value;
+            local_delta = fmaxf(local_delta, fabsf(new_value - prev_value));
+        }
+        if (local_delta < theta) {
+            break;
+        }
+    }
+    return iteration_count;
+}
+
 int main() {
     struct EnvironmentConfig config = { MAP_4X4, FALSE };
     struct EnvironmentState state;
@@ -440,7 +494,7 @@ int main() {
     close(state);
 
     /* Changing to a slippery map */
-    config.slippery = TRUE;
+    config.slippery = FALSE;
     struct DiscreteModelType model;
     struct TransitionProbabilityType transition_info;
     if (frozenlake_model_create(config, &model)) {
@@ -450,6 +504,29 @@ int main() {
     printf("Transition info for going from state 0 to 0 with action LEFT: probability = %f, reward = %f",
             transition_info.probability, transition_info.reward
           );
+
+    unsigned int s;
+    int iterations;
+    float stoch_policy[16][ACTION_COUNT];
+    float value_array[16];
+    for (s = 0; s < 16; s++) {
+        stoch_policy[s][LEFT] = 0.25;
+        stoch_policy[s][DOWN] = 0.25;
+        stoch_policy[s][RIGHT] = 0.25;
+        stoch_policy[s][UP] = 0.25;
+    }
+    /*
+    stoch_policy[14][RIGHT] = 1.0;
+    stoch_policy[14][UP] = 0.0;
+    stoch_policy[14][DOWN] = 0.0;
+    stoch_policy[14][LEFT] = 0.0;
+    */
+    iterations = iterative_policy_evaluation(&model, stoch_policy, 0.9, value_array);
+    printf("Estimated value function using %d iterations\n", iterations);
+    for (s = 0; s < 16; s++) {
+        printf("Value function for state %u: %f\n", s, value_array[s]);
+    }
+
     frozenlake_model_destroy(&model);
     return 0;
 }
