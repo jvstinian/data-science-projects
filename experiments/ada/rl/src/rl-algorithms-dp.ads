@@ -17,13 +17,16 @@ generic
    -- type Transition_Probability_Type is private;  -- TODO: Remove
    type DP_Model_Type is array (State_Type, Action_Type, State_Type) of Transition_Probability_Type;
 package RL.Algorithms.DP is
-    subtype Probability_Type is Float range 0.0 .. 1.0;
-    type Deterministic_Policy_Type is array (State_Type) of Action_Type;
-    type Stochastic_Policy_Type is array (State_Type, Action_Type) of Probability_Type;
+   subtype Probability_Type is Float range 0.0 .. 1.0;
+   type Deterministic_Policy_Type is array (State_Type) of Action_Type;
+   type Stochastic_Policy_Type is array (State_Type, Action_Type) of Probability_Type;
 
-    type Value_Function_Type is array (State_Type) of Float;
-    
-    function Iterative_Policy_Evaluation(Model : DP_Model_Type; Policy : Stochastic_Policy_Type; Discount_Factor : Float) return Value_Function_Type;
-    function Iterative_Policy_Evaluation(Model : DP_Model_Type; Policy : Deterministic_Policy_Type; Discount_Factor : Float; Value_Estimate : Value_Function_Type) return Value_Function_Type;
-    -- function Policy_Iteration(Model : DP_Model_Type; Discount_Factor : Float) return Deterministic_Policy_Type;
+   type Value_Function_Type is array (State_Type) of Float;
+
+   function Iterative_Policy_Evaluation(Model : DP_Model_Type; Policy : Stochastic_Policy_Type; Discount_Factor : Float) return Value_Function_Type;
+   function Iterative_Policy_Evaluation(Model : DP_Model_Type; Policy : Deterministic_Policy_Type; Discount_Factor : Float; Value_Estimate : Value_Function_Type) return Value_Function_Type;
+   
+   procedure Print_Policy(Policy : Deterministic_Policy_Type);
+   -- function Policy_Iteration(Model : DP_Model_Type; Discount_Factor : Float) return Deterministic_Policy_Type;
+   function Policy_Iteration(Model : DP_Model_Type; Discount_Factor : Float) return Deterministic_Policy_Type;
 end RL.Algorithms.DP;
