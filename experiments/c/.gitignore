@@ -1,6 +1,7 @@
 # Executables
 main
 cartpole
+hexmain
 
 # Assembly
 **/*.asm
