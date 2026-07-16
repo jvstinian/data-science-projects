@@ -39,6 +39,7 @@
         buildInputs = with pkgs; [
           pkg-config
           # automake autoconf libtool
+          gdb
           cmake
           check
           clang-tools
