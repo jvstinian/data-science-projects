@@ -2,6 +2,7 @@
 main
 cartpole
 hexmain
+ataxxmain
 
 # Assembly
 **/*.asm
