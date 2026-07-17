@@ -284,10 +284,8 @@ struct ValidActions get_valid_actions(struct State s) {
 }
 
 static void print_board(struct State s) {
-    /*  TODO: Not used in the C implementation
-    char line[3 + 3 * BOARD_WIDTH - 1];
-    memset(line, ' ', sizeof(line) / sizeof(line[0]));
-    */
+    /*  The maximum line length below is
+     *  1 + 3*BOARD_WIDTH. */
 
     unsigned short b, r;
 
@@ -295,27 +293,32 @@ static void print_board(struct State s) {
         if (r == 0) {
             printf("  ");
         }
-        /* TODO: This will likely need to be adjusted */
         printf("%-2u", r);
     }
     printf("\n");
 
     for (b = 0; b < BOARD_WIDTH; b++) {
         printf("%2u", b);
-        printf("%*s", b + 1, " "); /* TODO: This is probably wrong */
-        /* At this point we've printed 3 + b characters, so
-         * the next character will be the 4 + b character (using 1-indexing) */
+        if (b > 0) {
+            /* Have to put a conditional here as the following still
+             * prints a space with b == 0 */
+            printf("%*s", b, " ");
+        }
+        /* At this point we've printed 2 + b characters, so
+         * the next character will be the 3 + b character (using 1-indexing).
+         * Below we will print 2*BOARD_WIDTH more characters,
+         * for a total of 2 + b + 2*BOARD_WIDTH characters (excluding newline). */
 
         for (r = 0; r < BOARD_WIDTH; r++) {
             switch (s.board[b][r]) {
                 case Red_Stone: 
-                    printf("%c ", 'R');
+                    printf(" %c", 'R');
                     break;
                 case Blue_Stone: 
-                    printf("%c ", 'B');
+                    printf(" %c", 'B');
                     break;
                 case No_Mark: 
-                    printf("%c ", '*');
+                    printf(" %c", '*');
                     break;
             }
         }

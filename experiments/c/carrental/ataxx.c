@@ -106,7 +106,6 @@ Boolean available_move_from(enum AtaxxMark (*board)[BOARD_WIDTH], unsigned short
     return FALSE;
 }
   
-/* TODO: check the following */
 static void can_move(enum AtaxxMark (*board)[BOARD_WIDTH], Boolean *players_can_move) {
     enum AtaxxMark temp_mark;
     unsigned short int r, c;
@@ -203,14 +202,22 @@ enum AtaxxPlayer mark_to_player(enum AtaxxMark mark) {
 
 static enum AtaxxPlayer next_player_in_ring(struct AtaxxState state, enum AtaxxPlayer p) {
     enum AtaxxPlayer res = p;
-    /* TODO: No need to use the Ada approach.  Use a for loop over i, setting res = p + i */
-    while (1) {
-        res = (enum AtaxxPlayer) ((((unsigned int) res) + 1) % MAX_PLAYER_COUNT);
+    unsigned int i;
+    /* Use a for loop over i, setting res = p + i */
+    for (i = 1; i <= MAX_PLAYER_COUNT; i++) {
+        res = (enum AtaxxPlayer) ((((unsigned int) p) + i) % MAX_PLAYER_COUNT);
         if (state.player_indicators[res]) {
-            /* Found the next valid player */
             break;
         }
     }
+    /* The following uses an approach similar to that used in Ada.
+    while (1) {
+        res = (enum AtaxxPlayer) ((((unsigned int) res) + 1) % MAX_PLAYER_COUNT);
+        if (state.player_indicators[res]) {
+            break;
+        }
+    }
+    */
     return res;
 }
 
@@ -368,12 +375,14 @@ void ataxx_actions_list_destroy(ValidActionsList* lp) {
 
 ValidActionsList* get_valid_actions (struct AtaxxState state) {
     enum AtaxxPlayer player = state.current_player;
-    /* TODO: Perhaps use player_to_mark in the following */
+    /* We use player_to_mark in the following */
+    /*
     enum AtaxxMark player_mark = (enum AtaxxMark) ((int) player);
+    */
+    enum AtaxxMark player_mark = player_to_mark(player);
     const size_t max_actions = state.scores[player] * 24;
     ValidActionsList* vas = ataxx_actions_list_create(max_actions);
     int vas_status = 0;
-    /* size_t next_index = 0;  TODO: Not needed in this implementation */
 
     /* Temp variables for loop below */
     struct CellIndices source;
@@ -385,7 +394,6 @@ ValidActionsList* get_valid_actions (struct AtaxxState state) {
     if (vas == NULL) {
         return NULL;
     }
-    /* (void) next_index; */
 
     for (r=0; r < BOARD_WIDTH; r++){
         for (c=0; c < BOARD_WIDTH; c++){
@@ -476,15 +484,54 @@ void print_board(struct AtaxxState state) {
     }
 }
 
+void get_winners(unsigned short int *scores, Boolean* winning_players, unsigned short int* num_winners) {
+    unsigned short int i;
+    unsigned short int max_score = 0;
+
+    /* Set the winning players vector to FALSE throughout */
+    memset(winning_players, 0, MAX_PLAYER_COUNT * sizeof(Boolean));
+    *num_winners = 0;
+
+    /* Find the max score */
+    for (i=0; i < MAX_PLAYER_COUNT; i++) {
+        if (scores[i] > max_score) {
+            max_score = scores[i];
+        }
+    }
+
+    /* Identify the players with the max score */
+    for (i=0; i < MAX_PLAYER_COUNT; i++) {
+        if (scores[i] >= max_score) {
+            winning_players[i] = TRUE;
+            *num_winners += 1;
+        }
+    }
+}
+
 void print_game_status(struct AtaxxState state) {
     enum AtaxxPlayer p;
+    unsigned short int i, remaining_winners;
+    Boolean winning_players[MAX_PLAYER_COUNT];
 
     switch (state.status) {
         case Active:
             printf("Next Player: %s", player_names[get_player(state)]);
             break;
         case Finished:
-            printf("Game Over: TBD");  /* TODO: Print winner or draw status */
+            get_winners(state.scores, winning_players, &remaining_winners);
+            printf("Game Over: ");
+            for (i = 0; i < MAX_PLAYER_COUNT; i++) {
+                if (winning_players[i]) {
+                    printf("%s", player_names[i]);
+                    remaining_winners--;
+                    if (remaining_winners > 1) {
+                        printf(", ");
+                    } else if (remaining_winners > 0) {
+                        /* Exactly one winner remaining to print */
+                        printf(", and ");
+                    }
+                }
+            }
             break;
     }
     printf("\n");
@@ -492,7 +539,6 @@ void print_game_status(struct AtaxxState state) {
     printf("Scores: \n");
     for (p = Red; p <= Black; p++) {
         if (state.player_indicators[p]) {
-            /* TODO: How to we want the player to print? */
             printf("   %5s: %d\n", player_names[p], state.scores[p]);
         }
     }
@@ -513,7 +559,11 @@ int main() {
     size_t i;
     ValidActionsList* vas;
     struct AtaxxAction a;
-    vas = get_valid_actions(state);  /* TODO: Check vas != NULL */
+    vas = get_valid_actions(state);
+    if (vas == NULL) {
+        fprintf(stderr, "main: error in get_valid_actions, exiting.");
+        return 1;
+    }
     for(i=0; i < ataxx_actions_list_length(vas); i++) {
         a = ataxx_actions_list_get(vas, i);
         printf("Action %lu: (%u, %u) -> (%u, %u)\n",
