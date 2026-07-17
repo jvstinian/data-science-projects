@@ -1,13 +1,11 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Integer_Text_IO; use Ada.Integer_Text_IO;
 with Ada.Float_Text_IO; use Ada.Float_Text_IO;
--- with RL.Envs.Blackjack; use RL.Envs.Blackjack;
 with Ada.Containers; use Ada.Containers;
 with Ada.Containers.Bounded_Hashed_Maps;
 with Ada.Numerics.Discrete_Random;
 with Ada.Numerics.Float_Random;
 
- 
 package body RL.Algorithms.MC is
    function MC_Policy_Evaluation(Env_Config : Config_Type; Policy : Policy_Type; MC_Config : MC_Config_Type) return Value_Function_Type is
       type Reward_Tracker_Type is record
@@ -27,9 +25,6 @@ package body RL.Algorithms.MC is
       SAR_Array : SAR_Array_Type;
 
       V : State_Reward_Tracker_Type := (others => (0.0, 0));
-      -- Returns_Sum : array(Observation_Type) of Float := (others => 0.0);
-      -- Returns_Count : array(Observation_Type) of Integer := (others => 0);
-      -- Obs : Observation_Type;
       Seed_Reset : Seed_Reset_Type := (Kind => Set_Default);
       Env : Environment_Type := Make(Env_Config);
       Obs : Observation_Type;
@@ -37,19 +32,16 @@ package body RL.Algorithms.MC is
       Discrete_Obs : Discrete_Observation_Type;
       Action : Action_Type;
       Terminated : Boolean;
-      -- I : Natural;
       Last_I : Natural;
-      Cumulative_Reward : Float;  -- TODO: Is this needed?
 
       procedure Every_Visit_Reward_Update(V : in out State_Reward_Tracker_Type; SAR_Array_Input: SAR_Array_Type; Last_I : Natural) is
          SAR_Array : SAR_Array_Type := SAR_Array_Input; -- A local copy to avoid specifying "in out" for the array parameter
       begin
          for I in reverse 1 .. Last_I loop
             if I < Last_I then
-               -- IN PROGRESS: Use gamma for discounting in the following
                SAR_Array(I).Reward := SAR_Array(I).Reward + MC_Config.Discount_Factor * SAR_Array(I + 1).Reward;
             end if;
-            -- TODO: This is the every-visit approach, need to modify to implement first-visit approach
+            -- Update the state reward tracker
             V(SAR_Array(I).State).Total_Reward := V(SAR_Array(I).State).Total_Reward + SAR_Array(I).Reward;
             V(SAR_Array(I).State).Count        := V(SAR_Array(I).State).Count + 1;
          end loop;
@@ -61,7 +53,7 @@ package body RL.Algorithms.MC is
          type First_Visit_Array_Type is array(Discrete_Observation_Type) of Natural;
          First_Visit_Array : First_Visit_Array_Type := (others => 0);
 
-         First_Visit : Natural;
+         First_Visit : Natural;  -- Temp value for convenience
       begin
          for I in reverse 1 .. Last_I loop
             if I < Last_I then
@@ -83,7 +75,6 @@ package body RL.Algorithms.MC is
          Discrete_Obs := To_Discrete_Observation(Obs);
          Terminated := False;
          Last_I := 1;
-         Cumulative_Reward := 0.0;  -- TODO: What is this?
          for I in 1 .. Max_Episode_Steps loop
             Action := Policy(Discrete_Obs);
             Step_Output := Step(Env, Action);
@@ -94,15 +85,6 @@ package body RL.Algorithms.MC is
             exit when Terminated;
          end loop;
 
-         -- for I in reverse 1 .. Last_I loop
-         --    if I < Last_I then
-         --       -- IN PROGRESS: Use gamma for discounting in the following
-         --       SAR_Array(I).Reward := SAR_Array(I).Reward + MC_Config.Discount_Factor * SAR_Array(I + 1).Reward;
-         --    end if;
-         --    -- TODO: This is the every-visit approach, need to modify to implement first-visit approach
-         --    V(SAR_Array(I).State).Total_Reward := V(SAR_Array(I).State).Total_Reward + SAR_Array(I).Reward;
-         --    V(SAR_Array(I).State).Count        := V(SAR_Array(I).State).Count + 1;
-         -- end loop;
          case MC_Config.Visit_Type is
             when First_Visit =>
                First_Visit_Reward_Update(V, SAR_Array, Last_I);
@@ -118,7 +100,6 @@ package body RL.Algorithms.MC is
             end if;
          end loop;
       end return;
-      
    end MC_Policy_Evaluation;
    
    -- TODO: Should we use MC_Config_Type?  We might not want to allow the Every_Visit option.
@@ -144,8 +125,8 @@ package body RL.Algorithms.MC is
       Action_Gen : Action_Random.Generator;
 
       -- NOTE: The flag for indicating whether a state was encountered in an episode
-      --        doesn't impact the results.  At best it reduces the number of states
-      --        for which to update action values and the policy.
+      --       doesn't impact the results.  At best it reduces the number of states
+      --       for which to update action values and the policy.
       type State_Encountered_Flag_Type is array(Discrete_Observation_Type) of Boolean;
       State_Encountered_Flag : State_Encountered_Flag_Type;
 
@@ -162,7 +143,7 @@ package body RL.Algorithms.MC is
       Terminated : Boolean;
       Last_I : Natural;
       Stable : Boolean;
-      
+ 
       procedure First_Visit_Reward_Update(Q_Tracker: in out State_Action_Reward_Tracker_Type; SAR_Array_Input : SAR_Array_Type; Last_I : Natural) is
          SAR_Array : SAR_Array_Type := SAR_Array_Input; -- A local copy to avoid specifying "in out" for the array parameter
 
