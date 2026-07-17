@@ -14,8 +14,16 @@ blackjack.o: blackjack.c
 ttt.o: ttt.c
 	gcc ttt.c -c -std=c89 -g -Og -Wall -Wextra -o ttt.o
 
-build: poisson.o carrental.o blackjack.o ttt.o
+hex.o: hex.c
+	gcc hex.c -c -std=c89 -g -Og -Wall -Wextra -o hex.o
+
+ataxx.o: ataxx.c
+	gcc ataxx.c -c -std=c89 -g -Og -Wall -Wextra -o ataxx.o
+
+build: poisson.o carrental.o blackjack.o ttt.o hex.o ataxx.o
 	gcc carrental.o poisson.o blackjack.o -lm -o main
+	gcc hex.o -lm -o hexmain
+	gcc ataxx.o -lm -o ataxxmain
 
 run: build
 	./main
