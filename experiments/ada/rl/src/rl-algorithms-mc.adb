@@ -1,74 +1,15 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Integer_Text_IO; use Ada.Integer_Text_IO;
 with Ada.Float_Text_IO; use Ada.Float_Text_IO;
-with Blackjack; use Blackjack;
+-- with RL.Envs.Blackjack; use RL.Envs.Blackjack;
 with Ada.Containers; use Ada.Containers;
 with Ada.Containers.Bounded_Hashed_Maps;
 with Ada.Numerics.Discrete_Random;
 with Ada.Numerics.Float_Random;
 
--- TODO: The MC_* methods have been moved to RL.Algorithms.MC 
-procedure MC_Policy_Evaluation_Example is
-   -- We use the "Auto_Hit" option which automatically hits till the player
-   -- has a sum of 12 or more, so we only need to consider player sums of 12-21,
-   -- or ten possible values.
-   -- We also consider whether the player has a usable ace or not, which represents
-   -- two possible values.
-   -- The dealer cards can have a value of 1-10.
-   -- So overall there are 200 = 2 * 10 * 10 possible non-terminal states.
-   -- We also add a terminal state which is used when the player sum exceeds 21.
-   Num_Discrete_States : constant Integer := 2 * 10 * 10 + 1;
-   type Discrete_Observation_Type is range 0 .. Num_Discrete_States - 1;
-   -- subtype Discrete_Observation_Type2 is Discrete_Observation_Type range 0 .. 30;
-   function To_Discrete_Observation(Obs : Observation_Type) return Discrete_Observation_Type is
-      Dealer_Value_Index : Natural := Obs.Dealer_Showing_Card_Value - 1;
-      Player_Value_Index : Natural;
-      Res : Discrete_Observation_Type;
-   begin
-      if Obs.Player_Sum > 21 then
-         return Discrete_Observation_Type'Last; -- Terminal state for player going bust
-      end if;
-         Player_Value_Index := Boolean'Pos(Obs.Usable_Ace) * 10 + (Obs.Player_Sum - 12); -- 10 for the range 12 .. 21
-      -- if Obs.Usable_Ace then
-      --    Obs.Player_Sum - 12; -- Player sums with a usable ace can be 12-21
-      --    Player_Value_Index := Player_Value_Index + 20; -- Usable ace states come after non-usable ace states
-      -- else 
-      --    Player_Value_Index := Obs.Player_Sum - 2; -- Player sums without a usable ace can be 2-21
-      -- end if;
-      return Discrete_Observation_Type(Player_Value_Index * 10 + Dealer_Value_Index);
-   end;
-
-   -- Env : Environment_Type := Make(Config_Type'(Natural_Win_Reward => SAB, Auto_Hit => True));
-
-   -- Hash Map approach
-   -- function Observation_Hash (Obs : Observation_Type) return Hash_Type is
-   --    Card_Value : Integer := Card_Type'Pos(Obs.Dealer_Showing_Card);
-   --    Ace_Offset : Integer := Boolean'Pos(Obs.Usable_Ace);
-   -- begin
-   --    return Hash_Type(Obs.Player_Sum) xor Hash_Type(Card_Value) xor Hash_Type(Ace_Offset);
-   -- end Observation_Hash;
-   -- 
-   -- package State_Value_Map_Type is new Ada.Containers.Bounded_Hashed_Maps (
-   --       Key_Type => Observation_Type,
-   --       Element_Type => Float, -- TODO
-   --       Hash => Observation_Hash,
-   --       Equivalent_Keys => "=");
-
-   -- State_Value_Map : State_Value_Map_Type.Map(20, Hash_Type(16)); --  := State_Value_Map_Type.Empty_Map;
-
-   type MC_Visit_Type is (First_Visit, Every_Visit);
-   type MC_Config_Type is record
-      Num_Episodes : Integer;
-      Visit_Type : MC_Visit_Type;
-      Discount_Factor : Float := 1.0;
-   end record;
-
-   type Policy_Type is array (Discrete_Observation_Type) of Action_Type;
-   type Value_Function_Type is array(Discrete_Observation_Type) of Float;
-
-   type Mixed_Policy_Type is array (Discrete_Observation_Type, Action_Type) of Float;
-
-   function MC_Policy_Evaluation(Policy : Policy_Type; MC_Config : MC_Config_Type) return Value_Function_Type is
+ 
+package body RL.Algorithms.MC is
+   function MC_Policy_Evaluation(Env_Config : Config_Type; Policy : Policy_Type; MC_Config : MC_Config_Type) return Value_Function_Type is
       type Reward_Tracker_Type is record
          Total_Reward : Float;
          Count : Integer;
@@ -82,14 +23,15 @@ procedure MC_Policy_Evaluation_Example is
          Reward : Float;
       end record;
 
-      type SAR_Array_Type is array (1 .. 21) of SAR_Type;
+      type SAR_Array_Type is array (1 .. Max_Episode_Steps) of SAR_Type;
       SAR_Array : SAR_Array_Type;
 
       V : State_Reward_Tracker_Type := (others => (0.0, 0));
       -- Returns_Sum : array(Observation_Type) of Float := (others => 0.0);
       -- Returns_Count : array(Observation_Type) of Integer := (others => 0);
       -- Obs : Observation_Type;
-      Env : Environment_Type := Make(Config_Type'(Natural_Win_Reward => SAB, Auto_Hit => True));
+      Seed_Reset : Seed_Reset_Type := (Kind => Set_Default);
+      Env : Environment_Type := Make(Env_Config);
       Obs : Observation_Type;
       Step_Output : Step_Return_Type;
       Discrete_Obs : Discrete_Observation_Type;
@@ -137,18 +79,18 @@ procedure MC_Policy_Evaluation_Example is
       end First_Visit_Reward_Update;
    begin
       for Episode in 1 .. MC_Config.Num_Episodes loop
-         Obs := Reset(Env);
+         Obs := Reset(Env, Seed_Reset);
          Discrete_Obs := To_Discrete_Observation(Obs);
          Terminated := False;
          Last_I := 1;
          Cumulative_Reward := 0.0;  -- TODO: What is this?
-         for I in 1 .. 21 loop
+         for I in 1 .. Max_Episode_Steps loop
             Action := Policy(Discrete_Obs);
             Step_Output := Step(Env, Action);
-            SAR_Array(I) := (State => Discrete_Obs, Action => Action, Reward => Step_Output.Reward);
-            Discrete_Obs := To_Discrete_Observation(Step_Output.Observation);
+            SAR_Array(I) := (State => Discrete_Obs, Action => Action, Reward => Get_Reward(Step_Output));
+            Discrete_Obs := To_Discrete_Observation(Get_Observation(Step_Output));
             Last_I := I;
-            Terminated := Step_Output.Terminated;
+            Terminated := Get_Terminated(Step_Output);
             exit when Terminated;
          end loop;
 
@@ -179,19 +121,8 @@ procedure MC_Policy_Evaluation_Example is
       
    end MC_Policy_Evaluation;
    
-   MC_PE_Config : MC_Config_Type := (Num_Episodes => 50 * 1000000, Visit_Type => First_Visit, Discount_Factor => 1.0);
-   Temp_Policy : Policy_Type := (others => Stick); -- IN PROGRESS: This is a pretty bad policy, need to implement a better one
-   Value_Function : Value_Function_Type;
-   Stick_Level : constant Natural := 17;
-  
-   type State_Action_Value_Type is array (Discrete_Observation_Type, Action_Type) of Float;
-   type Evaluation_Results_Type is record
-      Q: State_Action_Value_Type;
-      Policy : Policy_Type;
-   end record;
-
    -- TODO: Should we use MC_Config_Type?  We might not want to allow the Every_Visit option.
-   function MC_Exploring_Starts_Evaluation(MC_Config : MC_Config_Type) return Evaluation_Results_Type is
+   function MC_Exploring_Starts_Evaluation(Env_Config : Config_Type; MC_Config : MC_Config_Type) return Evaluation_Results_Type is
       type Reward_Tracker_Type is record
          Total_Reward : Long_Float;  -- TODO: Using Long_Float to see what happens
          Count : Integer;
@@ -206,7 +137,7 @@ procedure MC_Policy_Evaluation_Example is
          Reward : Float;
       end record;
 
-      type SAR_Array_Type is array (1 .. 21) of SAR_Type;
+      type SAR_Array_Type is array (1 .. Max_Episode_Steps) of SAR_Type;
       SAR_Array : SAR_Array_Type;
    
       package Action_Random is new Ada.Numerics.Discrete_Random(Result_Subtype => Action_Type);
@@ -219,10 +150,11 @@ procedure MC_Policy_Evaluation_Example is
       State_Encountered_Flag : State_Encountered_Flag_Type;
 
       Prev_Policy : Policy_Type;
-      Policy : Policy_Type := (others => Stick);
+      Policy : Policy_Type := (others => Action_Type'First);
       Q : State_Action_Value_Type := (others => (others => 0.0));
       
-      Env : Environment_Type := Make(Config_Type'(Natural_Win_Reward => SAB, Auto_Hit => True));
+      Env : Environment_Type := Make(Env_Config);
+      Seed_Reset : Seed_Reset_Type := (Kind => Set_Default);
       Obs : Observation_Type;
       Step_Output : Step_Return_Type;
       Discrete_Obs : Discrete_Observation_Type;
@@ -288,30 +220,30 @@ procedure MC_Policy_Evaluation_Example is
          -- Initialize Env and select a random action.
          -- TODO: Random selection of env and action might need to be generalized
          State_Encountered_Flag := (others => False);
-         Obs := Reset(Env);
+         Obs := Reset(Env, Seed_Reset);
          Action := Action_Random.Random(Action_Gen);
 
          -- Process the first action
          Discrete_Obs := To_Discrete_Observation(Obs);
          Step_Output := Step(Env, Action);
-         SAR_Array(1) := (State => Discrete_Obs, Action => Action, Reward => Step_Output.Reward);
+         SAR_Array(1) := (State => Discrete_Obs, Action => Action, Reward => Get_Reward(Step_Output));
          State_Encountered_Flag(Discrete_Obs) := True;
          Last_I := 1;
-         Terminated := Step_Output.Terminated;
+         Terminated := Get_Terminated(Step_Output);
 
          if not Terminated then
-            Discrete_Obs := To_Discrete_Observation(Step_Output.Observation);
+            Discrete_Obs := To_Discrete_Observation(Get_Observation(Step_Output));
 
             -- Simulate as before starting from step 2
-            for I in 2 .. 21 loop
+            for I in 2 .. Max_Episode_Steps loop
                Action := Policy(Discrete_Obs);
                Step_Output := Step(Env, Action);
-               SAR_Array(I) := (State => Discrete_Obs, Action => Action, Reward => Step_Output.Reward);
+               SAR_Array(I) := (State => Discrete_Obs, Action => Action, Reward => Get_Reward(Step_Output));
                State_Encountered_Flag(Discrete_Obs) := True;
                Last_I := I;
-               Terminated := Step_Output.Terminated;
+               Terminated := Get_Terminated(Step_Output);
                exit when Terminated;
-               Discrete_Obs := To_Discrete_Observation(Step_Output.Observation);
+               Discrete_Obs := To_Discrete_Observation(Get_Observation(Step_Output));
             end loop;
          end if;
 
@@ -348,21 +280,10 @@ procedure MC_Policy_Evaluation_Example is
       return Evaluation_Results_Type'(Q => Q, Policy => Policy);
    end MC_Exploring_Starts_Evaluation;
    
-   Evaluation_Results: Evaluation_Results_Type;
-   
-   type MC_Epsilon_Soft_Config_Type is record
-      Num_Episodes : Integer;
-      -- Visit_Type : MC_Visit_Type;
-      Discount_Factor : Float := 1.0;
-      Epsilon : Float;
-   end record;
-   
-   MC_Epsilon_Soft_Config : MC_Epsilon_Soft_Config_Type := (Num_Episodes => 5 * 1000000, Discount_Factor => 1.0, Epsilon => 0.05);
-
    -- IN PROGRESS: Should we use MC_Config_Type
    -- TODO: Should we add a condition so that 1/Action_Count <= 1 - epsilon 
    --       (which is equivalent to epsilon <= 1 - 1/Action_Count).
-   function MC_Epsilon_Soft_Evaluation(MC_Config : MC_Epsilon_Soft_Config_Type) return Evaluation_Results_Type is
+   function MC_Epsilon_Soft_Evaluation(Env_Config : Config_Type; MC_Config : MC_Epsilon_Soft_Config_Type) return Evaluation_Results_Type is
       type Reward_Tracker_Type is record
          Total_Reward : Long_Float;  -- TODO: Using Long_Float to see what happens
          Count : Integer;
@@ -377,7 +298,7 @@ procedure MC_Policy_Evaluation_Example is
          Reward : Float;
       end record;
 
-      type SAR_Array_Type is array (1 .. 21) of SAR_Type;
+      type SAR_Array_Type is array (1 .. Max_Episode_Steps) of SAR_Type;
       SAR_Array : SAR_Array_Type;
   
       package Unif_Random renames Ada.Numerics.Float_Random;
@@ -420,7 +341,8 @@ procedure MC_Policy_Evaluation_Example is
       Mixed_Policy : Mixed_Policy_Type := (others => (others => 1.0 / Float(Action_Count)));  -- TODO: Is this what we want?
       Q : State_Action_Value_Type := (others => (others => 0.0));
       
-      Env : Environment_Type := Make(Config_Type'(Natural_Win_Reward => SAB, Auto_Hit => True));
+      Env : Environment_Type := Make(Env_Config);
+      Seed_Reset : Seed_Reset_Type := (Kind => Set_Default);
       Obs : Observation_Type;
       Step_Output : Step_Return_Type;
       Discrete_Obs : Discrete_Observation_Type;
@@ -502,19 +424,19 @@ procedure MC_Policy_Evaluation_Example is
       for Episode in 1 .. MC_Config.Num_Episodes loop
          -- Initialize Env and select a random action.
          State_Encountered_Flag := (others => False);
-         Obs := Reset(Env);
+         Obs := Reset(Env, Seed_Reset);
          for I in 1 .. 21 loop
             Discrete_Obs := To_Discrete_Observation(Obs);
             Action := Get_Random_Action(Mixed_Policy, Discrete_Obs);
             -- Put_Line("Using action: " & Action_Type'Image(Action));  -- TODO Verbose
             Step_Output := Step(Env, Action);
-            SAR_Array(I) := (State => Discrete_Obs, Action => Action, Reward => Step_Output.Reward);
+            SAR_Array(I) := (State => Discrete_Obs, Action => Action, Reward => Get_Reward(Step_Output));
             Last_I := I;
             State_Encountered_Flag(Discrete_Obs) := True;
-            Terminated := Step_Output.Terminated;
+            Terminated := Get_Terminated(Step_Output);
             exit when Terminated;
             -- Set state to next state
-            Discrete_Obs := To_Discrete_Observation(Step_Output.Observation);
+            Discrete_Obs := To_Discrete_Observation(Get_Observation(Step_Output));
          end loop;
 
          -- For first occurrent of state s and action a, record total reward
@@ -552,107 +474,4 @@ procedure MC_Policy_Evaluation_Example is
       return Evaluation_Results_Type'(Q => Q, Policy => Greedy_Policy);
    end MC_Epsilon_Soft_Evaluation;
 
-   procedure Print_Evaluation_Results(Evaluation_Results: Evaluation_Results_Type) is
-   begin
-      for Temp_Useable_Ace in 0 .. 1 loop
-         Put_Line("Usable Ace: " & Boolean'Image(Boolean'Val(Temp_Useable_Ace)));
-         Put("    ");
-         for Temp_Dealer_Showing_Value in 1 .. 10 loop
-            Put(Temp_Dealer_Showing_Value, Width => 8);
-         end loop;
-         New_Line;
-
-         for Temp_Player_Sum in 12 .. 21 loop
-            Put(Temp_Player_Sum, Width => 2);
-            Put(": ");
-            for Temp_Dealer_Showing_Value in 1 .. 10 loop
-               declare
-                  A : Action_Type := Evaluation_Results.Policy(
-                     Discrete_Observation_Type(Temp_Useable_Ace * 10 * 10 + (Temp_Player_Sum - 12) * 10 + (Temp_Dealer_Showing_Value - 1))
-                  );
-               begin
-                  case A is
-                     when HIT =>
-                        Put("     HIT");
-                     when STICK =>
-                        Put("   STICK");
-                  end case;
-               end;
-            end loop;
-            New_Line;
-         end loop;
-      end loop;
-   end Print_Evaluation_Results;
-begin
-   for Temp_Useable_Ace in 0 .. 1 loop
-      for Temp_Player_Sum in 12 .. 21 loop
-         for Temp_Dealer_Showing_Value in 1 .. 10 loop
-            declare
-               Temp_I : Discrete_Observation_Type := Discrete_Observation_Type(Temp_Useable_Ace * 10 * 10 + (Temp_Player_Sum - 12) * 10 + (Temp_Dealer_Showing_Value - 1));
-            begin
-               if Temp_Player_Sum < Stick_Level then
-                  Temp_Policy(Temp_I) := Hit;
-               else
-                  Temp_Policy(Temp_I) := Stick;
-               end if;
-            end;
-         end loop;
-      end loop;
-   end loop;
-   Put_Line("Starting Monte Carlo Policy Evaluation");
-   Put_Line("Last element of Discrete_Observation_Type: " & Discrete_Observation_Type'Image(Discrete_Observation_Type'Last));
-   -- Put_Line("Last element of Discrete_Observation_Type2: " & Discrete_Observation_Type2'Image(Discrete_Observation_Type2'Last));
-   -- Put_Line("Element after last element of Discrete_Observation_Type2: " & Discrete_Observation_Type2'Image(Discrete_Observation_Type2'Succ(Discrete_Observation_Type2'Last)));
-   Value_Function := MC_Policy_Evaluation(Temp_Policy, MC_PE_Config);
-   for S in Discrete_Observation_Type loop
-      Put_Line("Value for state " & Discrete_Observation_Type'Image(S) & ": " & Float'Image(Value_Function(S)));
-   end loop;
-   -- Put_Line(State_Value_Map.Is_Empty'Image);
-   -- for I in 2 .. 21 loop
-   --    State_Value_Map.Insert(
-   --       Key => Observation_Type'(Player_Sum => I, Dealer_Showing_Card => Card_Type'First, Usable_Ace => False),
-   --       New_Item => Float(I));
-   -- end loop;
-   -- for I in 2 .. 21 loop
-   --    declare
-   --       Value : Float;
-   --    begin
-   --       Value := State_Value_Map.Element(
-   --          Observation_Type'(Player_Sum => I, Dealer_Showing_Card => Card_Type'First, Usable_Ace => False)
-   --       );
-   --       Put_Line("Value for player sum " & Integer'Image(I) & ": " & Float'Image(Value));
-   --    end;
-   -- end loop;
-   Put_Line("Policy Evaluation Results (100 * Reward):");
-   for Temp_Useable_Ace in 0 .. 1 loop
-      Put_Line("Usable Ace: " & Boolean'Image(Boolean'Val(Temp_Useable_Ace)));
-      Put("    ");
-      for Temp_Dealer_Showing_Value in 1 .. 10 loop
-         Put(Temp_Dealer_Showing_Value, Width => 8);
-      end loop;
-      New_Line;
-
-      for Temp_Player_Sum in 12 .. 21 loop
-         Put(Temp_Player_Sum, Width => 2);
-         Put(": ");
-         for Temp_Dealer_Showing_Value in 1 .. 10 loop
-            Put(100.0 * Value_Function(Discrete_Observation_Type(Temp_Useable_Ace * 10 * 10 + (Temp_Player_Sum - 12) * 10 + (Temp_Dealer_Showing_Value - 1))), Fore => 5, Aft => 2, Exp => 0);
-         end loop;
-         New_Line;
-      end loop;
-   end loop;
-
-   -- TODO: The results don't seem to match the book perfectly, even when using
-   --       50 million episodes.  This implementation will need to be reviewed.
-   -- Evaluation_Results_Type 
-   Put_Line("MC Exploring Starts");
-   Put_Line("Number of episodes: " & Integer'Image(MC_PE_Config.Num_Episodes));
-   Evaluation_Results := MC_Exploring_Starts_Evaluation(MC_PE_Config);
-   Print_Evaluation_Results(Evaluation_Results);
-
-   -- Put_Line("MC Epsilon Soft on-policy evaluation");
-   -- Put_Line("Number of episodes: " & Integer'Image(MC_Epsilon_Soft_Config.Num_Episodes));
-   -- Evaluation_Results := MC_Epsilon_Soft_Evaluation(MC_Epsilon_Soft_Config);
-   -- Print_Evaluation_Results(Evaluation_Results);
-
-end MC_Policy_Evaluation_Example;
+end RL.Algorithms.MC;
