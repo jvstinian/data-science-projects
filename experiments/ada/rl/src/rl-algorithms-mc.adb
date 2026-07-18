@@ -142,10 +142,10 @@ package body RL.Algorithms.MC is
       Action : Action_Type;
       Terminated : Boolean;
       Last_I : Natural;
-      Stable : Boolean;
  
       procedure First_Visit_Reward_Update(Q_Tracker: in out State_Action_Reward_Tracker_Type; SAR_Array_Input : SAR_Array_Type; Last_I : Natural) is
-         SAR_Array : SAR_Array_Type := SAR_Array_Input; -- A local copy to avoid specifying "in out" for the array parameter
+         -- A local copy to avoid specifying "in out" for the array parameter
+         SAR_Array : SAR_Array_Type := SAR_Array_Input;
 
          type First_Visit_Array_Type is array(Discrete_Observation_Type) of Natural;
          First_Visit_Array : First_Visit_Array_Type := (others => 0);
@@ -166,7 +166,8 @@ package body RL.Algorithms.MC is
                First_Visit := First_Visit_Array(S);
                A := SAR_Array(First_Visit).Action;
                -- NOTE: SAR_Array(First_Visit).State should equal S
-               Q_Tracker(S, A).Total_Reward := Q_Tracker(S, A).Total_Reward + Long_Float(SAR_Array(First_Visit).Reward);  -- TODO: Using Long_Float
+               -- TODO: Using Long_Float
+               Q_Tracker(S, A).Total_Reward := Q_Tracker(S, A).Total_Reward + Long_Float(SAR_Array(First_Visit).Reward);
                Q_Tracker(S, A).Count        := Q_Tracker(S, A).Count + 1;
             end if;
          end loop;
@@ -236,27 +237,17 @@ package body RL.Algorithms.MC is
             if State_Encountered_Flag(S) then
                for A in Action_Type loop
                   -- if State_Action_Reward_Tracker(S, A).Count) > 0 then -- TODO
-                  Q(S, A) := Float(State_Action_Reward_Tracker(S, A).Total_Reward / Long_Float(State_Action_Reward_Tracker(S, A).Count));  -- TODO: Long_Float
+                  -- TODO: Long_Float
+                  Q(S, A) := Float(State_Action_Reward_Tracker(S, A).Total_Reward / Long_Float(State_Action_Reward_Tracker(S, A).Count));
                   -- end if;
                end loop;
             end if;
          end loop;
          
          -- Use arg max to update policy
-         -- Track whether the policy is stable
          Prev_Policy := Policy;
          Policy := Update_Policy(Q, Prev_Policy, State_Encountered_Flag);
-         -- TODO: Consider exiting when a stable policy is found.
-         -- Stable := True;
-         -- for S in Discrete_Observation_Type loop
-         --    if Policy(S) /= Prev_Policy(S) then
-         --       Stable := False;
-         --    end if;
-         --    exit when not Stable;
-         -- end loop;
-         -- 
-         -- -- Exit when the policy is stable.
-         -- exit when Stable;
+         -- At this time we donn't consider an early exit based on policy stability
       end loop;
       return Evaluation_Results_Type'(Q => Q, Policy => Policy);
    end MC_Exploring_Starts_Evaluation;
@@ -356,7 +347,8 @@ package body RL.Algorithms.MC is
                First_Visit := First_Visit_Array(S);
                A := SAR_Array(First_Visit).Action;
                -- NOTE: SAR_Array(First_Visit).State should equal S
-               Q_Tracker(S, A).Total_Reward := Q_Tracker(S, A).Total_Reward + Long_Float(SAR_Array(First_Visit).Reward);  -- TODO: Using Long_Float
+               -- TODO: Using Long_Float
+               Q_Tracker(S, A).Total_Reward := Q_Tracker(S, A).Total_Reward + Long_Float(SAR_Array(First_Visit).Reward);
                Q_Tracker(S, A).Count        := Q_Tracker(S, A).Count + 1;
             end if;
          end loop;
@@ -406,10 +398,9 @@ package body RL.Algorithms.MC is
          -- Initialize Env and select a random action.
          State_Encountered_Flag := (others => False);
          Obs := Reset(Env, Seed_Reset);
-         for I in 1 .. 21 loop
+         for I in 1 .. Max_Episode_Steps loop
             Discrete_Obs := To_Discrete_Observation(Obs);
             Action := Get_Random_Action(Mixed_Policy, Discrete_Obs);
-            -- Put_Line("Using action: " & Action_Type'Image(Action));  -- TODO Verbose
             Step_Output := Step(Env, Action);
             SAR_Array(I) := (State => Discrete_Obs, Action => Action, Reward => Get_Reward(Step_Output));
             Last_I := I;
@@ -428,31 +419,17 @@ package body RL.Algorithms.MC is
             -- TODO: Do we want to put a conditional on State_Encountered_Flag(S)?
             for A in Action_Type loop
                if State_Action_Reward_Tracker(S, A).Count > 0 then
-                  Q(S, A) := Float(State_Action_Reward_Tracker(S, A).Total_Reward / Long_Float(State_Action_Reward_Tracker(S, A).Count));  -- TODO: Long_Float
-               -- else  -- NOTE: a default of -1, will likely get rid of this as there's no real impact
-               --    Q(S, A) := -1.0;
+                  -- TODO: Long_Float
+                  Q(S, A) := Float(State_Action_Reward_Tracker(S, A).Total_Reward / Long_Float(State_Action_Reward_Tracker(S, A).Count));
                end if;
             end loop;
          end loop;
          
          -- Use arg max to update policy
-         -- Track whether the policy is stable
-         -- Prev_Policy := Policy;
          Greedy_Policy := Best_Policy(Q);
          Mixed_Policy := Epsilon_Soft_Policy_Update (MC_Config, Mixed_Policy, Greedy_Policy, State_Encountered_Flag);
          -- TODO: Consider what an exit for an epsilon-soft on-policy evaluation might look like.
-         -- Stable := True;
-         -- for S in Discrete_Observation_Type loop
-         --    if Policy(S) /= Prev_Policy(S) then
-         --       Stable := False;
-         --    end if;
-         --    exit when not Stable;
-         -- end loop;
-         -- 
-         -- -- Exit when the policy is stable.
-         -- exit when Stable;
       end loop;
       return Evaluation_Results_Type'(Q => Q, Policy => Greedy_Policy);
    end MC_Epsilon_Soft_Evaluation;
-
 end RL.Algorithms.MC;

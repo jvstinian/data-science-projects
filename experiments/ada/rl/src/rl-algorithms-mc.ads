@@ -30,8 +30,6 @@ package RL.Algorithms.MC is
    type Policy_Type is array (Discrete_Observation_Type) of Action_Type;
    type Value_Function_Type is array(Discrete_Observation_Type) of Float;
 
-   type Mixed_Policy_Type is array (Discrete_Observation_Type, Action_Type) of Float;
-   
    type State_Action_Value_Type is array (Discrete_Observation_Type, Action_Type) of Float;
    type Evaluation_Results_Type is record
       Q: State_Action_Value_Type;
@@ -48,5 +46,6 @@ package RL.Algorithms.MC is
    function MC_Policy_Evaluation(Env_Config : Config_Type; Policy : Policy_Type; MC_Config : MC_Config_Type) return Value_Function_Type;
    function MC_Exploring_Starts_Evaluation(Env_Config : Config_Type; MC_Config : MC_Config_Type) return Evaluation_Results_Type;
    function MC_Epsilon_Soft_Evaluation(Env_Config : Config_Type; MC_Config : MC_Epsilon_Soft_Config_Type) return Evaluation_Results_Type;
-
+private
+   type Mixed_Policy_Type is array (Discrete_Observation_Type, Action_Type) of Float;
 end RL.Algorithms.MC;

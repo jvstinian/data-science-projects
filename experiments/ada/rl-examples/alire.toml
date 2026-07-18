@@ -10,6 +10,7 @@ website = ""
 tags = ["rl", "algorithms"]
 
 executables = ["rl-examples", "frozenlake-example",
+               "mc_policy_evaluation_example",
                "policy_iteration_example", "value_iteration_example",
                "td_example", "eligibility_trace_example",
                "cartpole-main" ]

@@ -1,7 +1,8 @@
 with Ada.Text_IO; use Ada.Text_IO;
 with Ada.Integer_Text_IO; use Ada.Integer_Text_IO;
 with Ada.Float_Text_IO; use Ada.Float_Text_IO;
-with Blackjack; use Blackjack;
+with RL; use RL;
+with RL.Envs.Blackjack; use RL.Envs.Blackjack;
 with Ada.Containers; use Ada.Containers;
 with Ada.Containers.Bounded_Hashed_Maps;
 with Ada.Numerics.Discrete_Random;
@@ -90,6 +91,7 @@ procedure MC_Policy_Evaluation_Example is
       -- Returns_Count : array(Observation_Type) of Integer := (others => 0);
       -- Obs : Observation_Type;
       Env : Environment_Type := Make(Config_Type'(Natural_Win_Reward => SAB, Auto_Hit => True));
+      Seed_Reset : Seed_Reset_Type := (Kind => Set_Default);
       Obs : Observation_Type;
       Step_Output : Step_Return_Type;
       Discrete_Obs : Discrete_Observation_Type;
@@ -135,9 +137,10 @@ procedure MC_Policy_Evaluation_Example is
             end if;
          end loop;
       end First_Visit_Reward_Update;
+
    begin
       for Episode in 1 .. MC_Config.Num_Episodes loop
-         Obs := Reset(Env);
+         Obs := Reset(Env, Seed_Reset);
          Discrete_Obs := To_Discrete_Observation(Obs);
          Terminated := False;
          Last_I := 1;
@@ -223,6 +226,7 @@ procedure MC_Policy_Evaluation_Example is
       Q : State_Action_Value_Type := (others => (others => 0.0));
       
       Env : Environment_Type := Make(Config_Type'(Natural_Win_Reward => SAB, Auto_Hit => True));
+      Seed_Reset : Seed_Reset_Type := (Kind => Set_Default);
       Obs : Observation_Type;
       Step_Output : Step_Return_Type;
       Discrete_Obs : Discrete_Observation_Type;
@@ -288,7 +292,7 @@ procedure MC_Policy_Evaluation_Example is
          -- Initialize Env and select a random action.
          -- TODO: Random selection of env and action might need to be generalized
          State_Encountered_Flag := (others => False);
-         Obs := Reset(Env);
+         Obs := Reset(Env, Seed_Reset);
          Action := Action_Random.Random(Action_Gen);
 
          -- Process the first action
@@ -322,9 +326,9 @@ procedure MC_Policy_Evaluation_Example is
          for S in Discrete_Observation_Type loop
             if State_Encountered_Flag(S) then
                for A in Action_Type loop
-                  -- if State_Action_Reward_Tracker(S, A).Count) > 0 then -- TODO
-                  Q(S, A) := Float(State_Action_Reward_Tracker(S, A).Total_Reward / Long_Float(State_Action_Reward_Tracker(S, A).Count));  -- TODO: Long_Float
-                  -- end if;
+                  if State_Action_Reward_Tracker(S, A).Count > 0 then -- TODO
+                     Q(S, A) := Float(State_Action_Reward_Tracker(S, A).Total_Reward / Long_Float(State_Action_Reward_Tracker(S, A).Count));  -- TODO: Long_Float
+                  end if;
                end loop;
             end if;
          end loop;
@@ -421,6 +425,7 @@ procedure MC_Policy_Evaluation_Example is
       Q : State_Action_Value_Type := (others => (others => 0.0));
       
       Env : Environment_Type := Make(Config_Type'(Natural_Win_Reward => SAB, Auto_Hit => True));
+      Seed_Reset : Seed_Reset_Type := (Kind => Set_Default);
       Obs : Observation_Type;
       Step_Output : Step_Return_Type;
       Discrete_Obs : Discrete_Observation_Type;
@@ -502,7 +507,7 @@ procedure MC_Policy_Evaluation_Example is
       for Episode in 1 .. MC_Config.Num_Episodes loop
          -- Initialize Env and select a random action.
          State_Encountered_Flag := (others => False);
-         Obs := Reset(Env);
+         Obs := Reset(Env, Seed_Reset);
          for I in 1 .. 21 loop
             Discrete_Obs := To_Discrete_Observation(Obs);
             Action := Get_Random_Action(Mixed_Policy, Discrete_Obs);
