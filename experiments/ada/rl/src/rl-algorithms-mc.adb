@@ -236,10 +236,10 @@ package body RL.Algorithms.MC is
          for S in Discrete_Observation_Type loop
             if State_Encountered_Flag(S) then
                for A in Action_Type loop
-                  -- if State_Action_Reward_Tracker(S, A).Count) > 0 then -- TODO
-                  -- TODO: Long_Float
-                  Q(S, A) := Float(State_Action_Reward_Tracker(S, A).Total_Reward / Long_Float(State_Action_Reward_Tracker(S, A).Count));
-                  -- end if;
+                  if State_Action_Reward_Tracker(S, A).Count > 0 then -- TODO
+                     -- TODO: Long_Float
+                     Q(S, A) := Float(State_Action_Reward_Tracker(S, A).Total_Reward / Long_Float(State_Action_Reward_Tracker(S, A).Count));
+                  end if;
                end loop;
             end if;
          end loop;

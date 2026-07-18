@@ -1,10 +1,10 @@
 
 generic
-   type Config_Type is (<>);
-   type Environment_Type is (<>);
+   type Config_Type is private;
+   type Environment_Type (<>) is limited private;
    type Action_Type is (<>);
    type Step_Return_Type is private;
-   type Observation_Type is (<>);
+   type Observation_Type is private;
    type Discrete_Observation_Type is (<>);
 
    Max_Episode_Steps : Positive;
