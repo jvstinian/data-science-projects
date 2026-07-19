@@ -10,7 +10,7 @@ add_compile_options(-Wall -Wextra)
 
 # Library
 add_library(rllib
-    src/line_walk.c
+    src/linewalk.c
 )
 
 # Includes

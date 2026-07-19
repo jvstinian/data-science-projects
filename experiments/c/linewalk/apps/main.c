@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "line_walk.h"
+#include "envs/linewalk.h"
 
 
 int main() {
