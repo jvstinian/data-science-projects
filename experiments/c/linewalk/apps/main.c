@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "envs/linewalk.h"
+#include "reinforcementlearning/envs/linewalk.h"
 
 
 int main() {
