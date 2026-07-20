@@ -4,6 +4,7 @@
 #include <string.h> /* memset */
 #include <alloca.h>
 #include <time.h> /* For setting the RNG */
+#include <float.h> /* FLT_MAX */
 #include <math.h> /* abs */
 
 #if defined(__STDC__) && !defined(__STDC_VERSION__)
@@ -446,6 +447,166 @@ int iterative_policy_evaluation(struct DiscreteModelType* model, float (*policy)
     return iteration_count;
 }
 
+int iterative_deterministic_policy_evaluation(
+    struct DiscreteModelType* model, enum ActionType* dpolicy, float df, float *value_array
+) {
+    unsigned int num_states = model->num_states;
+
+    /* We assume the value_array has been initialized prior to calling
+     * the method */
+    float theta = 1.0e-6; /* Convergence threshold */
+    float local_delta = 0.0;
+
+    float prev_value;
+    float new_value;
+
+    unsigned int s, s1;
+    enum ActionType a;
+    struct TransitionProbabilityType trprob;
+
+    int iteration_count = 0;
+    
+    while (1) {
+        iteration_count += 1;
+        /* printf("Iteration %d\n", iteration_count); */
+
+        local_delta = 0.0;
+        for (s = 0; s < num_states;  s++) {
+            prev_value = value_array[s];
+            a = dpolicy[s];
+            new_value = 0.0;
+            for (s1 = 0; s1 < num_states;  s1++) {
+                trprob = frozenlake_get_transition(model, s, a, s1);
+                new_value += trprob.probability * (trprob.reward + df * value_array[s1]);
+            }
+            value_array[s] = new_value;
+            local_delta = fmaxf(local_delta, fabsf(new_value - prev_value));
+        }
+        if (local_delta < theta) {
+            break;
+        }
+    }
+    return iteration_count;
+}
+   
+static void print_policy(const enum ActionType* dpolicy, unsigned int num_states) {
+    unsigned int s;
+    enum ActionType a;
+
+    const char* action_names[ACTION_COUNT] = { 
+        "LEFT", "DOWN", "RIGHT", "UP"
+    };
+
+    printf("Policy: \n");
+    for (s = 0; s < num_states; s++) {
+        a = dpolicy[s];
+        printf("%d: %s\n", s, action_names[a]);
+    }
+}
+
+size_t arg_max(float* values, size_t length) {
+    float max_value = -FLT_MAX;
+    size_t best_idx = 0;
+    size_t i;
+
+    for (i = 0; i < length; i++) {
+        if (values[i] > max_value) {
+            max_value = values[i];
+            best_idx = i;
+        }
+    }
+    return best_idx;
+}
+
+/* TODO: Consider changing the name to "_given_init" */
+int policy_iteration_with_init(
+    struct DiscreteModelType* model, float df, float *value_array, enum ActionType* dpolicy
+) {
+    /* Init_Value_Func : Value_Function_Type;
+     * Init_Policy : Deterministic_Policy_Type
+      type Action_Value_Array_Type is array (Action_Type) of Float;
+
+      Value_Function : Value_Function_Type := Init_Value_Func;
+      Policy : Deterministic_Policy_Type := Init_Policy;
+     */
+    unsigned int num_states = model->num_states;
+
+    Boolean stable;
+
+    unsigned int s, s1;
+    enum ActionType a;
+
+    enum ActionType prev_action;
+    float action_values[ACTION_COUNT];
+
+    struct TransitionProbabilityType trprob;
+
+    int iteration_count = 0;
+
+    while (1) {
+        iteration_count += iterative_deterministic_policy_evaluation(model, dpolicy, df, value_array);
+   
+        stable = TRUE;
+
+        for (s = 0; s < num_states; s++) {
+            /* For state S, record the value of each action in Action_Values. */
+            for (a = 0; a < ACTION_COUNT; a++) {
+                action_values[a] = 0.0;
+                for (s1 = 0; s1 < num_states; s1++) {
+                    trprob = frozenlake_get_transition(model, s, a, s1);
+                    action_values[a] += trprob.probability * (trprob.reward + df * value_array[s1]);
+                }
+            }
+            /* Get the arg max */
+            prev_action = dpolicy[s];
+            dpolicy[s] = (enum ActionType) arg_max(action_values, ACTION_COUNT);
+            if (dpolicy[s] != prev_action) {
+               stable = FALSE;
+            }
+        }
+        if (stable) {
+            break;
+        }
+    }
+    return iteration_count;
+}
+
+/* TODO: We need to pass value_array and dpolicy */
+int policy_iteration(
+    struct DiscreteModelType* model, float df, int* num_iterations
+) {
+    /* Reset seed */
+    srand(time(NULL));
+    
+    unsigned int num_states = model->num_states;
+
+    unsigned int s;
+
+    float* value_array = malloc(num_states * sizeof(float));
+    if (value_array == NULL) {
+        fprintf(stderr, "policy_iteration: could not allocate state value array");
+        return 1;
+    }
+    /* Initialize value function to 0 */
+    memset(value_array, 0, sizeof(float) * num_states);
+
+    enum ActionType* dpolicy = malloc(num_states * sizeof(enum ActionType));
+    if (dpolicy == NULL) {
+        fprintf(stderr, "policy_iteration: could not allocate deterministic policy array");
+        free(value_array);
+        return 2;
+    }
+
+    /* Initialize policy using uniform distribution over actions */
+    for (s = 0; s < num_states; s++) {
+        dpolicy[s] = get_random_action();
+    }
+
+    print_policy(dpolicy, num_states);  /* TODO: Remove after debugging */
+    *num_iterations = policy_iteration_with_init(model, df, value_array, dpolicy);
+    return 0;
+}
+
 int main() {
     struct EnvironmentConfig config = { MAP_4X4, FALSE };
     struct EnvironmentState state;
@@ -527,6 +688,141 @@ int main() {
         printf("Value function for state %u: %f\n", s, value_array[s]);
     }
 
+    frozenlake_model_destroy(&model);
+
+    printf("Value Iteration: \n");
+    if (frozenlake_value_iteration_example(config, 0.9)) {
+        return 1;
+    }
+    return 0;
+}
+
+
+static float max_value(float* action_values) {
+    float maxval = -FLT_MAX;
+    enum ActionType a;
+
+    for (a = 0; a < ACTION_COUNT; a++) {
+        if (action_values[a] > maxval) {
+            maxval = action_values[a];
+        }
+    }
+    return maxval;
+}
+   
+static void get_action_values_for_state(struct DiscreteModelType* model, unsigned int s, const float* value_function, float df, float* action_values_out) {
+    float new_value;
+    unsigned int s1;
+    enum ActionType a;
+    struct TransitionProbabilityType trprob;
+
+    unsigned int num_states = model->num_states;
+
+    for (a = 0; a < ACTION_COUNT; a++) {
+        new_value = 0.0;
+        for (s1 = 0; s1 < num_states; s1++) {
+            trprob = frozenlake_get_transition(model, s, a, s1);
+            new_value += trprob.probability * (trprob.reward + df * value_function[s1]);
+        }
+        action_values_out[a] = new_value;
+    }
+}
+
+/* TODO: Perhaps return number of iterations? */
+static void value_max_action_update(struct DiscreteModelType* model, float df, float* value_function_out) {
+    /* Value_Function: Value_Function_Type := (others => 0.0); */
+    unsigned int num_states = model->num_states;
+
+    /* Overwrite value function with 0s */
+    memset(value_function_out, 0, num_states * sizeof(float));
+
+    unsigned int s;
+
+    float theta = 1.0e-6;  /* Convergence threshold */
+    float local_delta = 0.0;
+
+    float prev_value;
+    float new_value;
+    float next_values[ACTION_COUNT];
+
+    int iteration_count = 0;
+
+    while (1) {
+        iteration_count++;
+        printf("Iteration %d", iteration_count); /* TODO: Remove */
+
+        local_delta = 0.0;
+        for (s = 0; s < num_states; s++) {
+            prev_value = value_function_out[s];
+            get_action_values_for_state(model, s, value_function_out, df, next_values);
+            new_value = max_value(next_values);
+            value_function_out[s] = new_value;
+            local_delta = fmaxf(local_delta, fabsf(new_value - prev_value));
+        }
+        if (local_delta < theta) {
+            break;
+        }
+    }
+}
+ 
+int value_iteration(struct DiscreteModelType* model, float df, enum ActionType* dpolicy_out) {
+    unsigned int num_states = model->num_states;
+    unsigned int s;
+
+    for (s=0; s < num_states; s++) {
+        /* Initialize to random policy */
+        dpolicy_out[s] = get_random_action();
+    }
+    
+    /* Local values */
+    /* TODO: Consider returning value as well */
+    float* value_function = malloc(num_states * sizeof(float));
+    if (value_function == NULL) {
+        fprintf(stderr, "value_iteration: error allocating state value array");
+        return 1;
+    }
+
+    float action_values[ACTION_COUNT];
+
+    print_policy(dpolicy_out, num_states);  /* TODO: Remove after debugging */
+    value_max_action_update(model, df, value_function);
+
+    for (s=0; s < num_states; s++) {
+        get_action_values_for_state(model, s, value_function, df, action_values);
+        dpolicy_out[s] = (enum ActionType) arg_max(action_values, ACTION_COUNT);
+    }
+    return 0;
+}
+
+int frozenlake_value_iteration_example(struct EnvironmentConfig config, float df) {
+    struct DiscreteModelType model;
+
+    if (frozenlake_model_create(config, &model)) {
+        return 1;
+    }
+
+    unsigned int num_states = model.num_states;
+
+    enum ActionType* optimal_dpolicy_out = malloc(num_states * sizeof(enum ActionType));
+    if (optimal_dpolicy_out == NULL) {
+        fprintf(stderr, "frozenlake_value_iteration_example: could not allocate deterministic policy");
+        frozenlake_model_destroy(&model);
+        return 2;
+    }
+
+    /* Reset the seed */
+    srand(time(NULL));
+
+    if (value_iteration(&model, df, optimal_dpolicy_out)) {
+        fprintf(stderr, "frozenlake_value_iteration_example: error running value_iteration");
+        free(optimal_dpolicy_out);
+        frozenlake_model_destroy(&model);
+        return 3;
+    }
+
+    print_policy(optimal_dpolicy_out, num_states);
+
+    free(optimal_dpolicy_out);
     frozenlake_model_destroy(&model);
     return 0;
 }
