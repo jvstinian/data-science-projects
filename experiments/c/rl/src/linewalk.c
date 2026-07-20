@@ -1,4 +1,4 @@
-#include "line_walk.h"
+#include "reinforcementlearning/envs/linewalk.h"
 #include <stdio.h>
 #include <stdlib.h>
 

@@ -27,6 +27,12 @@ package RL.Algorithms.DP is
    function Iterative_Policy_Evaluation(Model : DP_Model_Type; Policy : Deterministic_Policy_Type; Discount_Factor : Float; Value_Estimate : Value_Function_Type) return Value_Function_Type;
    
    procedure Print_Policy(Policy : Deterministic_Policy_Type);
-   -- function Policy_Iteration(Model : DP_Model_Type; Discount_Factor : Float) return Deterministic_Policy_Type;
    function Policy_Iteration(Model : DP_Model_Type; Discount_Factor : Float) return Deterministic_Policy_Type;
+
+private
+   function Policy_Iteration_With_Init(
+      Model : DP_Model_Type; Discount_Factor : Float;
+      Init_Value_Func : Value_Function_Type;
+      Init_Policy : Deterministic_Policy_Type
+   ) return Deterministic_Policy_Type;
 end RL.Algorithms.DP;
