@@ -83,6 +83,10 @@ void frozenlake_model_destroy(const struct DiscreteModelType* model);
 struct TransitionProbabilityType frozenlake_get_transition(const struct DiscreteModelType* model, unsigned int s, enum ActionType action, unsigned int next_s);
 
 int iterative_policy_evaluation(struct DiscreteModelType* model, float (*policy)[ACTION_COUNT], float df, float *value_array);
+int iterative_deterministic_policy_evaluation(struct DiscreteModelType* model, enum ActionType* dpolicy, float df, float *value_array);
+
+int value_iteration(struct DiscreteModelType* model, float df, enum ActionType* dpolicy_out);
+int frozenlake_value_iteration_example(struct EnvironmentConfig config, float df);
 
 int main();
     

@@ -9,12 +9,12 @@ set(CMAKE_C_EXTENSIONS OFF)
 add_compile_options(-Wall -Wextra)
 
 # Library
-add_library(rllib
-    src/line_walk.c
+add_library(reinforcementlearning
+    src/linewalk.c
 )
 
 # Includes
-target_include_directories(rllib
+target_include_directories(reinforcementlearning
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -28,7 +28,7 @@ add_executable(rl_examples
 )
 
 # Link executable
-target_link_libraries(rl_examples PRIVATE rllib)
+target_link_libraries(rl_examples PRIVATE reinforcementlearning)
 
 # Testing
 enable_testing()
@@ -36,12 +36,12 @@ enable_testing()
 add_executable(test_core
     tests/test_example.c
 )
-target_link_libraries(test_core PRIVATE rllib check)
+target_link_libraries(test_core PRIVATE reinforcementlearning check)
 add_test(NAME run_test_core COMMAND test_core)
 
 # Install
 include(GNUInstallDirs)
-install(TARGETS rllib rl_examples)
+install(TARGETS reinforcementlearning rl_examples)
 
 install(DIRECTORY include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
