@@ -20,8 +20,8 @@ float rand_float() {
     return (float)rand() / (float)RAND_MAX;
 };
 
-enum FrozenlakeAction get_random_action() {
-    return (enum FrozenlakeAction) rand() % ACTION_COUNT;
+enum FrozenlakeAction frozenlake_get_random_action() {
+    return (enum FrozenlakeAction) rand() % FROZENLAKE_ACTION_COUNT;
 };
 
 enum MapElement {
@@ -88,7 +88,7 @@ struct TransitionType {
     Boolean terminated;
 };
 
-typedef struct TransitionType ActionTransitionType[ACTION_COUNT][ACTION_COUNT];
+typedef struct TransitionType ActionTransitionType[FROZENLAKE_ACTION_COUNT][FROZENLAKE_ACTION_COUNT];
 
 struct FrozenlakeEnvironment {
     unsigned int rows;
@@ -164,7 +164,21 @@ int can_slip(enum FrozenlakeAction intended_action, enum FrozenlakeAction actual
     };
 }
 
-int frozenlake_make(struct FrozenlakeConfig config, struct FrozenlakeEnvironment* state) {
+struct FrozenlakeEnvironment* frozenlake_make(struct FrozenlakeConfig config) {
+    struct FrozenlakeEnvironment* env = malloc(sizeof(struct FrozenlakeEnvironment));
+    if (env == NULL) {
+        fprintf(stderr, "frozenlake_make: Failed to allocate memory for FrozenlakeEnvironment\n");
+        return NULL;
+    }
+    if (frozenlake_init(config, env)) {
+        fprintf(stderr, "frozenlake_make: Failed to initialize FrozenlakeEnvironment\n");
+        free(env);
+        return NULL;
+    }
+    return env;
+}
+
+int frozenlake_init(struct FrozenlakeConfig config, struct FrozenlakeEnvironment* state) {
     unsigned int r, c, i;
     struct PositionType new_position;
     enum MapElement new_me;
@@ -175,7 +189,7 @@ int frozenlake_make(struct FrozenlakeConfig config, struct FrozenlakeEnvironment
     struct LocalMap map = get_map(config.map_name);
     ActionTransitionType* p = malloc(map.rows * map.cols * sizeof(ActionTransitionType));
     if (p == NULL) {
-        fprintf(stderr, "frozenlake_make: could not allocate transition types");
+        fprintf(stderr, "frozenlake_init: could not allocate transition types");
         return 1;
     }
 
@@ -231,10 +245,15 @@ int frozenlake_make(struct FrozenlakeConfig config, struct FrozenlakeEnvironment
     return 0;
 }
 
-void frozenlake_close(struct FrozenlakeEnvironment state) {
-    free(state.p);
+void frozenlake_deinit(struct FrozenlakeEnvironment* env) {
+    free(env->p);
 }
-      
+
+void frozenlake_close(struct FrozenlakeEnvironment* env) {
+    frozenlake_deinit(env);
+    free(env);
+}
+
 struct FrozenlakeObservation frozenlake_reset(struct FrozenlakeEnvironment* env) {
     struct FrozenlakeObservation result;
     srand(time(NULL));
@@ -346,7 +365,7 @@ struct LocalExpectedRewardType {
 
 
 struct TransitionProbabilityType frozenlake_get_transition(const struct DiscreteModelType* model, unsigned int s, enum FrozenlakeAction action, unsigned int next_s) {
-    size_t idx = s * ACTION_COUNT * model->num_states + action * model->num_states + next_s;
+    size_t idx = s * FROZENLAKE_ACTION_COUNT * model->num_states + action * model->num_states + next_s;
     return model->transition_probabilities[idx];
 }
 
@@ -378,7 +397,7 @@ int frozenlake_model_create(struct FrozenlakeConfig config, struct DiscreteModel
         return 1;
     }
 
-    arr_size = model->num_states * model->num_states * ACTION_COUNT;
+    arr_size = model->num_states * model->num_states * FROZENLAKE_ACTION_COUNT;
     model->transition_probabilities = malloc(arr_size * sizeof(struct TransitionType));
     if (model->transition_probabilities == NULL) {
         fprintf(stderr, "frozenlake_get_model: could not creaate list for transition data");
@@ -387,7 +406,7 @@ int frozenlake_model_create(struct FrozenlakeConfig config, struct DiscreteModel
 
     /* Assign 0 throughout */
     memset(model->transition_probabilities, 0, arr_size * sizeof(struct TransitionType));
-    if (frozenlake_make(config, &env)) {
+    if (frozenlake_init(config, &env)) {
         fprintf(stderr, "frozenlake_get_model: could not initialize environment");
         frozenlake_model_destroy(model);
         return 1;
@@ -417,14 +436,14 @@ int frozenlake_model_create(struct FrozenlakeConfig config, struct DiscreteModel
             * we calculate the discrete transition probabilities and conditional rewards */
            for(next_dpos = 0; next_dpos < model->num_states; next_dpos++) {
                 if (temp_expected_rewards[next_dpos].total_probability > 0.0f) {
-                    model_idx = prev_dpos * ACTION_COUNT * model->num_states + a * model->num_states + next_dpos;
+                    model_idx = prev_dpos * FROZENLAKE_ACTION_COUNT * model->num_states + a * model->num_states + next_dpos;
                     model->transition_probabilities[model_idx].probability = temp_expected_rewards[next_dpos].total_probability;
                     model->transition_probabilities[model_idx].reward = temp_expected_rewards[next_dpos].probability_weighted_reward / temp_expected_rewards[next_dpos].total_probability;
                 }
            }
         }
     }
-    frozenlake_close(env);
+    frozenlake_close(&env);
     return 0;
 }
 
@@ -432,7 +451,8 @@ void frozenlake_model_destroy(const struct DiscreteModelType* model){
     free(model->transition_probabilities);
 }
 
-int iterative_policy_evaluation(struct DiscreteModelType* model, float (*policy)[ACTION_COUNT], float df, float *value_array) {
+/* TODO: policy should probably be coerced to have const values */
+int iterative_policy_evaluation(struct DiscreteModelType* model, float (*policy)[FROZENLAKE_ACTION_COUNT], float df, float *value_array) {
     unsigned int num_states = model->num_states;
 
     /* Set the value function to 0 */
@@ -458,7 +478,7 @@ int iterative_policy_evaluation(struct DiscreteModelType* model, float (*policy)
         for (s = 0; s < num_states;  s++) {
             prev_value = value_array[s];
             new_value = 0.0;
-            for (a = 0; a < ACTION_COUNT; a++) {
+            for (a = 0; a < FROZENLAKE_ACTION_COUNT; a++) {
                 transition_value = 0.0;
                 for (s1 = 0; s1 < num_states;  s1++) {
                     trprob = frozenlake_get_transition(model, s, a, s1);
@@ -522,7 +542,7 @@ static void print_policy(const enum FrozenlakeAction* dpolicy, unsigned int num_
     unsigned int s;
     enum FrozenlakeAction a;
 
-    const char* action_names[ACTION_COUNT] = { 
+    const char* action_names[FROZENLAKE_ACTION_COUNT] = { 
         "LEFT", "DOWN", "RIGHT", "UP"
     };
 
@@ -566,7 +586,7 @@ int policy_iteration_with_init(
     enum FrozenlakeAction a;
 
     enum FrozenlakeAction prev_action;
-    float action_values[ACTION_COUNT];
+    float action_values[FROZENLAKE_ACTION_COUNT];
 
     struct TransitionProbabilityType trprob;
 
@@ -579,7 +599,7 @@ int policy_iteration_with_init(
 
         for (s = 0; s < num_states; s++) {
             /* For state S, record the value of each action in Action_Values. */
-            for (a = 0; a < ACTION_COUNT; a++) {
+            for (a = 0; a < FROZENLAKE_ACTION_COUNT; a++) {
                 action_values[a] = 0.0;
                 for (s1 = 0; s1 < num_states; s1++) {
                     trprob = frozenlake_get_transition(model, s, a, s1);
@@ -588,7 +608,7 @@ int policy_iteration_with_init(
             }
             /* Get the arg max */
             prev_action = dpolicy[s];
-            dpolicy[s] = (enum FrozenlakeAction) arg_max(action_values, ACTION_COUNT);
+            dpolicy[s] = (enum FrozenlakeAction) arg_max(action_values, FROZENLAKE_ACTION_COUNT);
             if (dpolicy[s] != prev_action) {
                stable = FALSE;
             }
@@ -628,7 +648,7 @@ int policy_iteration(
 
     /* Initialize policy using uniform distribution over actions */
     for (s = 0; s < num_states; s++) {
-        dpolicy[s] = get_random_action();
+        dpolicy[s] = frozenlake_get_random_action();
     }
 
     print_policy(dpolicy, num_states);  /* TODO: Remove after debugging */
@@ -641,7 +661,7 @@ static float max_value(float* action_values) {
     float maxval = -FLT_MAX;
     enum FrozenlakeAction a;
 
-    for (a = 0; a < ACTION_COUNT; a++) {
+    for (a = 0; a < FROZENLAKE_ACTION_COUNT; a++) {
         if (action_values[a] > maxval) {
             maxval = action_values[a];
         }
@@ -657,7 +677,7 @@ static void get_action_values_for_state(struct DiscreteModelType* model, unsigne
 
     unsigned int num_states = model->num_states;
 
-    for (a = 0; a < ACTION_COUNT; a++) {
+    for (a = 0; a < FROZENLAKE_ACTION_COUNT; a++) {
         new_value = 0.0;
         for (s1 = 0; s1 < num_states; s1++) {
             trprob = frozenlake_get_transition(model, s, a, s1);
@@ -682,7 +702,7 @@ static void value_max_action_update(struct DiscreteModelType* model, float df, f
 
     float prev_value;
     float new_value;
-    float next_values[ACTION_COUNT];
+    float next_values[FROZENLAKE_ACTION_COUNT];
 
     int iteration_count = 0;
 
@@ -710,7 +730,7 @@ int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAc
 
     for (s=0; s < num_states; s++) {
         /* Initialize to random policy */
-        dpolicy_out[s] = get_random_action();
+        dpolicy_out[s] = frozenlake_get_random_action();
     }
     
     /* Local values */
@@ -721,14 +741,14 @@ int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAc
         return 1;
     }
 
-    float action_values[ACTION_COUNT];
+    float action_values[FROZENLAKE_ACTION_COUNT];
 
     print_policy(dpolicy_out, num_states);  /* TODO: Remove after debugging */
     value_max_action_update(model, df, value_function);
 
     for (s=0; s < num_states; s++) {
         get_action_values_for_state(model, s, value_function, df, action_values);
-        dpolicy_out[s] = (enum FrozenlakeAction) arg_max(action_values, ACTION_COUNT);
+        dpolicy_out[s] = (enum FrozenlakeAction) arg_max(action_values, FROZENLAKE_ACTION_COUNT);
     }
     return 0;
 }
@@ -774,7 +794,7 @@ int main() {
 
     printf("Is slippery: %d\n", config.slippery);
 
-    if(frozenlake_make(config, &state)) {
+    if(frozenlake_init(config, &state)) {
         fprintf(stderr, "Error creating environment state");
         return 1;
     }
@@ -803,7 +823,7 @@ int main() {
     obs = frozenlake_reset(&state);
     while (1) {
         step_count++;
-        action = get_random_action();
+        action = frozenlake_get_random_action();
         step_return = frozenlake_step(&state, action);
         obs = step_return.observation;
         if (step_return.terminated) {
@@ -811,7 +831,7 @@ int main() {
             break;
         }
     }
-    frozenlake_close(state);
+    frozenlake_close(&state);
 
     /* Changing to a slippery map */
     config.slippery = FALSE;
@@ -827,7 +847,7 @@ int main() {
 
     unsigned int s;
     int iterations;
-    float stoch_policy[16][ACTION_COUNT];
+    float stoch_policy[16][FROZENLAKE_ACTION_COUNT];
     float value_array[16];
     for (s = 0; s < 16; s++) {
         stoch_policy[s][LEFT] = 0.25;
