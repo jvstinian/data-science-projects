@@ -74,7 +74,7 @@ enum Action linewalk_get_random_action(struct LineWalkEnvironment* env);
 struct SimulationSummary linewalk_uniform_random_actions(struct LineWalkConfig config, Boolean verbose);
 
 #define CONFIG_TYPE LineWalkConfig
-#include "random_action_h.inc"
+#include "reinforcementlearning/algorithms/random_action_h.inc"
 #undef CONFIG_TYPE
 
 int main();
