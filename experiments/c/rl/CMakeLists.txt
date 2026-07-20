@@ -6,11 +6,12 @@ set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
-add_compile_options(-Wall -Wextra)
+add_compile_options(-Wall -Wextra -Wswitch -Wswitch-enum)
 
 # Library
 add_library(reinforcementlearning
     src/linewalk.c
+    src/frozenlake.c
 )
 
 # Includes

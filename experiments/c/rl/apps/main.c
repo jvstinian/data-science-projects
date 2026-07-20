@@ -20,7 +20,7 @@ int main() {
     printf("Position after moving left: %d\n", state.position);
     print_state(state);
 
-    Action available_actions[2];
+    enum LineWalkAction available_actions[2];
     unsigned int num_actions = 0;
     get_available_actions(state, available_actions, &num_actions);
     printf("Number of available actions: %u\n", num_actions);

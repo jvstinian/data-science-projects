@@ -5,24 +5,17 @@ typedef enum Boolean {
     TRUE
 } Boolean;
 
-enum MapType {
+enum FrozenlakeMapType {
     MAP_4X4,
     MAP_8X8
 };
 
-enum MapElement {
-    START,
-    FROZEN,
-    HOLE,
-    GOAL
-};
-
-struct EnvironmentConfig {
-  enum MapType map_name;
+struct FrozenlakeConfig {
+  enum FrozenlakeMapType map_name;
   Boolean slippery;
 };
    
-enum ActionType {
+enum FrozenlakeAction {
     LEFT,
     DOWN,
     RIGHT,
@@ -31,45 +24,25 @@ enum ActionType {
 
 #define ACTION_COUNT 4
 
-struct ObservationType {
+struct FrozenlakeObservation {
     unsigned int position_index;
 };
    
-struct PositionType {
-    unsigned int row;
-    unsigned int col;
-};
+struct FrozenlakeEnvironment;
 
-struct TransitionType {
-    float probability;
-    struct PositionType position;
-    float reward;
-    Boolean terminated;
-};
-
-typedef struct TransitionType ActionTransitionType[ACTION_COUNT][ACTION_COUNT];
-
-struct EnvironmentState {
-    unsigned int rows;
-    unsigned int cols;
-    const enum MapElement* map;
-    ActionTransitionType* p;
-    struct PositionType agent_position;
-};
-   
-struct StepReturnType {
-    struct ObservationType observation;
+struct FrozenlakeStepReturn {
+    struct FrozenlakeObservation observation;
     float reward;
     Boolean terminated;
 };
   
-enum ActionType get_random_action();
+enum FrozenlakeAction get_random_action();
 
-int make(struct EnvironmentConfig config, struct EnvironmentState* state);
-struct ObservationType reset(struct EnvironmentState* env);
-void close(struct EnvironmentState state);
-struct StepReturnType step(struct EnvironmentState* env, enum ActionType action);
-void render_text(struct EnvironmentState env);
+int frozenlake_make(struct FrozenlakeConfig config, struct FrozenlakeEnvironment* state);
+struct FrozenlakeObservation frozenlake_reset(struct FrozenlakeEnvironment* env);
+void frozenlake_close(struct FrozenlakeEnvironment state);
+struct FrozenlakeStepReturn frozenlake_step(struct FrozenlakeEnvironment* env, enum FrozenlakeAction action);
+void frozenlake_render_text(struct FrozenlakeEnvironment env);
 
 struct TransitionProbabilityType {
    float probability;
@@ -78,15 +51,15 @@ struct TransitionProbabilityType {
 
 struct DiscreteModelType;
 
-int frozenlake_model_create(struct EnvironmentConfig config, struct DiscreteModelType* model);
+int frozenlake_model_create(struct FrozenlakeConfig config, struct DiscreteModelType* model);
 void frozenlake_model_destroy(const struct DiscreteModelType* model);
-struct TransitionProbabilityType frozenlake_get_transition(const struct DiscreteModelType* model, unsigned int s, enum ActionType action, unsigned int next_s);
+struct TransitionProbabilityType frozenlake_get_transition(const struct DiscreteModelType* model, unsigned int s, enum FrozenlakeAction action, unsigned int next_s);
 
 int iterative_policy_evaluation(struct DiscreteModelType* model, float (*policy)[ACTION_COUNT], float df, float *value_array);
-int iterative_deterministic_policy_evaluation(struct DiscreteModelType* model, enum ActionType* dpolicy, float df, float *value_array);
+int iterative_deterministic_policy_evaluation(struct DiscreteModelType* model, enum FrozenlakeAction* dpolicy, float df, float *value_array);
 
-int value_iteration(struct DiscreteModelType* model, float df, enum ActionType* dpolicy_out);
-int frozenlake_value_iteration_example(struct EnvironmentConfig config, float df);
+int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAction* dpolicy_out);
+int frozenlake_value_iteration_example(struct FrozenlakeConfig config, float df);
 
 int main();
     
