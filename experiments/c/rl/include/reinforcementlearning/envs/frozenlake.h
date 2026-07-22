@@ -64,7 +64,25 @@ int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAc
 int frozenlake_value_iteration_example(struct FrozenlakeConfig config, float df);
 
 int main();
-    
+
+unsigned int frozenlake_get_num_states(struct FrozenlakeConfig config);
+unsigned int frozenlake_to_discrete_observation(struct FrozenlakeObservation obs);
+
+#define ENVIRONMENT_PREFIX frozenlake
+#define CONFIG_TYPE struct FrozenlakeConfig
+#define ENVIRONMENT_TYPE struct FrozenlakeEnvironment
+#define ACTION_TYPE enum FrozenlakeAction
+#define OBSERVATION_TYPE struct FrozenlakeObservation
+#define STEP_RETURN_TYPE struct FrozenlakeStepReturn
+#define ENVIRONMENT_ACTION_COUNT FROZENLAKE_ACTION_COUNT
+#define GET_NUM_STATES_METHOD frozenlake_get_num_states
+#define MAKE_METHOD frozenlake_make
+#define RESET_METHOD frozenlake_reset
+#define STEP_METHOD frozenlake_step
+#define TO_DISCRETE_OBSERVATION_METHOD frozenlake_to_discrete_observation
+#define MC_DECLS_ONLY
+#include <reinforcementlearning/algorithms/mc.inc>
+
 /*
 package Frozen_Lake is
    type Map_Type is (Map_4x4, Map_8x8);

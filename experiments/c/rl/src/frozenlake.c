@@ -1447,3 +1447,33 @@ int watkins_q_iteration(struct FrozenlakeConfig config, struct ETSARSAConfig sar
     }
     return 0;
 }
+
+unsigned int frozenlake_get_num_states(struct FrozenlakeConfig config) {
+    switch (config.map_name) {
+        case MAP_4X4:
+            return 16;
+        case MAP_8X8: 
+            return 64;
+        default:
+            return 16;
+    };
+}
+
+unsigned int frozenlake_to_discrete_observation(struct FrozenlakeObservation obs) {
+    return obs.position_index;
+}
+
+#define ENVIRONMENT_PREFIX frozenlake
+#define CONFIG_TYPE struct FrozenlakeConfig
+#define ENVIRONMENT_TYPE struct FrozenlakeEnvironment
+#define OBSERVATION_TYPE struct FrozenlakeObservation
+#define STEP_RETURN_TYPE struct FrozenlakeStepReturn
+#define ACTION_TYPE enum FrozenlakeAction
+#define ENVIRONMENT_ACTION_COUNT FROZENLAKE_ACTION_COUNT
+#define GET_NUM_STATES_METHOD frozenlake_get_num_states
+#define MAKE_METHOD frozenlake_make
+#define RESET_METHOD frozenlake_reset
+#define STEP_METHOD frozenlake_step
+#define TO_DISCRETE_OBSERVATION_METHOD frozenlake_to_discrete_observation
+#include <reinforcementlearning/algorithms/mc.inc>
+

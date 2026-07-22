@@ -2,25 +2,62 @@
 #error "ENVIRONMENT_PREFIX must be defined in mc.inc"
 #endif
 
+#ifndef CONFIG_TYPE
+#error "CONFIG_TYPE is not defined in mc.inc"
+#endif
+
+#ifndef ENVIRONMENT_TYPE
+#error "ENVIRONMENT_TYPE is not defined in mc.inc"
+#endif
+
 #ifndef ACTION_TYPE
 #error "ACTION_TYPE is not defined in mc.inc"
+#endif
+
+#ifndef OBSERVATION_TYPE
+#error "OBSERVATION_TYPE is not defined in mc.inc"
+#endif
+
+#ifndef STEP_RETURN_TYPE
+#error "STEP_RETURN_TYPE is not defined in mc.inc"
 #endif
 
 #ifndef ENVIRONMENT_ACTION_COUNT
 #error "ENVIRONMENT_ACTION_COUNT is not defined in mc.inc"
 #endif
 
+#ifndef GET_NUM_STATES_METHOD
+#error "GET_NUM_STATES_METHOD is not defined in mc.inc"
+#endif
+
+#ifndef MAKE_METHOD
+#error "MAKE_METHOD is not defined in mc.inc"
+#endif
+
+#ifndef RESET_METHOD
+#error "RESET_METHOD is not defined in mc.inc"
+#endif
+
+#ifndef STEP_METHOD
+#error "STEP_METHOD is not defined in mc.inc"
+#endif
+
+#ifndef TO_DISCRETE_OBSERVATION_METHOD
+#error "TO_DISCRETE_OBSERVATION is not defined in mc.inc"
+#endif
+
+#include <reinforcementlearning/algorithms/mc_config.h>
 
 #define MC_FUNC_NAME(name) MC_CONCAT1(ENVIRONMENT_PREFIX, name)
 
 #define MC_CONCAT1(prefix, name) MC_CONCAT2(prefix, name)
 #define MC_CONCAT2(prefix, name) prefix##_##name
 
-struct MCConfig {
-    int num_episodes;
-    enum MCVisit visit_type;
-    float discount_factor; /* = 1.0 */
-};
+#ifdef MC_DECLS_ONLY
+
+int MC_FUNC_NAME(mc_policy_evaluation) (CONFIG_TYPE config, ACTION_TYPE* dpolicy, struct MCConfig mc_config, float* svalue_func_out);
+
+#else
 
 struct RewardTracker {
     float total_reward;
@@ -33,7 +70,7 @@ type State_Reward_Tracker_Type is array(Discrete_Observation_Type) of Reward_Tra
 
 struct SARType {
     unsigned int state; /* Discrete_Observation_Type */
-    enum Action action;
+    ACTION_TYPE action;
     float reward;
 };
 
@@ -43,7 +80,6 @@ SAR_Array : SAR_Array_Type;
 */
 
 /*
-type MC_Visit_Type is (First_Visit, Every_Visit);
    type Policy_Type is array (Discrete_Observation_Type) of Action_Type;
    type Value_Function_Type is array(Discrete_Observation_Type) of Float;
 
@@ -72,50 +108,62 @@ end RL.Algorithms.MC;
       type State_Reward_Tracker_Type is array(Discrete_Observation_Type) of Reward_Tracker_Type;
 */
 
-/*
-void every_visit_reward_update(RewardTracker* v, unsigned int num_states, const SARType* sar_array_input, unsigned int step_count) {
-    \/\* TODO: Need error handling \*\/
-    \/\* TODO: Length of sar_array is max_episode_steps \*\/
-    SARType* sar_array = malloc(num_states * sizeof(SARType));
-    memcpy(sar_array, sar_array_input, num_states * sizeof(SARType));
+static int every_visit_reward_update(struct MCConfig mc_config, struct RewardTracker* v, /*unsigned int num_states, */ const struct SARType* sar_array_input, unsigned int step_count) {
+    /* NOTE: Length of sar_array is max_episode_steps */
+    if (step_count == 0) return 0;
+
+    struct SARType* sar_array = malloc(mc_config.max_episode_steps * sizeof(struct SARType));
+    if (sar_array == NULL) {
+        fprintf(stderr, "every_visit_reward_update: unable to allocate array");
+        return 1;
+    }
+    memcpy(sar_array, sar_array_input, mc_config.max_episode_steps * sizeof(struct SARType));
 
     unsigned int i = step_count;
     while (i > 0) {
         i--;
         if (i < (step_count - 1)) {
-            sar_array[i].reward += mc_config.discount_factory * sar_array[i+1].reward;
+            sar_array[i].reward += mc_config.discount_factor * sar_array[i+1].reward;
         }
-        \/\* Update the state reward tracker \*\/
+        /* Update the state reward tracker */
         v[sar_array[i].state].total_reward += sar_array[i].reward;
         v[sar_array[i].state].count        += 1;
     }
     free(sar_array);
- }
+    return 0;
+}
 
-/*
-void first_visit_reward_update(RewardTracker* v, unsigned int num_states, const SARType* sar_array_input, unsigned int step_count) {
-    \/\* TODO: Need error handling \*\/
-    \/\* A local copy to avoid specifying "in out" for the array parameter \*\/
-    \/\* TODO: Length of sar_array is max_episode_steps \*\/
-    SARType* sar_array = malloc(num_states * sizeof(SARType));
-    memcpy(sar_array, sar_array_input, num_states * sizeof(SARType));
+static int first_visit_reward_update(struct MCConfig mc_config, struct RewardTracker* v, unsigned int num_states, const struct SARType* sar_array_input, unsigned int step_count) {
+    if (step_count == 0) return 0;
+    /* A local copy to avoid specifying "in out" for the array parameter */
+    struct SARType* sar_array = malloc(mc_config.max_episode_steps * sizeof(struct SARType));
+    if (sar_array == NULL) {
+        fprintf(stderr, "first_visit_reward_update: unable to allocate array");
+        return 1;
+    }
+    memcpy(sar_array, sar_array_input, mc_config.max_episode_steps * sizeof(struct SARType));
 
     unsigned int s;
 
     unsigned int* first_visit_array = malloc(num_states * sizeof(unsigned int));
-    \/\* Initialize each element of array to step_count.
-       This value will indicate no visit. \*\/
+    if (first_visit_array == NULL) {
+        fprintf(stderr, "first_visit_reward_update: unable to allocate first visit array");
+        free(sar_array);
+        return 1;
+    }
+    /* Initialize each element of array to step_count.
+       This value will indicate no visit. */
     for(s = 0; s < num_states; s++) {
         first_visit_array[s] = step_count;
     }
 
-    unsigned int first_visit; \/\* Temp value for convenience \*\/
+    unsigned int first_visit; /* Temp value for convenience */
 
     unsigned int i = step_count;
     while (i > 0) {
         i--;
         if (i < (step_count - 1)) {
-            sar_array[i].reward += mc_config.discount_factory * sar_array[i+1].reward;
+            sar_array[i].reward += mc_config.discount_factor * sar_array[i+1].reward;
         }
         first_visit_array[sar_array[i].state] = i;
     }
@@ -123,68 +171,78 @@ void first_visit_reward_update(RewardTracker* v, unsigned int num_states, const 
     for(s = 0; s < num_states; s++) {
         if (first_visit_array[s] < step_count) {
             first_visit = first_visit_array[s];
-            \/\* Note: We should have s == sar_array[first_visit].state \*\/
+            /* Note: We should have s == sar_array[first_visit].state */
             v[sar_array[first_visit].state].total_reward += sar_array[first_visit].reward;
             v[sar_array[first_visit].state].count        += 1;
         }
     }
+    free(first_visit_array);
+    free(sar_array);
+    return 0;
 }
 
-void mc_policy_evaluation(struct Config config, enum Action* dpolicy, struct MCConfig mc_config, float* svalue_func_out) {
-    \/\* TODO: The following is wrong \*\/
-    num_states = config.num_states;
+int MC_FUNC_NAME(mc_policy_evaluation) (CONFIG_TYPE config, ACTION_TYPE* dpolicy, struct MCConfig mc_config, float* svalue_func_out) {
+    unsigned int num_states = GET_NUM_STATES_METHOD(config);
 
-    \/\* TODO: Error handling \*\/
-    SARType* sar_array = malloc(max_episode_steps * sizeof(SARType));
+    struct SARType* sar_array = malloc(mc_config.max_episode_steps * sizeof(struct SARType));
+    if (sar_array == NULL) {
+        fprintf(stderr, "mc_policy_evaluation: unable to allocate array");
+        return 1;
+    }
 
-    \/\* TODO: Error handling \*\/
-    RewardTracker* v = malloc(num_states * sizeof(RewardTracker));
-    memset(v, 0, num_states * sizeof(RewardTracker));
+    struct RewardTracker* v = malloc(num_states * sizeof(struct RewardTracker));
+    if (v == NULL) {
+        fprintf(stderr, "mc_policy_evaluation: unable to allocate reward tracker array");
+        free(sar_array);
+        return 1;
+    }
+    memset(v, 0, num_states * sizeof(struct RewardTracker));
 
-    \/\*
-      Seed_Reset : Seed_Reset_Type := (Kind => Set_Default);
-    \*\/
-    struct Environment env = make(config);
-    struct ObservationType obs;
-    struct StepReturn step_output;
+    /* Seed_Reset : Seed_Reset_Type := (Kind => Set_Default); */
+    ENVIRONMENT_TYPE* env = MAKE_METHOD(config);
+    OBSERVATION_TYPE obs;
+    STEP_RETURN_TYPE step_output;
     unsigned int discrete_obs;
-    enum Action action;
+    ACTION_TYPE action;
     Boolean terminated;
-    unsigned int last_i;
+    unsigned int step_count;
 
     unsigned int episode;
+    unsigned int s;
     unsigned int i;
 
-    for (episode = 1; episode <= mc_config.num_episodes; episode++) {
-        obs = reset(env); \/\* Seed_Reset \*\/
-        discrete_obs = to_discrete_observation(obs);
+    for (episode = 0; episode < mc_config.num_episodes; episode++) {
+        obs = RESET_METHOD(env); /* Seed_Reset */
+        discrete_obs = TO_DISCRETE_OBSERVATION_METHOD(obs);
         terminated = FALSE;
-        last_i = 1;
-        for (i=1; i <= max_episode_steps; i++) {
-            \/\* TODO: might need to go i = 0 and i < max_episode_steps \*\/
+        step_count = 0;
+        for (i=0; i < mc_config.max_episode_steps; i++) {
+            /* IN PROGRESS: might need to go i = 0 and i < max_episode_steps */
             action = dpolicy[discrete_obs];
-            step_output = step(env, action);
-            \/\*
+            step_output = STEP_METHOD(env, action);
+            /*
             sar_array[i].state = discrete_obs;
             sar_array[i].action = action;
             sar_array[i].reward = get_reward(step_output);
-            \*\/
-            sar_array[i] = (struct SARType) { discrete_obs, action, get_reward(step_output) };
+            */
+            sar_array[i] = (struct SARType) { discrete_obs, action, step_output.reward };
+            step_count = i + 1;
 
-            discrete_obs = to_discrete_observation(step_output.observation);
-            last_i = i;
-            terminated = get_terminated(step_output);
+            /* Break if terminated */
+            terminated = step_output.terminated;
             if (terminated) {
                 break;
             }
+            /* Set the next state */
+            discrete_obs = TO_DISCRETE_OBSERVATION_METHOD(step_output.observation);
         }
 
         switch (mc_config.visit_type) {
-            case First_Visit:
-                first_visit_reward_update(v, sar_array, last_i);
+            case FIRST_VISIT:
+                first_visit_reward_update(mc_config, v, num_states, sar_array, step_count);
                 break;
-            case Every_Visit:
-               every_visit_reward_update(v, sar_array, last_i);
+            case EVERY_VISIT:
+               every_visit_reward_update(mc_config, v, sar_array, step_count);
                 break;
         }
     }
@@ -192,11 +250,31 @@ void mc_policy_evaluation(struct Config config, enum Action* dpolicy, struct MCC
     memset(svalue_func_out, 0, num_states*sizeof(float));
     for (s = 0; s < num_states; s++) {
         if (v[s].count > 0) {
-            res[s] = v[s].total_reward / ((float) v[s].count);
+            svalue_func_out[s] = v[s].total_reward / ((float) v[s].count);
         }
     }
+    return 0;
 }
 
+#endif
+
+#undef ENVIRONMENT_PREFIX
+#undef CONFIG_TYPE
+#undef ENVIRONMENT_TYPE
+#undef ACTION_TYPE
+#undef OBSERVATION_TYPE
+#undef STEP_RETURN_TYPE
+#undef ENVIRONMENT_ACTION_COUNT
+#undef GET_NUM_STATES_METHOD
+#undef MAKE_METHOD
+#undef RESET_METHOD
+#undef STEP_METHOD
+#undef TO_DISCRETE_OBSERVATION_METHOD
+#ifdef MC_DECLS_ONLY
+#undef MC_DECLS_ONLY
+#endif
+
+/*
 \/\*
 type State_Action_Reward_Tracker_Type is array(Discrete_Observation_Type, Action_Type) of Reward_Tracker_Type;
 State_Action_Reward_Tracker : State_Action_Reward_Tracker_Type := (others => (others => (0.0, 0)));
@@ -289,7 +367,7 @@ void mc_exploring_starts_evaluation(struct Config config, struct MCConfig mc_con
     float (*q)[ACTION_COUNT] = malloc(num_states * ACTION_COUNT * sizeof(float));
     memset(dpolicy, 0, num_states * sizeof(*q));
 
-    struct Environment env = make(config);
+    struct Environment env = MAKE_METHOD(config);
     \/\*
     Seed_Reset : Seed_Reset_Type := (Kind => Set_Default);
     \*\/
@@ -471,7 +549,7 @@ void mc_epsilon_soft_evaluation(struct Config config, struct MCEpsilonSoftConfig
     q = malloc(num_states * sizeof(*q));
     memset(q, 0, num_states * sizeof(*q));
     
-    struct Environment env = make(config);
+    struct Environment env = MAKE_METHOD(config);
     \/\*
     Seed_Reset : Seed_Reset_Type := (Kind => Set_Default);
     \*\/
