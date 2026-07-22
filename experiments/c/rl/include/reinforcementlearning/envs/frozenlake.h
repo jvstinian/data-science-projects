@@ -1,12 +1,5 @@
 #include <stdio.h>
-
-#ifndef INC_BOOLEAN
-#define INC_BOOLEAN
-typedef enum Boolean {
-    FALSE,
-    TRUE
-} Boolean;
-#endif
+#include <reinforcementlearning/bool.h>
 
 enum FrozenlakeMapType {
     MAP_4X4,
@@ -83,6 +76,7 @@ unsigned int frozenlake_to_discrete_observation(struct FrozenlakeObservation obs
 #define RESET_METHOD frozenlake_reset
 #define STEP_METHOD frozenlake_step
 #define CLOSE_METHOD frozenlake_close
+#define GET_RANDOM_ACTION_ES_METHOD frozenlake_get_random_action
 #define TO_DISCRETE_OBSERVATION_METHOD frozenlake_to_discrete_observation
 #define MC_DECLS_ONLY
 #include <reinforcementlearning/algorithms/mc.inc>

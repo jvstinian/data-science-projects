@@ -1475,6 +1475,7 @@ unsigned int frozenlake_to_discrete_observation(struct FrozenlakeObservation obs
 #define RESET_METHOD frozenlake_reset
 #define STEP_METHOD frozenlake_step
 #define CLOSE_METHOD frozenlake_close
+#define GET_RANDOM_ACTION_ES_METHOD frozenlake_get_random_action
 #define TO_DISCRETE_OBSERVATION_METHOD frozenlake_to_discrete_observation
 #include <reinforcementlearning/algorithms/mc.inc>
 

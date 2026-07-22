@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <reinforcementlearning/bool.h>
 
 typedef struct LineWalkConfig {
     int N; /* Number of positions in the line */
@@ -17,14 +18,6 @@ enum LineWalkAction {
 enum LineWalkPlayer {
     PLAYER1
 };
-
-#ifndef INC_BOOLEAN
-#define INC_BOOLEAN
-typedef enum Boolean {
-    FALSE,
-    TRUE
-} Boolean;
-#endif
 
 typedef struct LineWalkState {
     LineWalkConfig config;
