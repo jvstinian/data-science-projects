@@ -455,6 +455,7 @@ void frozenlake_model_destroy(const struct DiscreteModelType* model){
 }
 
 /* TODO: policy should probably be coerced to have const values */
+/* TODO: Complete move to dp.inc.  I've checked and the following can be replaced. */
 int iterative_policy_evaluation(struct DiscreteModelType* model, const float (*policy)[FROZENLAKE_ACTION_COUNT], float df, float *value_array) {
     unsigned int num_states = model->num_states;
 
@@ -499,6 +500,7 @@ int iterative_policy_evaluation(struct DiscreteModelType* model, const float (*p
     return iteration_count;
 }
 
+/* TODO: Move to dp.inc */
 int iterative_deterministic_policy_evaluation(
     struct DiscreteModelType* model, enum FrozenlakeAction* dpolicy, float df, float *value_array
 ) {
@@ -540,7 +542,7 @@ int iterative_deterministic_policy_evaluation(
     }
     return iteration_count;
 }
-   
+ 
 static void print_policy(const enum FrozenlakeAction* dpolicy, unsigned int num_states) {
     unsigned int s;
     enum FrozenlakeAction a;
@@ -556,6 +558,7 @@ static void print_policy(const enum FrozenlakeAction* dpolicy, unsigned int num_
     }
 }
 
+/* TODO: Move to dp.inc or to another header */
 size_t arg_max(float* values, size_t length) {
     float max_value = -FLT_MAX;
     size_t best_idx = 0;
@@ -571,6 +574,7 @@ size_t arg_max(float* values, size_t length) {
 }
 
 /* TODO: Consider changing the name to "_given_init" */
+/* TODO: Move to dp.inc */
 int policy_iteration_with_init(
     struct DiscreteModelType* model, float df, float *value_array, enum FrozenlakeAction* dpolicy
 ) {
@@ -624,6 +628,7 @@ int policy_iteration_with_init(
 }
 
 /* TODO: We need to pass value_array and dpolicy */
+/* TODO: Move to dp.inc */
 int policy_iteration(
     struct DiscreteModelType* model, float df, int* num_iterations
 ) {
@@ -672,6 +677,7 @@ static float max_value(float* action_values) {
     return maxval;
 }
    
+/* TODO: Move to dp.inc */
 static void get_action_values_for_state(struct DiscreteModelType* model, unsigned int s, const float* value_function, float df, float* action_values_out) {
     float new_value;
     unsigned int s1;
@@ -691,6 +697,7 @@ static void get_action_values_for_state(struct DiscreteModelType* model, unsigne
 }
 
 /* TODO: Perhaps return number of iterations? */
+/* TODO: Move to dp.inc */
 static void value_max_action_update(struct DiscreteModelType* model, float df, float* value_function_out) {
     /* Value_Function: Value_Function_Type := (others => 0.0); */
     unsigned int num_states = model->num_states;
@@ -727,6 +734,7 @@ static void value_max_action_update(struct DiscreteModelType* model, float df, f
     }
 }
  
+/* TODO: Move to dp.inc */
 int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAction* dpolicy_out) {
     unsigned int num_states = model->num_states;
     unsigned int s;
@@ -756,6 +764,7 @@ int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAc
     return 0;
 }
 
+/* TODO: Move to dp.inc */
 int frozenlake_value_iteration_example(struct FrozenlakeConfig config, float df) {
     struct DiscreteModelType model;
 
@@ -891,6 +900,7 @@ struct TDConfig {
     float gamma;
 };
 
+/* TODO: Move to td.inc */
 int td_iterative_policy_evaluation(struct FrozenlakeConfig config, struct TDConfig td_config, enum FrozenlakeAction* policy, float* value_function_out) {
     /* TODO: return error if make fails */
     struct FrozenlakeEnvironment* env = frozenlake_make(config);
@@ -963,10 +973,12 @@ struct SARSAConfig {
     unsigned int episodes_to_minimum_epsilon;
 };
 
+/* TODO: Move to td.inc */
 static enum FrozenlakeAction best_action_for_state(float (*q)[FROZENLAKE_ACTION_COUNT], unsigned int s) {
     return (enum FrozenlakeAction) arg_max(q[s], FROZENLAKE_ACTION_COUNT);
 }
 
+/* TODO: Move to td.inc */
 static enum FrozenlakeAction choose_action_epsilon_greedy(float epsilon, float (*q)[FROZENLAKE_ACTION_COUNT], unsigned int s) {
     float u = rand_float();
     if (u < epsilon) {
@@ -979,6 +991,7 @@ static enum FrozenlakeAction choose_action_epsilon_greedy(float epsilon, float (
 }
 
 /* TODO: The epsilon trajectory in the following needs improvement */
+/* TODO: Move to td.inc */
 static float update_epsilon(struct SARSAConfig sarsa_config, unsigned int episode) {
     float init_eps = sarsa_config.initial_epsilon;
     float min_eps = sarsa_config.minimum_epsilon;
@@ -988,6 +1001,7 @@ static float update_epsilon(struct SARSAConfig sarsa_config, unsigned int episod
     return fmaxf(min_eps, k * init_eps / ((float) episode));
 }
 
+/* TODO: Move to td.inc */
 int sarsa_on_policy(struct FrozenlakeConfig config, struct SARSAConfig sarsa_config, float (*q)[FROZENLAKE_ACTION_COUNT]) {
     /* TODO: return error if make fails */
     struct FrozenlakeEnvironment* env = frozenlake_make(config);
@@ -1069,6 +1083,7 @@ int sarsa_on_policy(struct FrozenlakeConfig config, struct SARSAConfig sarsa_con
     return 0;
 }
 
+/* TODO: Move to td.inc */
 int sarsa_off_policy(struct FrozenlakeConfig config, struct SARSAConfig sarsa_config, float (*q)[FROZENLAKE_ACTION_COUNT]) {
     /* TODO: return error if make fails */
     struct FrozenlakeEnvironment* env = frozenlake_make(config);
@@ -1149,13 +1164,14 @@ int sarsa_off_policy(struct FrozenlakeConfig config, struct SARSAConfig sarsa_co
     }
     return 0;
 }
-    
+
 struct ETConfig {
     float alpha;
     float gamma;
     float lambda;
 };
 
+/* TODO: Move to et.inc */
 int et_iterative_policy_evaluation(struct FrozenlakeConfig config, struct ETConfig et_config, float* dpolicy, float* svalue_func_out) {
     /* TODO: return error if make fails */
     struct FrozenlakeEnvironment* env = frozenlake_make(config);
@@ -1246,6 +1262,7 @@ struct ETSARSAConfig {
     float lambda;
 };
 
+/* TODO: Move to et.inc */
 int et_sarsa_on_policy(struct FrozenlakeConfig config, struct ETSARSAConfig sarsa_config, float (*q)[FROZENLAKE_ACTION_COUNT]) {
     /* TODO: return error if make fails */
     struct FrozenlakeEnvironment* env = frozenlake_make(config);
@@ -1344,6 +1361,7 @@ int et_sarsa_on_policy(struct FrozenlakeConfig config, struct ETSARSAConfig sars
     return 0;
 }
 
+/* TODO: Move to et.inc */
 int watkins_q_iteration(struct FrozenlakeConfig config, struct ETSARSAConfig sarsa_config, float (*q)[FROZENLAKE_ACTION_COUNT]) {
     /* TODO: return error if make fails */
     struct FrozenlakeEnvironment* env = frozenlake_make(config);
