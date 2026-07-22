@@ -65,6 +65,7 @@
 #ifdef MC_DECLS_ONLY
 
 int MC_FUNC_NAME(mc_policy_evaluation) (CONFIG_TYPE config, ACTION_TYPE* dpolicy, struct MCConfig mc_config, float* svalue_func_out);
+int MC_FUNC_NAME(mc_exploring_starts_evaluation) (CONFIG_TYPE config, struct MCConfig mc_config);
 
 #else
 
@@ -368,6 +369,7 @@ void update_policy(const float (*q)[ENVIRONMENT_ACTION_COUNT], unsigned int num_
 }
 
 /* TODO: Should we use MC_Config_Type?  We might not want to allow the Every_Visit option. */
+/* TODO: The return type needs to be determined. */
 int MC_FUNC_NAME(mc_exploring_starts_evaluation) (CONFIG_TYPE config, struct MCConfig mc_config) {
     unsigned int num_states = GET_NUM_STATES_METHOD(config);
 
