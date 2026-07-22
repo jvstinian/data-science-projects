@@ -1,9 +1,12 @@
 #include <stdio.h>
 
+#ifndef INC_BOOLEAN
+#define INC_BOOLEAN
 typedef enum Boolean {
     FALSE,
     TRUE
 } Boolean;
+#endif
 
 enum FrozenlakeMapType {
     MAP_4X4,
@@ -63,7 +66,7 @@ int iterative_deterministic_policy_evaluation(struct DiscreteModelType* model, e
 int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAction* dpolicy_out);
 int frozenlake_value_iteration_example(struct FrozenlakeConfig config, float df);
 
-int main();
+int frozenlake_example_main();
 
 unsigned int frozenlake_get_num_states(struct FrozenlakeConfig config);
 unsigned int frozenlake_to_discrete_observation(struct FrozenlakeObservation obs);
@@ -79,6 +82,7 @@ unsigned int frozenlake_to_discrete_observation(struct FrozenlakeObservation obs
 #define MAKE_METHOD frozenlake_make
 #define RESET_METHOD frozenlake_reset
 #define STEP_METHOD frozenlake_step
+#define CLOSE_METHOD frozenlake_close
 #define TO_DISCRETE_OBSERVATION_METHOD frozenlake_to_discrete_observation
 #define MC_DECLS_ONLY
 #include <reinforcementlearning/algorithms/mc.inc>

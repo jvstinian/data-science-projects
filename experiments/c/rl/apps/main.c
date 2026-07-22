@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "reinforcementlearning/envs/linewalk.h"
+#include "reinforcementlearning/envs/frozenlake.h"
 
 enum Environments {
     LINEWALK,
@@ -55,7 +56,39 @@ int linewalk_example() {
     return 0;
 }
 
+int frozenlake_mc_policy_evaluation_example() {
+    unsigned int s;
+    struct FrozenlakeConfig config = { MAP_4X4, FALSE };
+    enum FrozenlakeAction dpolicy[16];
+    dpolicy[0] = DOWN;
+    dpolicy[1] = RIGHT;
+    dpolicy[2] = DOWN;
+    dpolicy[3] = LEFT;
+    dpolicy[4] = DOWN;
+    dpolicy[5] = LEFT;
+    dpolicy[6] = DOWN;
+    dpolicy[7] = LEFT;
+    dpolicy[8] = RIGHT;
+    dpolicy[9] = DOWN;
+    dpolicy[10] = DOWN;
+    dpolicy[11] = LEFT;
+    dpolicy[12] = LEFT;
+    dpolicy[13] = RIGHT;
+    dpolicy[14] = RIGHT;
+    dpolicy[15] = LEFT;
+    struct MCConfig mc_config = { 100, 50, FIRST_VISIT, 0.9 };
+    float svalue_func[16]; /* TODO: Avoiding allocation */
+    int status = frozenlake_mc_policy_evaluation(config, dpolicy, mc_config, svalue_func);
+    for (s = 0; s < 16; s++) {
+        printf("%d: %d, %.4f\n", s, dpolicy[s], svalue_func[s]);
+    }
+    return status;
+}
+
 int main() {
+    /*
     return linewalk_example();
+    */
+    return frozenlake_mc_policy_evaluation_example();
 }
 

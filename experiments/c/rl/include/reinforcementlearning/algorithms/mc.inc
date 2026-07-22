@@ -42,6 +42,10 @@
 #error "STEP_METHOD is not defined in mc.inc"
 #endif
 
+#ifndef CLOSE_METHOD
+#error "CLOSE_METHOD is not defined in mc.inc"
+#endif
+
 #ifndef TO_DISCRETE_OBSERVATION_METHOD
 #error "TO_DISCRETE_OBSERVATION is not defined in mc.inc"
 #endif
@@ -200,6 +204,12 @@ int MC_FUNC_NAME(mc_policy_evaluation) (CONFIG_TYPE config, ACTION_TYPE* dpolicy
 
     /* Seed_Reset : Seed_Reset_Type := (Kind => Set_Default); */
     ENVIRONMENT_TYPE* env = MAKE_METHOD(config);
+    if (env == NULL) {
+        fprintf(stderr, "mc_policy_evaluation: unable to create RL environment");
+        free(v);
+        free(sar_array);
+        return 1;
+    }
     OBSERVATION_TYPE obs;
     STEP_RETURN_TYPE step_output;
     unsigned int discrete_obs;
@@ -210,6 +220,7 @@ int MC_FUNC_NAME(mc_policy_evaluation) (CONFIG_TYPE config, ACTION_TYPE* dpolicy
     unsigned int episode;
     unsigned int s;
     unsigned int i;
+    int status = 0;
 
     for (episode = 0; episode < mc_config.num_episodes; episode++) {
         obs = RESET_METHOD(env); /* Seed_Reset */
@@ -239,13 +250,22 @@ int MC_FUNC_NAME(mc_policy_evaluation) (CONFIG_TYPE config, ACTION_TYPE* dpolicy
 
         switch (mc_config.visit_type) {
             case FIRST_VISIT:
-                first_visit_reward_update(mc_config, v, num_states, sar_array, step_count);
+                status = first_visit_reward_update(mc_config, v, num_states, sar_array, step_count);
                 break;
             case EVERY_VISIT:
-               every_visit_reward_update(mc_config, v, sar_array, step_count);
+                status = every_visit_reward_update(mc_config, v, sar_array, step_count);
                 break;
         }
+        if (status) {
+            fprintf(stderr, "mc_policy_evaluation: unable process state-action-reward episode data");
+            CLOSE_METHOD(env);
+            free(v);
+            free(sar_array);
+            return 1;
+        }
     }
+
+    CLOSE_METHOD(env);
 
     memset(svalue_func_out, 0, num_states*sizeof(float));
     for (s = 0; s < num_states; s++) {
@@ -269,17 +289,18 @@ int MC_FUNC_NAME(mc_policy_evaluation) (CONFIG_TYPE config, ACTION_TYPE* dpolicy
 #undef MAKE_METHOD
 #undef RESET_METHOD
 #undef STEP_METHOD
+#undef CLOSE_METHOD
 #undef TO_DISCRETE_OBSERVATION_METHOD
 #ifdef MC_DECLS_ONLY
 #undef MC_DECLS_ONLY
 #endif
 
 /*
-\/\*
 type State_Action_Reward_Tracker_Type is array(Discrete_Observation_Type, Action_Type) of Reward_Tracker_Type;
 State_Action_Reward_Tracker : State_Action_Reward_Tracker_Type := (others => (others => (0.0, 0)));
-\*\/
+*/
 
+/*
 void first_visit_reward_sa_update(RewardTracker (*q_tracker)[ACTION_COUNT], unsigned int num_states, SARType* sar_array_input, unsigned int step_count) {
     \/\* A local copy to avoid specifying "in out" for the array parameter \*\/
     \/\* TODO: Error handling \*\/

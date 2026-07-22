@@ -18,10 +18,13 @@ enum LineWalkPlayer {
     PLAYER1
 };
 
+#ifndef INC_BOOLEAN
+#define INC_BOOLEAN
 typedef enum Boolean {
     FALSE,
     TRUE
 } Boolean;
+#endif
 
 typedef struct LineWalkState {
     LineWalkConfig config;
