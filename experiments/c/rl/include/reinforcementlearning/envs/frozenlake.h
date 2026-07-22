@@ -53,7 +53,16 @@ int frozenlake_model_create(struct FrozenlakeConfig config, struct DiscreteModel
 void frozenlake_model_destroy(const struct DiscreteModelType* model);
 struct TransitionProbabilityType frozenlake_get_transition(const struct DiscreteModelType* model, unsigned int s, enum FrozenlakeAction action, unsigned int next_s);
 
-int iterative_policy_evaluation(struct DiscreteModelType* model, const float (*policy)[FROZENLAKE_ACTION_COUNT], float df, float *value_array);
+/* int iterative_policy_evaluation(struct DiscreteModelType* model, const float (*policy)[FROZENLAKE_ACTION_COUNT], float df, float *value_array); */
+#define ENVIRONMENT_PREFIX frozenlake
+#define DISCRETE_MODEL_TYPE struct DiscreteModelType
+#define ACTION_TYPE enum FrozenlakeAction
+#define ENVIRONMENT_ACTION_COUNT FROZENLAKE_ACTION_COUNT 
+#define GET_TRANSITION_METHOD frozenlake_get_transition
+#define PRINT_POLICY_METHOD print_policy
+#define DP_DECLS_ONLY
+#include <reinforcementlearning/algorithms/dp.inc>
+
 int iterative_deterministic_policy_evaluation(struct DiscreteModelType* model, enum FrozenlakeAction* dpolicy, float df, float *value_array);
 
 int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAction* dpolicy_out);
