@@ -1,8 +1,21 @@
 #include <stdio.h>
 #include "reinforcementlearning/envs/linewalk.h"
 
+enum Environments {
+    LINEWALK,
+    FROZENLAKE
+};
 
-int main() {
+enum Algorithms {
+    RL_RANDOM_ACTIONS
+};
+
+struct RunConfig {
+    enum Environments env_name;
+    enum Algorithms algorithm_name;
+};
+
+int linewalk_example() {
     LineWalkConfig config = { .N = 5 }; /* Example configuration with 5 positions */
     LineWalkState state = initial_state(config);
     
@@ -40,5 +53,9 @@ int main() {
     printf("Simulation Summary: Steps = %lu, Total Reward = %5.2f\n", simsum.num_steps, simsum.total_reward);
  
     return 0;
+}
+
+int main() {
+    return linewalk_example();
 }
 
