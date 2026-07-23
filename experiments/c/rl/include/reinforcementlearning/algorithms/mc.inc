@@ -757,4 +757,3 @@ int MC_FUNC_NAME(mc_epsilon_soft_evaluation) (CONFIG_TYPE config, struct MCEpsil
 #ifdef MC_DECLS_ONLY
 #undef MC_DECLS_ONLY
 #endif
-
