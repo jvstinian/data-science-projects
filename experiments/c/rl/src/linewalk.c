@@ -16,14 +16,14 @@ Boolean is_terminal (LineWalkState state) {
     }
 }
 
-Player get_player(LineWalkState state) {
+enum LineWalkPlayer get_player(LineWalkState state) {
     /* Silence C89 unused parameter warnings */
     (void)state;
 
     return PLAYER1;
 }
 
-LineWalkState step(LineWalkState state, Action action) {
+LineWalkState step(LineWalkState state, enum LineWalkAction action) {
     LineWalkState new_state = state; /* Start with the current state */
     if (state.kind == ACTIVE) {
         switch (action) {
@@ -45,7 +45,7 @@ LineWalkState step(LineWalkState state, Action action) {
     return new_state;
 }
 
-float reward(Player player, LineWalkState state) {
+float reward(enum LineWalkPlayer player, LineWalkState state) {
     /* Silence C89 unused parameter warnings */
     (void)player;
 
@@ -57,7 +57,7 @@ float reward(Player player, LineWalkState state) {
 }
 
 /* TODO: Perhaps remove the num_actions output parameter and just return the count? */
-unsigned int get_available_actions (LineWalkState state, Action *available_actions, unsigned int* num_actions) {
+unsigned int get_available_actions (LineWalkState state, enum LineWalkAction *available_actions, unsigned int* num_actions) {
     unsigned int count = 0;
     if (state.kind == ACTIVE) {
         available_actions[count++] = MOVE_LEFT;
@@ -67,9 +67,9 @@ unsigned int get_available_actions (LineWalkState state, Action *available_actio
     return count;
 }
 
-enum Action linewalk_mctsenv_get_random_action(LineWalkState state) {
+enum LineWalkAction linewalk_mctsenv_get_random_action(LineWalkState state) {
     (void)state;
-    return (enum Action) rand() % 2;
+    return (enum LineWalkAction) rand() % 2;
 }
 
 void print_state(LineWalkState state) {
@@ -111,7 +111,7 @@ struct LineWalkObservation linewalk_reset(struct LineWalkEnvironment* env) {
     return (struct LineWalkObservation) { env->position };
 }
 
-struct LineWalkStepReturn linewalk_step(struct LineWalkEnvironment* env, enum Action action) {
+struct LineWalkStepReturn linewalk_step(struct LineWalkEnvironment* env, enum LineWalkAction action) {
     /* We reinvent the wheel rather than using the step method
      * that was defined above */
     unsigned short int new_pos = env->position;
@@ -162,11 +162,11 @@ void linewalk_close(struct LineWalkEnvironment* env) {
 #define ENVIRONMENT_PREFIX linewalk
 #define CONFIG_TYPE LineWalkConfig
 #define STATE_TYPE LineWalkState
-#define ACTION_TYPE enum Action
+#define ACTION_TYPE enum LineWalkAction
 #define STEP_METHOD step
 #define RANDOM_ACTION_METHOD linewalk_mctsenv_get_random_action
 #define IS_TERMINAL_METHOD is_terminal
-#include "mctsenv_uniform_random_actions_c.inc"
+#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions_c.inc>
 #undef IS_TERMINAL_METHOD
 #undef RANDOM_ACTION_METHOD 
 #undef STEP_METHOD
@@ -175,9 +175,9 @@ void linewalk_close(struct LineWalkEnvironment* env) {
 #undef CONFIG_TYPE
 #undef ENVIRONMENT_PREFIX
 
-enum Action linewalk_get_random_action(struct LineWalkEnvironment* env) {
+enum LineWalkAction linewalk_get_random_action(struct LineWalkEnvironment* env) {
     (void)env;
-    return (enum Action) rand() % 2;
+    return (enum LineWalkAction) rand() % 2;
 }
 
 #define ENVIRONMENT_PREFIX linewalk
@@ -185,13 +185,13 @@ enum Action linewalk_get_random_action(struct LineWalkEnvironment* env) {
 #define ENVIRONMENT_TYPE struct LineWalkEnvironment
 #define OBSERVATION_TYPE struct LineWalkObservation
 #define STEPRETURN_TYPE struct LineWalkStepReturn
-#define ACTION_TYPE enum Action
+#define ACTION_TYPE enum LineWalkAction
 #define MAKE_METHOD linewalk_make
 #define RESET_METHOD linewalk_reset
 #define RANDOM_ACTION_METHOD linewalk_get_random_action
 #define STEP_METHOD linewalk_step
 #define CLOSE_METHOD linewalk_close
-#include "uniform_random_actions_c.inc"
+#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
 #undef CLOSE_METHOD
 #undef STEP_METHOD
 #undef RANDOM_ACTION_METHOD
