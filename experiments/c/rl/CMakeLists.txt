@@ -12,6 +12,8 @@ add_compile_options(-Wall -Wextra -Wswitch -Wswitch-enum)
 add_library(reinforcementlearning
     src/linewalk.c
     src/frozenlake.c
+    src/array_ops.c
+    src/epsilon_policies.c
 )
 
 # Includes

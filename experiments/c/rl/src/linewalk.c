@@ -166,7 +166,7 @@ void linewalk_close(struct LineWalkEnvironment* env) {
 #define STEP_METHOD step
 #define RANDOM_ACTION_METHOD linewalk_mctsenv_get_random_action
 #define IS_TERMINAL_METHOD is_terminal
-#include "mctsenv_uniform_random_actions_c.inc"
+#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions_c.inc>
 #undef IS_TERMINAL_METHOD
 #undef RANDOM_ACTION_METHOD 
 #undef STEP_METHOD
@@ -191,7 +191,7 @@ enum LineWalkAction linewalk_get_random_action(struct LineWalkEnvironment* env) 
 #define RANDOM_ACTION_METHOD linewalk_get_random_action
 #define STEP_METHOD linewalk_step
 #define CLOSE_METHOD linewalk_close
-#include "uniform_random_actions_c.inc"
+#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
 #undef CLOSE_METHOD
 #undef STEP_METHOD
 #undef RANDOM_ACTION_METHOD
