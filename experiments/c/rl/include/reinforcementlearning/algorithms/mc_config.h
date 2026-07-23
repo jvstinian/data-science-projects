@@ -13,4 +13,12 @@ struct MCConfig {
     float discount_factor; /* = 1.0 */
 };
 
+struct MCEpsilonSoftConfig {
+    unsigned int num_episodes;
+    unsigned int max_episode_steps;
+    /* enum MCVisit visit_type; */
+    float discount_factor;
+    float epsilon;
+};
+
 #endif
