@@ -8,13 +8,20 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 add_compile_options(-Wall -Wextra -Wswitch -Wswitch-enum)
 
+# Look for the math library
+find_library(MATH_LIBRARY m)
+
 # Library
 add_library(reinforcementlearning
     src/linewalk.c
     src/frozenlake.c
+    src/cartpole.c
     src/array_ops.c
     src/epsilon_policies.c
 )
+
+# link math library
+target_link_libraries(reinforcementlearning PRIVATE ${MATH_LIBRARY})
 
 # Includes
 target_include_directories(reinforcementlearning
