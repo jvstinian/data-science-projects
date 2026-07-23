@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <reinforcementlearning/bool.h>
 
 typedef struct LineWalkConfig {
     int N; /* Number of positions in the line */
@@ -17,11 +18,6 @@ enum LineWalkAction {
 enum LineWalkPlayer {
     PLAYER1
 };
-
-typedef enum Boolean {
-    FALSE,
-    TRUE
-} Boolean;
 
 typedef struct LineWalkState {
     LineWalkConfig config;
@@ -72,10 +68,6 @@ struct SimulationSummary {
 
 enum LineWalkAction linewalk_get_random_action(struct LineWalkEnvironment* env);
 struct SimulationSummary linewalk_uniform_random_actions(struct LineWalkConfig config, Boolean verbose);
-
-#define CONFIG_TYPE LineWalkConfig
-#include "reinforcementlearning/algorithms/random_action_h.inc"
-#undef CONFIG_TYPE
 
 /* TODO: Remove when ready 
 int main();

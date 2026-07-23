@@ -1,9 +1,5 @@
 #include <stdio.h>
-
-typedef enum Boolean {
-    FALSE,
-    TRUE
-} Boolean;
+#include <reinforcementlearning/bool.h>
 
 enum FrozenlakeMapType {
     MAP_4X4,
@@ -57,14 +53,77 @@ int frozenlake_model_create(struct FrozenlakeConfig config, struct DiscreteModel
 void frozenlake_model_destroy(const struct DiscreteModelType* model);
 struct TransitionProbabilityType frozenlake_get_transition(const struct DiscreteModelType* model, unsigned int s, enum FrozenlakeAction action, unsigned int next_s);
 
-int iterative_policy_evaluation(struct DiscreteModelType* model, float (*policy)[FROZENLAKE_ACTION_COUNT], float df, float *value_array);
+/* int iterative_policy_evaluation(struct DiscreteModelType* model, const float (*policy)[FROZENLAKE_ACTION_COUNT], float df, float *value_array); */
+#define ENVIRONMENT_PREFIX frozenlake
+#define DISCRETE_MODEL_TYPE struct DiscreteModelType
+#define ACTION_TYPE enum FrozenlakeAction
+#define ENVIRONMENT_ACTION_COUNT FROZENLAKE_ACTION_COUNT 
+#define GET_TRANSITION_METHOD frozenlake_get_transition
+#define PRINT_POLICY_METHOD print_policy
+#define DP_DECLS_ONLY
+#include <reinforcementlearning/algorithms/dp.inc>
+
 int iterative_deterministic_policy_evaluation(struct DiscreteModelType* model, enum FrozenlakeAction* dpolicy, float df, float *value_array);
 
 int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAction* dpolicy_out);
 int frozenlake_value_iteration_example(struct FrozenlakeConfig config, float df);
 
-int main();
-    
+int frozenlake_example_main();
+
+unsigned int frozenlake_get_num_states(struct FrozenlakeConfig config);
+unsigned int frozenlake_to_discrete_observation(struct FrozenlakeObservation obs);
+
+#define ENVIRONMENT_PREFIX frozenlake
+#define CONFIG_TYPE struct FrozenlakeConfig
+#define ENVIRONMENT_TYPE struct FrozenlakeEnvironment
+#define ACTION_TYPE enum FrozenlakeAction
+#define OBSERVATION_TYPE struct FrozenlakeObservation
+#define STEP_RETURN_TYPE struct FrozenlakeStepReturn
+#define ENVIRONMENT_ACTION_COUNT FROZENLAKE_ACTION_COUNT
+#define GET_NUM_STATES_METHOD frozenlake_get_num_states
+#define MAKE_METHOD frozenlake_make
+#define RESET_METHOD frozenlake_reset
+#define STEP_METHOD frozenlake_step
+#define CLOSE_METHOD frozenlake_close
+#define GET_RANDOM_ACTION_ES_METHOD frozenlake_get_random_action
+#define TO_DISCRETE_OBSERVATION_METHOD frozenlake_to_discrete_observation
+#define MC_DECLS_ONLY
+#include <reinforcementlearning/algorithms/mc.inc>
+
+#define ENVIRONMENT_PREFIX frozenlake
+#define CONFIG_TYPE struct FrozenlakeConfig
+#define ENVIRONMENT_TYPE struct FrozenlakeEnvironment
+#define OBSERVATION_TYPE struct FrozenlakeObservation
+#define STEP_RETURN_TYPE struct FrozenlakeStepReturn
+#define ACTION_TYPE enum FrozenlakeAction
+#define ENVIRONMENT_ACTION_COUNT FROZENLAKE_ACTION_COUNT
+#define GET_NUM_STATES_METHOD frozenlake_get_num_states
+#define MAKE_METHOD frozenlake_make
+#define RESET_METHOD frozenlake_reset
+#define STEP_METHOD frozenlake_step
+#define CLOSE_METHOD frozenlake_close
+#define GET_RANDOM_ACTION_ES_METHOD frozenlake_get_random_action
+#define TO_DISCRETE_OBSERVATION_METHOD frozenlake_to_discrete_observation
+#define TD_DECLS_ONLY
+#include <reinforcementlearning/algorithms/td.inc>
+
+#define ENVIRONMENT_PREFIX frozenlake
+#define CONFIG_TYPE struct FrozenlakeConfig
+#define ENVIRONMENT_TYPE struct FrozenlakeEnvironment
+#define OBSERVATION_TYPE struct FrozenlakeObservation
+#define STEP_RETURN_TYPE struct FrozenlakeStepReturn
+#define ACTION_TYPE enum FrozenlakeAction
+#define ENVIRONMENT_ACTION_COUNT FROZENLAKE_ACTION_COUNT
+#define GET_NUM_STATES_METHOD frozenlake_get_num_states
+#define MAKE_METHOD frozenlake_make
+#define RESET_METHOD frozenlake_reset
+#define STEP_METHOD frozenlake_step
+#define CLOSE_METHOD frozenlake_close
+#define GET_RANDOM_ACTION_ES_METHOD frozenlake_get_random_action
+#define TO_DISCRETE_OBSERVATION_METHOD frozenlake_to_discrete_observation
+#define ET_DECLS_ONLY
+#include <reinforcementlearning/algorithms/et.inc>
+
 /*
 package Frozen_Lake is
    type Map_Type is (Map_4x4, Map_8x8);
