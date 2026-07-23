@@ -1,4 +1,5 @@
 #include <reinforcementlearning/algorithms/array_ops.h>
+#include <reinforcementlearning/algorithms/epsilon_policies.h>
 #include <reinforcementlearning/envs/frozenlake.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -8,6 +9,7 @@
 #include <float.h> /* FLT_MAX */
 #include <math.h> /* abs */
 
+/* TODO: Need to consolidate the math definitions */
 #if defined(__STDC__) && !defined(__STDC_VERSION__)
     float fmaxf(float x, float y) {
         return (x > y) ? x : y;
@@ -659,6 +661,7 @@ int policy_iteration(
 
 
 /* TODO: Move to dp.inc */
+/*
 static void get_action_values_for_state(struct DiscreteModelType* model, unsigned int s, const float* value_function, float df, float* action_values_out) {
     float new_value;
     unsigned int s1;
@@ -676,19 +679,21 @@ static void get_action_values_for_state(struct DiscreteModelType* model, unsigne
         action_values_out[a] = new_value;
     }
 }
+*/
 
 /* TODO: Perhaps return number of iterations? */
 /* TODO: Move to dp.inc */
+/*
 static void value_max_action_update(struct DiscreteModelType* model, float df, float* value_function_out) {
-    /* Value_Function: Value_Function_Type := (others => 0.0); */
+    \/\* Value_Function: Value_Function_Type := (others => 0.0); \*\/
     unsigned int num_states = model->num_states;
 
-    /* Overwrite value function with 0s */
+    \/\* Overwrite value function with 0s \*\/
     memset(value_function_out, 0, num_states * sizeof(float));
 
     unsigned int s;
 
-    float theta = 1.0e-6;  /* Convergence threshold */
+    float theta = 1.0e-6;  \/\* Convergence threshold \*\/
     float local_delta = 0.0;
 
     float prev_value;
@@ -699,7 +704,7 @@ static void value_max_action_update(struct DiscreteModelType* model, float df, f
 
     while (1) {
         iteration_count++;
-        printf("Iteration %d", iteration_count); /* TODO: Remove */
+        printf("Iteration %d", iteration_count); \/\* TODO: Remove \*\/
 
         local_delta = 0.0;
         for (s = 0; s < num_states; s++) {
@@ -714,19 +719,21 @@ static void value_max_action_update(struct DiscreteModelType* model, float df, f
         }
     }
 }
+*/
  
 /* TODO: Move to dp.inc */
+/*
 int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAction* dpolicy_out) {
     unsigned int num_states = model->num_states;
     unsigned int s;
 
     for (s=0; s < num_states; s++) {
-        /* Initialize to random policy */
+        \/\* Initialize to random policy \*\/
         dpolicy_out[s] = frozenlake_get_random_action();
     }
     
-    /* Local values */
-    /* TODO: Consider returning value as well */
+    \/\* Local values \*\/
+    \/\* TODO: Consider returning value as well \*\/
     float* value_function = malloc(num_states * sizeof(float));
     if (value_function == NULL) {
         fprintf(stderr, "value_iteration: error allocating state value array");
@@ -735,7 +742,7 @@ int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAc
 
     float action_values[FROZENLAKE_ACTION_COUNT];
 
-    print_policy(dpolicy_out, num_states);  /* TODO: Remove after debugging */
+    print_policy(dpolicy_out, num_states);  \/\* TODO: Remove after debugging \*\/
     value_max_action_update(model, df, value_function);
 
     for (s=0; s < num_states; s++) {
@@ -744,8 +751,9 @@ int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAc
     }
     return 0;
 }
+*/
 
-/* TODO: Move to dp.inc */
+/* NOTE: Keeping the example defined here for now rather than moving to dp.inc */
 int frozenlake_value_iteration_example(struct FrozenlakeConfig config, float df) {
     struct DiscreteModelType model;
 
@@ -765,7 +773,7 @@ int frozenlake_value_iteration_example(struct FrozenlakeConfig config, float df)
     /* Reset the seed */
     srand(time(NULL));
 
-    if (value_iteration(&model, df, optimal_dpolicy_out)) {
+    if (frozenlake_value_iteration(&model, df, optimal_dpolicy_out)) {
         fprintf(stderr, "frozenlake_value_iteration_example: error running value_iteration");
         free(optimal_dpolicy_out);
         frozenlake_model_destroy(&model);
@@ -879,18 +887,21 @@ int frozenlake_example_main() {
 #define GET_TRANSITION_METHOD frozenlake_get_transition
 #define PRINT_POLICY_METHOD print_policy
 #include <reinforcementlearning/algorithms/dp.inc>
- 
+
+/*
 struct TDConfig {
     float alpha;
     float gamma;
 };
+*/
 
 /* TODO: Move to td.inc */
 /* TODO: This method has been moved */
+/*
 int td_iterative_policy_evaluation(struct FrozenlakeConfig config, struct TDConfig td_config, enum FrozenlakeAction* policy, float* value_function_out) {
-    /* TODO: return error if make fails */
+    \/\* TODO: return error if make fails \*\/
     struct FrozenlakeEnvironment* env = frozenlake_make(config);
-    /* Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default); */
+    \/\* Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default); \*\/
 
     struct FrozenlakeObservation obs;
     unsigned int s, s1;
@@ -900,18 +911,18 @@ int td_iterative_policy_evaluation(struct FrozenlakeConfig config, struct TDConf
 
     unsigned int num_states = env->rows * env->cols;
 
-    /* Reset value function to 0 */
+    \/\* Reset value function to 0 \*\/
     memset(value_function_out, 0, num_states * sizeof(float));
-    float theta = 1.0e-6;  /* Convergence threshold */
+    float theta = 1.0e-6;  \/\* Convergence threshold \*\/
     float local_delta = 0.0;
 
-    /* TODO: return error if malloc fails */
+    \/\* TODO: return error if malloc fails \*\/
     float* prev_value_function = malloc(num_states * sizeof(float));
 
     int episode_count = 0;
     unsigned int step_index = 0;
 
-    /* NOTE: We cap the number of steps per episode.  This differs from the textbook algorithm. */
+    \/\* NOTE: We cap the number of steps per episode.  This differs from the textbook algorithm. \*\/
     unsigned int max_steps = 50;
 
     while (1) {
@@ -921,8 +932,8 @@ int td_iterative_policy_evaluation(struct FrozenlakeConfig config, struct TDConf
         memcpy(prev_value_function, value_function_out, num_states * sizeof(float));
         local_delta = 0.0;
 
-        obs = frozenlake_reset(env); /* Seed_Reset */
-        s = obs.position_index;  /* TODO: To move to a C template we'll need a to_discrete_state method */
+        obs = frozenlake_reset(env); \/\* Seed_Reset \*\/
+        s = obs.position_index;  \/\* TODO: To move to a C template we'll need a to_discrete_state method \*\/
         step_index = 0;
         terminated = FALSE;
 
@@ -933,14 +944,14 @@ int td_iterative_policy_evaluation(struct FrozenlakeConfig config, struct TDConf
             s1 = obs.position_index;
             printf("Action %d takes state %u to state %u", (int) action, s, s1);
             value_function_out[s] += td_config.alpha * (step_result.reward + td_config.gamma * value_function_out[s1] - value_function_out[s]);
-            /* Update to next state */
+            \/\* Update to next state \*\/
             s = s1;
             step_index++;
             terminated = step_result.terminated || (step_index >= max_steps);
         }
 
-        /* NOTE: We exit when the max value function change falls below a threshold.
-                 This differs from the textbook algorithm. */
+        \/\* NOTE: We exit when the max value function change falls below a threshold.
+                 This differs from the textbook algorithm. \*\/
         for(s = 0; s < num_states; s++) {
             local_delta = fmaxf(local_delta, fabsf(value_function_out[s] - prev_value_function[s]));
         }
@@ -950,7 +961,9 @@ int td_iterative_policy_evaluation(struct FrozenlakeConfig config, struct TDConf
     }
     return episode_count;
 }
-   
+*/
+ 
+/*
 struct SARSAConfig {
     float alpha;
     float gamma;
@@ -958,13 +971,17 @@ struct SARSAConfig {
     float minimum_epsilon;
     unsigned int episodes_to_minimum_epsilon;
 };
+*/
 
 /* TODO: Move to td.inc */
+/*
 static enum FrozenlakeAction best_action_for_state(float (*q)[FROZENLAKE_ACTION_COUNT], unsigned int s) {
     return (enum FrozenlakeAction) arg_max(q[s], FROZENLAKE_ACTION_COUNT);
 }
+*/
 
 /* TODO: Move to td.inc */
+/*
 static enum FrozenlakeAction choose_action_epsilon_greedy(float epsilon, float (*q)[FROZENLAKE_ACTION_COUNT], unsigned int s) {
     float u = rand_float();
     if (u < epsilon) {
@@ -975,9 +992,11 @@ static enum FrozenlakeAction choose_action_epsilon_greedy(float epsilon, float (
         return best_action_for_state(q, s);
     }
 }
+*/
 
 /* TODO: The epsilon trajectory in the following needs improvement */
 /* TODO: Move to td.inc */
+/*
 static float update_epsilon(struct SARSAConfig sarsa_config, unsigned int episode) {
     float init_eps = sarsa_config.initial_epsilon;
     float min_eps = sarsa_config.minimum_epsilon;
@@ -986,19 +1005,21 @@ static float update_epsilon(struct SARSAConfig sarsa_config, unsigned int episod
 
     return fmaxf(min_eps, k * init_eps / ((float) episode));
 }
+*/
 
 /* TODO: Move to td.inc */
+/*
 int sarsa_on_policy(struct FrozenlakeConfig config, struct SARSAConfig sarsa_config, float (*q)[FROZENLAKE_ACTION_COUNT]) {
-    /* TODO: return error if make fails */
+    \/\* TODO: return error if make fails \*\/
     struct FrozenlakeEnvironment* env = frozenlake_make(config);
-    /* Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default); */
+    \/\* Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default); \*\/
 
     struct FrozenlakeObservation obs;
     unsigned int s, s1;
     struct FrozenlakeStepReturn step_result;
     enum FrozenlakeAction a, a1;
     Boolean terminated = FALSE;
-    /* The local delta indices */
+    \/\* The local delta indices \*\/
     unsigned int s0;
     enum FrozenlakeAction a0;
 
@@ -1006,33 +1027,33 @@ int sarsa_on_policy(struct FrozenlakeConfig config, struct SARSAConfig sarsa_con
 
     unsigned int num_states = env->rows * env->cols;
 
-    /* Reset value function to 0 */
+    \/\* Reset value function to 0 \*\/
     memset(q, 0, num_states * sizeof(*q));
-    float theta = 1.0e-6;  /* Convergence threshold */
+    float theta = 1.0e-6;  \/\* Convergence threshold \*\/
     float local_delta = 0.0;
 
-    /* TODO: return error if malloc fails */
+    \/\* TODO: return error if malloc fails \*\/
     float (*prev_action_value_func)[FROZENLAKE_ACTION_COUNT] = malloc(num_states * sizeof(*q));
 
     unsigned int episode_count = 0;
     unsigned int step_index = 0;
 
-    /* NOTE: We cap the number of steps per episode.  This differs from the textbook algorithm. */
+    \/\* NOTE: We cap the number of steps per episode.  This differs from the textbook algorithm. \*\/
     unsigned int max_steps = 100;
 
-    /* TODO: Reset RNG, not needed once we reset below */
+    \/\* TODO: Reset RNG, not needed once we reset below \*\/
     srand(time(NULL));
 
     while (1) { 
         episode_count++;
-        /* Put_Line("Episode " & Episode_Count'Image); */
+        \/\* Put_Line("Episode " & Episode_Count'Image); \*\/
 
         epsilon = update_epsilon(sarsa_config, (int) episode_count);
         printf("Episode %u, epsilon: %f", episode_count, epsilon);
 
         memcpy(prev_action_value_func, q, num_states * sizeof(*q));
 
-        obs = frozenlake_reset(env); /* Seed_Reset */
+        obs = frozenlake_reset(env); \/\* Seed_Reset \*\/
         s = obs.position_index;
         a = choose_action_epsilon_greedy(epsilon, q, s);
         step_index = 0;
@@ -1045,18 +1066,18 @@ int sarsa_on_policy(struct FrozenlakeConfig config, struct SARSAConfig sarsa_con
             a1 = choose_action_epsilon_greedy(epsilon, q, s1);
             printf("Action %d takes state %u to state %u and action %d in on-policy SARSA", a, s, s1, a1);
             q[s][a] += sarsa_config.alpha * (step_result.reward + sarsa_config.gamma * q[s1][a1] - q[s][a]);
-            /* Update to next state */
+            \/\* Update to next state \*\/
             s = s1;
             a = a1;
             step_index++;
             terminated = step_result.terminated || (step_index >= max_steps);
         }
 
-        /* NOTE: We exit when the max value function change falls below a threshold
+        \/\* NOTE: We exit when the max value function change falls below a threshold
          *       after episode Episodes_To_Minimum_Epsilon is reached.
-         *       This differs from the textbook algorithm. */
+         *       This differs from the textbook algorithm. \*\/
         local_delta = 0.0;
-        /* TODO: Decide whether to reintroduce something like the following condition before exiting */
+        \/\* TODO: Decide whether to reintroduce something like the following condition before exiting \*\/
         for (s0 = 0; s0 < num_states; s0++) {
             for (a0 = 0; a0 < FROZENLAKE_ACTION_COUNT; a0++) {
                 local_delta = fmaxf(local_delta, fabsf(q[s0][a0] - prev_action_value_func[s0][a0]));
@@ -1068,19 +1089,21 @@ int sarsa_on_policy(struct FrozenlakeConfig config, struct SARSAConfig sarsa_con
     }
     return 0;
 }
+*/
 
 /* TODO: Move to td.inc */
+/*
 int sarsa_off_policy(struct FrozenlakeConfig config, struct SARSAConfig sarsa_config, float (*q)[FROZENLAKE_ACTION_COUNT]) {
-    /* TODO: return error if make fails */
+    \/\* TODO: return error if make fails \*\/
     struct FrozenlakeEnvironment* env = frozenlake_make(config);
-    /* Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default); */
+    \/\* Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default); \*\/
 
     struct FrozenlakeObservation obs;
     unsigned int s, s1;
     struct FrozenlakeStepReturn step_result;
     enum FrozenlakeAction a, a1;
     Boolean terminated = FALSE;
-    /* The local delta indices */
+    \/\* The local delta indices \*\/
     unsigned int s0;
     enum FrozenlakeAction a0;
 
@@ -1088,57 +1111,57 @@ int sarsa_off_policy(struct FrozenlakeConfig config, struct SARSAConfig sarsa_co
 
     unsigned int num_states = env->rows * env->cols;
 
-    /* Reset value function to 0 */
+    \/\* Reset value function to 0 \*\/
     memset(q, 0, num_states * sizeof(*q));
-    float theta = 1.0e-6;  /* Convergence threshold */
+    float theta = 1.0e-6;  \/\* Convergence threshold \*\/
     float local_delta = 0.0;
 
-    /* TODO: return error if malloc fails */
+    \/\* TODO: return error if malloc fails \*\/
     float (*prev_action_value_func)[FROZENLAKE_ACTION_COUNT] = malloc(num_states * sizeof(*q));
 
     unsigned int episode_count = 0;
     unsigned int step_index = 0;
 
-    /* NOTE: We cap the number of steps per episode.  This differs from the textbook algorithm. */
+    \/\* NOTE: We cap the number of steps per episode.  This differs from the textbook algorithm. \*\/
     unsigned int max_steps = 100;
 
-    /* TODO: Reset RNG, not needed once we reset below */
+    \/\* TODO: Reset RNG, not needed once we reset below \*\/
     srand(time(NULL));
 
     while (1) { 
         episode_count++;
-        /* Put_Line("Episode " & Episode_Count'Image); */
+        \/\* Put_Line("Episode " & Episode_Count'Image); \*\/
 
         epsilon = update_epsilon(sarsa_config, (int) episode_count);
         printf("Episode %u, epsilon: %f", episode_count, epsilon);
 
         memcpy(prev_action_value_func, q, num_states * sizeof(*q));
 
-        obs = frozenlake_reset(env); /* Seed_Reset */
+        obs = frozenlake_reset(env); \/\* Seed_Reset \*\/
         s = obs.position_index;
         step_index = 0;
         terminated = FALSE;
 
         while (!terminated) {
-            /* TODO: I think there's an error here.  A needs to be moved up (out of the loop) */
+            \/\* TODO: I think there's an error here.  A needs to be moved up (out of the loop) \*\/
             a = choose_action_epsilon_greedy(epsilon, q, s);
             step_result = frozenlake_step(env, a);
             obs = step_result.observation;
             s1 = obs.position_index;
-            a1 = best_action_for_state(q, s1);  /* TODO: Just get best value for state */
+            a1 = best_action_for_state(q, s1);  \/\* TODO: Just get best value for state \*\/
             printf("Action %d takes state %u to state %u in off-policy SARSA", a, s, s1);
             q[s][a] += sarsa_config.alpha * (step_result.reward + sarsa_config.gamma * q[s1][a1] - q[s][a]);
-            /* Update to next state */
+            \/\* Update to next state \*\/
             s = s1;
             step_index++;
             terminated = step_result.terminated || (step_index >= max_steps);
         }
 
-        /* NOTE: We exit when the max value function change falls below a threshold
+        \/\* NOTE: We exit when the max value function change falls below a threshold
          *       after episode Episodes_To_Minimum_Epsilon is reached.
-         *       This differs from the textbook algorithm. */
+         *       This differs from the textbook algorithm. \*\/
         local_delta = 0.0;
-        /* TODO: Decide whether to reintroduce something like the following condition before exiting */
+        \/\* TODO: Decide whether to reintroduce something like the following condition before exiting \*\/
         for (s0 = 0; s0 < num_states; s0++) {
             for (a0 = 0; a0 < FROZENLAKE_ACTION_COUNT; a0++) {
                 local_delta = fmaxf(local_delta, fabsf(q[s0][a0] - prev_action_value_func[s0][a0]));
@@ -1150,18 +1173,14 @@ int sarsa_off_policy(struct FrozenlakeConfig config, struct SARSAConfig sarsa_co
     }
     return 0;
 }
-
-struct ETConfig {
-    float alpha;
-    float gamma;
-    float lambda;
-};
+*/
 
 /* TODO: Move to et.inc */
+/*
 int et_iterative_policy_evaluation(struct FrozenlakeConfig config, struct ETConfig et_config, float* dpolicy, float* svalue_func_out) {
-    /* TODO: return error if make fails */
+    \/\* TODO: return error if make fails \*\/
     struct FrozenlakeEnvironment* env = frozenlake_make(config);
-    /* Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default); */
+    \/\* Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default); \*\/
 
     unsigned int num_states = env->rows * env->cols;
 
@@ -1175,26 +1194,26 @@ int et_iterative_policy_evaluation(struct FrozenlakeConfig config, struct ETConf
     struct FrozenlakeStepReturn step_result;
     enum FrozenlakeAction a;
     Boolean terminated = FALSE;
-    /* The local delta indices
+    \/\* The local delta indices
     unsigned int s0;
     enum FrozenlakeAction a0;
-    */
+    \*\/
 
-    /* Reset value function to 0 */
+    \/\* Reset value function to 0 \*\/
     memset(svalue_func_out, 0, num_states * sizeof(*svalue_func_out));
-    float theta = 1.0e-6;  /* Convergence threshold */
+    float theta = 1.0e-6;  \/\* Convergence threshold \*\/
     float local_delta = 0.0;
 
-    /* TODO: return error if malloc fails */
+    \/\* TODO: return error if malloc fails \*\/
     float* prev_svalue_func = malloc(num_states * sizeof(float));
 
     unsigned int episode_count = 0;
     unsigned int step_index = 0;
 
-    /* NOTE: We cap the number of steps per episode.  This differs from the textbook algorithm. */
+    \/\* NOTE: We cap the number of steps per episode.  This differs from the textbook algorithm. \*\/
     unsigned int max_steps = 50;
 
-    /* TODO: Reset RNG, not needed once we reset below */
+    \/\* TODO: Reset RNG, not needed once we reset below \*\/
     srand(time(NULL));
 
     while (1) {
@@ -1203,10 +1222,10 @@ int et_iterative_policy_evaluation(struct FrozenlakeConfig config, struct ETConf
 
         memcpy(prev_svalue_func, svalue_func_out, num_states * sizeof(float));
 
-        /* TODO: From the text of the book and the book errata, E needs to be set to 0
-                 at the beginning of an episode. */
+        \/\* TODO: From the text of the book and the book errata, E needs to be set to 0
+                 at the beginning of an episode. \*\/
 
-        obs = frozenlake_reset(env); /* Seed_Reset */
+        obs = frozenlake_reset(env); \/\* Seed_Reset \*\/
         s = obs.position_index;
         step_index = 0;
         terminated = FALSE;
@@ -1223,15 +1242,15 @@ int et_iterative_policy_evaluation(struct FrozenlakeConfig config, struct ETConf
                 svalue_func_out[s2] += et_config.alpha * td_error * e[s2];
                 e[s2] = et_config.gamma * et_config.lambda * e[s2];
             }
-            /* Update to next state */
+            \/\* Update to next state \*\/
             s = s1;
             step_index++;
             terminated = (step_result.terminated || (step_index >= max_steps));
        }
         
         local_delta = 0.0;
-        /* NOTE: We exit when the max value function change falls below a threshold.
-                 This differs from the textbook algorithm. */
+        \/\* NOTE: We exit when the max value function change falls below a threshold.
+                 This differs from the textbook algorithm. \*\/
         for (s = 0; s < num_states; s++) {
             local_delta = fmaxf(local_delta, fabsf(svalue_func_out[s] - prev_svalue_func[s]));
         }
@@ -1241,22 +1260,40 @@ int et_iterative_policy_evaluation(struct FrozenlakeConfig config, struct ETConf
     }
     return 0;
 }
+*/
 
-/* TODO: Note that there is a type with the same name in the TD example */
-struct ETSARSAConfig {
-    struct SARSAConfig td_config;
-    float lambda;
-};
+/* TODO: The following method is the same as those defined in td.inc */
+/*
+static enum FrozenlakeAction et_best_action_for_state(float (*q)[FROZENLAKE_ACTION_COUNT], unsigned int s) {
+    return (enum FrozenlakeAction) arg_max(q[s], FROZENLAKE_ACTION_COUNT);
+}
+*/
+
+/* TODO: The following method is the same as those defined in td.inc */
+/*
+static enum FrozenlakeAction et_choose_action_epsilon_greedy(float epsilon, float (*q)[FROZENLAKE_ACTION_COUNT], unsigned int s) {
+    float u = rand_float();
+    if (u < epsilon) {
+        float a_rand;
+        \/\* TODO: I believe we have methods for getting a random action assuming a uniform distribution \*\/
+        a_rand = rand_float() * ((float) FROZENLAKE_ACTION_COUNT);
+        return (enum FrozenlakeAction) ((int) floorf(a_rand));
+    } else {
+        return et_best_action_for_state(q, s);
+    }
+}
+*/
 
 /* TODO: Move to et.inc */
+/*
 int et_sarsa_on_policy(struct FrozenlakeConfig config, struct ETSARSAConfig sarsa_config, float (*q)[FROZENLAKE_ACTION_COUNT]) {
-    /* TODO: return error if make fails */
+    \/\* TODO: return error if make fails \*\/
     struct FrozenlakeEnvironment* env = frozenlake_make(config);
-    /* Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default); */
+    \/\* Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default); \*\/
 
     unsigned int num_states = env->rows * env->cols;
 
-    /* TODO: return error if malloc fails */
+    \/\* TODO: return error if malloc fails \*\/
     float (*prev_esavalue_func)[FROZENLAKE_ACTION_COUNT] = malloc(num_states * sizeof(*q));
     memset(prev_esavalue_func, 0, num_states * sizeof(*prev_esavalue_func));
 
@@ -1269,43 +1306,43 @@ int et_sarsa_on_policy(struct FrozenlakeConfig config, struct ETSARSAConfig sars
     struct FrozenlakeStepReturn step_result;
     enum FrozenlakeAction a, a1, a2;
     Boolean terminated = FALSE;
-    /* The local delta indices */
+    \/\* The local delta indices \*\/
     unsigned int s0;
     enum FrozenlakeAction a0;
 
     float epsilon;
 
-    /* Reset value function to 0 */
+    \/\* Reset value function to 0 \*\/
     memset(q, 0, num_states * sizeof(*q));
-    float theta = 1.0e-6;  /* Convergence threshold */
+    float theta = 1.0e-6;  \/\* Convergence threshold \*\/
     float local_delta = 0.0;
 
-    /* TODO: return error if malloc fails */
+    \/\* TODO: return error if malloc fails \*\/
     float (*prev_q)[FROZENLAKE_ACTION_COUNT] = malloc(num_states * sizeof(*q));
 
     unsigned int episode_count = 0;
     unsigned int step_index = 0;
 
-    /* NOTE: We cap the number of steps per episode.  This differs from the textbook algorithm. */
+    \/\* NOTE: We cap the number of steps per episode.  This differs from the textbook algorithm. \*\/
     unsigned int max_steps = 100;
 
-    /* TODO: Reset RNG, not needed once we reset below */
+    \/\* TODO: Reset RNG, not needed once we reset below \*\/
     srand(time(NULL));
 
     while (1) { 
         episode_count++;
-        /* Put_Line("Episode " & Episode_Count'Image); */
+        \/\* Put_Line("Episode " & Episode_Count'Image); \*\/
 
         epsilon = update_epsilon(sarsa_config.td_config, (int) episode_count);
         printf("Episode %u, epsilon: %f", episode_count, epsilon);
 
         memcpy(prev_q, q, num_states * sizeof(*q));
 
-        /* TODO: From the text of the book and the book errata, E needs to be set to 0
-                 at the beginning of an episode. */
-        obs = frozenlake_reset(env); /* Seed_Reset */
+        \/\* TODO: From the text of the book and the book errata, E needs to be set to 0
+                 at the beginning of an episode. \*\/
+        obs = frozenlake_reset(env); \/\* Seed_Reset \*\/
         s = obs.position_index;
-        a = choose_action_epsilon_greedy(epsilon, q, s);
+        a = et_choose_action_epsilon_greedy (epsilon, q, s);
         step_index = 0;
         terminated = FALSE;
 
@@ -1313,7 +1350,7 @@ int et_sarsa_on_policy(struct FrozenlakeConfig config, struct ETSARSAConfig sars
             step_result = frozenlake_step(env, a);
             obs = step_result.observation;
             s1 = obs.position_index;
-            a1 = choose_action_epsilon_greedy(epsilon, q, s1);
+            a1 = et_choose_action_epsilon_greedy(epsilon, q, s1);
             printf("Action %d takes state %u to state %u and action %d in on-policy SARSA", a, s, s1, a1);
             td_error = step_result.reward + sarsa_config.td_config.gamma * q[s1][a1] - q[s][a];
             esa[s][a] += 1.0;
@@ -1323,18 +1360,18 @@ int et_sarsa_on_policy(struct FrozenlakeConfig config, struct ETSARSAConfig sars
                     esa[s2][a2] = sarsa_config.td_config.gamma * sarsa_config.lambda * esa[s2][a2];
                 }
             }
-            /* Update to next state */
+            \/\* Update to next state \*\/
             s = s1;
             a = a1;
             step_index++;
             terminated = (step_result.terminated || (step_index >= max_steps));
         }
 
-        /* NOTE: We exit when the max value function change falls below a threshold
+        \/\* NOTE: We exit when the max value function change falls below a threshold
          *       after episode Episodes_To_Minimum_Epsilon is reached.
-         *       This differs from the textbook algorithm. */
+         *       This differs from the textbook algorithm. \*\/
         local_delta = 0.0;
-        /* TODO: Decide whether to reintroduce something like the following condition before exiting */
+        \/\* TODO: Decide whether to reintroduce something like the following condition before exiting \*\/
         for (s0 = 0; s0 < num_states; s0++) {
             for (a0 = 0; a0 < FROZENLAKE_ACTION_COUNT; a0++) {
                 local_delta = fmaxf(local_delta, fabsf(q[s0][a0] - prev_q[s0][a0]));
@@ -1346,16 +1383,18 @@ int et_sarsa_on_policy(struct FrozenlakeConfig config, struct ETSARSAConfig sars
     }
     return 0;
 }
+*/
 
 /* TODO: Move to et.inc */
+/*
 int watkins_q_iteration(struct FrozenlakeConfig config, struct ETSARSAConfig sarsa_config, float (*q)[FROZENLAKE_ACTION_COUNT]) {
-    /* TODO: return error if make fails */
+    \/\* TODO: return error if make fails \*\/
     struct FrozenlakeEnvironment* env = frozenlake_make(config);
-    /* Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default); */
+    \/\* Seed_Reset : Seed_Reset_Type := Seed_Reset_Type'(Kind => Set_Default); \*\/
 
     unsigned int num_states = env->rows * env->cols;
 
-    /* TODO: return error if malloc fails */
+    \/\* TODO: return error if malloc fails \*\/
     float (*prev_savalue_func)[FROZENLAKE_ACTION_COUNT] = malloc(num_states * sizeof(*q));
     memset(prev_savalue_func, 0, num_states * sizeof(*prev_savalue_func));
 
@@ -1368,41 +1407,41 @@ int watkins_q_iteration(struct FrozenlakeConfig config, struct ETSARSAConfig sar
     struct FrozenlakeStepReturn step_result;
     enum FrozenlakeAction a, a1, a2, a_best;
     Boolean terminated = FALSE;
-    /* The local delta indices */
+    \/\* The local delta indices \*\/
     unsigned int s0;
     enum FrozenlakeAction a0;
 
     float epsilon;
 
-    /* Reset value function to 0 */
+    \/\* Reset value function to 0 \*\/
     memset(q, 0, num_states * sizeof(*q));
-    float theta = 1.0e-6;  /* Convergence threshold */
+    float theta = 1.0e-6;  \/\* Convergence threshold \*\/
     float local_delta = 0.0;
 
-    /* TODO: return error if malloc fails */
+    \/\* TODO: return error if malloc fails \*\/
     float (*prev_q)[FROZENLAKE_ACTION_COUNT] = malloc(num_states * sizeof(*q));
 
     unsigned int episode_count = 0;
     unsigned int step_index = 0;
     unsigned int max_steps = 100;
 
-    /* TODO: Reset RNG, not needed once we reset below */
+    \/\* TODO: Reset RNG, not needed once we reset below \*\/
     srand(time(NULL));
 
     while (1) {
         episode_count++;
-        /* Put_Line("Episode " & Episode_Count'Image); */
+        \/\* Put_Line("Episode " & Episode_Count'Image); \*\/
 
         epsilon = update_epsilon(sarsa_config.td_config, (int) episode_count);
         printf("Episode %u, epsilon: %f", episode_count, epsilon);
 
         memcpy(prev_q, q, num_states * sizeof(*q));
 
-        /* TODO: From the text of the book and the book errata, E needs to be set to 0
-                 at the beginning of an episode. */
-        obs = frozenlake_reset(env); /* Seed_Reset */
+        \/\* TODO: From the text of the book and the book errata, E needs to be set to 0
+                 at the beginning of an episode. \*\/
+        obs = frozenlake_reset(env); \/\* Seed_Reset \*\/
         s = obs.position_index;
-        a = choose_action_epsilon_greedy(epsilon, q, s);
+        a = et_choose_action_epsilon_greedy(epsilon, q, s);
         step_index = 0;
         terminated = FALSE;
 
@@ -1410,8 +1449,8 @@ int watkins_q_iteration(struct FrozenlakeConfig config, struct ETSARSAConfig sar
             step_result = frozenlake_step(env, a);
             obs = step_result.observation;
             s1 = obs.position_index;
-            a1 = choose_action_epsilon_greedy(epsilon, q, s1);
-            a_best = best_action_for_state(q, s1);  /* TODO: Just get best value for state */
+            a1 = et_choose_action_epsilon_greedy(epsilon, q, s1);
+            a_best = et_best_action_for_state(q, s1);  \/\* TODO: Just get best value for state \*\/
             printf("Action %d takes state %u to state %u in Watkin's Q algorithm (off-policy SARSA usingn Eligibility Trace)", a, s, s1);
 
             td_error = step_result.reward + sarsa_config.td_config.gamma * q[s1][a_best] - q[s][a];
@@ -1419,7 +1458,7 @@ int watkins_q_iteration(struct FrozenlakeConfig config, struct ETSARSAConfig sar
             for(s2 = 0; s2 < num_states; s2++) {
                 for(a2 = 0; a2 < FROZENLAKE_ACTION_COUNT; a2++) {
                     q[s2][a2] += sarsa_config.td_config.alpha * td_error * esa[s2][a2];
-                    /* IN PROGRESS: Is the following correct?  Based on the text, I think so. */
+                    \/\* IN PROGRESS: Is the following correct?  Based on the text, I think so. \*\/
                     esa[s2][a2] = sarsa_config.td_config.gamma * sarsa_config.lambda * esa[s2][a2];
                     if (a1 == a_best) {
                         esa[s2][a2] = sarsa_config.td_config.gamma * sarsa_config.lambda * esa[s2][a2];
@@ -1428,18 +1467,18 @@ int watkins_q_iteration(struct FrozenlakeConfig config, struct ETSARSAConfig sar
                     }
                 }
             }
-            /* Update to next state */
+            \/\* Update to next state \*\/
             s = s1;
             a = a1;
             step_index++;
             terminated = (step_result.terminated || (step_index >= max_steps));
         }
 
-        /* NOTE: We exit when the max value function change falls below a threshold
+        \/\* NOTE: We exit when the max value function change falls below a threshold
          *       after episode Episodes_To_Minimum_Epsilon is reached.
-         *       This differs from the textbook algorithm. */
+         *       This differs from the textbook algorithm. \*\/
         local_delta = 0.0;
-        /* TODO: Decide whether to reintroduce something like the following condition before exiting */
+        \/\* TODO: Decide whether to reintroduce something like the following condition before exiting \*\/
         for (s0 = 0; s0 < num_states; s0++) {
             for (a0 = 0; a0 < FROZENLAKE_ACTION_COUNT; a0++) {
                 local_delta = fmaxf(local_delta, fabsf(q[s0][a0] - prev_q[s0][a0]));
@@ -1451,6 +1490,7 @@ int watkins_q_iteration(struct FrozenlakeConfig config, struct ETSARSAConfig sar
     }
     return 0;
 }
+*/
 
 unsigned int frozenlake_get_num_states(struct FrozenlakeConfig config) {
     switch (config.map_name) {
@@ -1482,4 +1522,36 @@ unsigned int frozenlake_to_discrete_observation(struct FrozenlakeObservation obs
 #define GET_RANDOM_ACTION_ES_METHOD frozenlake_get_random_action
 #define TO_DISCRETE_OBSERVATION_METHOD frozenlake_to_discrete_observation
 #include <reinforcementlearning/algorithms/mc.inc>
+
+#define ENVIRONMENT_PREFIX frozenlake
+#define CONFIG_TYPE struct FrozenlakeConfig
+#define ENVIRONMENT_TYPE struct FrozenlakeEnvironment
+#define OBSERVATION_TYPE struct FrozenlakeObservation
+#define STEP_RETURN_TYPE struct FrozenlakeStepReturn
+#define ACTION_TYPE enum FrozenlakeAction
+#define ENVIRONMENT_ACTION_COUNT FROZENLAKE_ACTION_COUNT
+#define GET_NUM_STATES_METHOD frozenlake_get_num_states
+#define MAKE_METHOD frozenlake_make
+#define RESET_METHOD frozenlake_reset
+#define STEP_METHOD frozenlake_step
+#define CLOSE_METHOD frozenlake_close
+#define GET_RANDOM_ACTION_ES_METHOD frozenlake_get_random_action
+#define TO_DISCRETE_OBSERVATION_METHOD frozenlake_to_discrete_observation
+#include <reinforcementlearning/algorithms/td.inc>
+
+#define ENVIRONMENT_PREFIX frozenlake
+#define CONFIG_TYPE struct FrozenlakeConfig
+#define ENVIRONMENT_TYPE struct FrozenlakeEnvironment
+#define OBSERVATION_TYPE struct FrozenlakeObservation
+#define STEP_RETURN_TYPE struct FrozenlakeStepReturn
+#define ACTION_TYPE enum FrozenlakeAction
+#define ENVIRONMENT_ACTION_COUNT FROZENLAKE_ACTION_COUNT
+#define GET_NUM_STATES_METHOD frozenlake_get_num_states
+#define MAKE_METHOD frozenlake_make
+#define RESET_METHOD frozenlake_reset
+#define STEP_METHOD frozenlake_step
+#define CLOSE_METHOD frozenlake_close
+#define GET_RANDOM_ACTION_ES_METHOD frozenlake_get_random_action
+#define TO_DISCRETE_OBSERVATION_METHOD frozenlake_to_discrete_observation
+#include <reinforcementlearning/algorithms/et.inc>
 

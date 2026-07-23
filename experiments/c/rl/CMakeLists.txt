@@ -13,6 +13,7 @@ add_library(reinforcementlearning
     src/linewalk.c
     src/frozenlake.c
     src/array_ops.c
+    src/epsilon_policies.c
 )
 
 # Includes
