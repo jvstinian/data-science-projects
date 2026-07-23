@@ -45,6 +45,7 @@ int DP_FUNC_NAME(policy_iteration_with_init) (
 int DP_FUNC_NAME(policy_iteration) (
     DISCRETE_MODEL_TYPE* model, float df, int* num_iterations
 );
+int DP_FUNC_NAME(value_iteration) (DISCRETE_MODEL_TYPE* model, float df, ACTION_TYPE* dpolicy_out);
 
 #else
 
@@ -219,7 +220,90 @@ int DP_FUNC_NAME(policy_iteration) (
     *num_iterations = DP_FUNC_NAME(policy_iteration_with_init) (model, df, value_array, dpolicy);
     return 0;
 }
- 
+
+static void DP_FUNC_NAME(get_action_values_for_state) (DISCRETE_MODEL_TYPE* model, unsigned int s, const float* value_function, float df, float* action_values_out) {
+    float new_value;
+    unsigned int s1;
+    ACTION_TYPE a;
+    struct TransitionProbabilityType trprob;
+
+    unsigned int num_states = model->num_states;
+
+    for (a = 0; a < ENVIRONMENT_ACTION_COUNT; a++) {
+        new_value = 0.0;
+        for (s1 = 0; s1 < num_states; s1++) {
+            trprob = GET_TRANSITION_METHOD(model, s, a, s1);
+            new_value += trprob.probability * (trprob.reward + df * value_function[s1]);
+        }
+        action_values_out[a] = new_value;
+    }
+}
+
+static void DP_FUNC_NAME(value_max_action_update) (DISCRETE_MODEL_TYPE* model, float df, float* value_function_out) {
+    /* Value_Function: Value_Function_Type := (others => 0.0); */
+    unsigned int num_states = model->num_states;
+
+    /* Overwrite value function with 0s */
+    memset(value_function_out, 0, num_states * sizeof(float));
+
+    unsigned int s;
+
+    float theta = 1.0e-6;  /* Convergence threshold */
+    float local_delta = 0.0;
+
+    float prev_value;
+    float new_value;
+    float next_values[ENVIRONMENT_ACTION_COUNT];
+
+    int iteration_count = 0;
+
+    while (1) {
+        iteration_count++;
+        printf("Iteration %d", iteration_count); /* TODO: Remove */
+
+        local_delta = 0.0;
+        for (s = 0; s < num_states; s++) {
+            prev_value = value_function_out[s];
+            DP_FUNC_NAME(get_action_values_for_state) (model, s, value_function_out, df, next_values);
+            new_value = (ACTION_TYPE) max_value(next_values, ENVIRONMENT_ACTION_COUNT);
+            value_function_out[s] = new_value;
+            local_delta = fmaxf(local_delta, fabsf(new_value - prev_value));
+        }
+        if (local_delta < theta) {
+            break;
+        }
+    }
+}
+
+int DP_FUNC_NAME(value_iteration) (DISCRETE_MODEL_TYPE* model, float df, ACTION_TYPE* dpolicy_out) {
+    unsigned int num_states = model->num_states;
+    unsigned int s;
+
+    for (s=0; s < num_states; s++) {
+        /* Initialize to random policy */
+        dpolicy_out[s] = frozenlake_get_random_action();
+    }
+    
+    /* Local values */
+    /* TODO: Consider returning value as well */
+    float* value_function = malloc(num_states * sizeof(float));
+    if (value_function == NULL) {
+        fprintf(stderr, "value_iteration: error allocating state value array");
+        return 1;
+    }
+
+    float action_values[ENVIRONMENT_ACTION_COUNT];
+
+    print_policy(dpolicy_out, num_states);  /* TODO: Remove after debugging */
+    DP_FUNC_NAME(value_max_action_update) (model, df, value_function);
+
+    for (s=0; s < num_states; s++) {
+        DP_FUNC_NAME(get_action_values_for_state) (model, s, value_function, df, action_values);
+        dpolicy_out[s] = (ACTION_TYPE) arg_max(action_values, ENVIRONMENT_ACTION_COUNT);
+    }
+    return 0;
+}
+
 #endif
 
 #undef ENVIRONMENT_PREFIX
