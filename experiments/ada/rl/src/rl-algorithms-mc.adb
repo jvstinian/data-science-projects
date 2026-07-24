@@ -393,8 +393,8 @@ package body RL.Algorithms.MC is
          -- Initialize Env and select a random action.
          State_Encountered_Flag := (others => False);
          Obs := Reset(Env, Seed_Reset);
+         Discrete_Obs := To_Discrete_Observation(Obs);
          for I in 1 .. Max_Episode_Steps loop
-            Discrete_Obs := To_Discrete_Observation(Obs);
             Action := Get_Random_Action(Mixed_Policy, Discrete_Obs);
             Step_Output := Step(Env, Action);
             SAR_Array(I) := (State => Discrete_Obs, Action => Action, Reward => Get_Reward(Step_Output));

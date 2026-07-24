@@ -35,7 +35,7 @@ package RL.Envs.Cartpole is
     type Threshold_Type is new Float range X_Threshold_Lower .. X_Threshold_Upper;
     type Theta_Threshold_Type is new Float range Theta_Threshold_Lower .. Theta_Threshold_Upper;
 
-    -- Configguration
+    -- Configuration
     --
     -- Sutton_Barto_Reward determines the reward values.
     -- When True, a reward of 0 is awarded for non-terminating steps and -1 for the terminating step
