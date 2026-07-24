@@ -1,3 +1,6 @@
+#ifndef INC_RL_ENVS_FROZENLAKE_H
+#define INC_RL_ENVS_FROZENLAKE_H
+
 #include <stdio.h>
 #include <reinforcementlearning/bool.h>
 
@@ -168,3 +171,4 @@ private
 
 end Frozen_Lake;
 */
+#endif
