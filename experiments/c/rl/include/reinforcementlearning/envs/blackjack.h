@@ -1,3 +1,8 @@
+#ifndef INC_RL_ENVS_BLACKJACK_H
+#define INC_RL_ENVS_BLACKJACK_H
+
+#include <reinforcementlearning/bool.h>
+
 /*  ## Description
  *  Blackjack is a card game where the goal is to beat the dealer by obtaining
  *  cards that sum to closer to 21 (without going over 21) than the dealers
@@ -112,51 +117,48 @@
  *    of the player, which was introduced to facilitate comparison of results
  *    with the Sutton and Barto book. */
 
-typedef enum Boolean {
-    FALSE,
-    TRUE
-} Boolean;
-
 enum NaturalWinReward {
     SAB,
     NATURAL_WIN,
     NO_NATURAL_WIN
 };
 
-struct Config {
+struct BlackjackConfig {
     enum NaturalWinReward natural_win_reward;
     enum Boolean auto_hit;
 };
 
-enum Action {
+enum BlackjackAction {
     STICK,
     HIT
 };
 
-struct Environment;
+struct BlackjackEnvironment;
 
-struct Observation {
+struct BlackjackObservation {
     unsigned int player_sum;
     unsigned int dealer_showing_card_value;
     Boolean usable_ace;
 };
 
-struct StepReturn {
-    struct Observation observation;
+struct BlackjackStepReturn {
+    struct BlackjackObservation observation;
     float reward;
     Boolean terminated;
 };
  
-struct Environment* blackjack_make(struct Config config);
-int blackjack_init(struct Config config, struct Environment* env);
-struct Observation blackjack_reset(struct Environment* env/*, Seed_Reset : Seed_Reset_Type*/);
-struct StepReturn blackjack_step(struct Environment* env, enum Action action);
-void blackjack_render_text(struct Environment* env);
+struct BlackjackEnvironment* blackjack_make(struct BlackjackConfig config);
+int blackjack_init(struct BlackjackConfig config, struct BlackjackEnvironment* env);
+struct BlackjackObservation blackjack_reset(struct BlackjackEnvironment* env/*, Seed_Reset : Seed_Reset_Type*/);
+struct BlackjackStepReturn blackjack_step(struct BlackjackEnvironment* env, enum BlackjackAction action);
+void blackjack_render_text(struct BlackjackEnvironment* env);
 
 /* static methods
     enum Card draw_card();
     void draw_hand(unsigned int* hand);
     struct HandSummary hand_sum_and_usable_ace(unsigned int* hand);
     unsigned int sum_hand(unsigned int* hand);
-    struct Observation get_obs(struct Environment* env);
+    struct BlackjackObservation get_obs(struct BlackjackEnvironment* env);
 */
+
+#endif

@@ -16,6 +16,8 @@ add_library(reinforcementlearning
     src/linewalk.c
     src/frozenlake.c
     src/cartpole.c
+    src/blackjack.c
+    src/carrental.c
     src/ttt.c
     src/ataxx.c
     src/hex.c
