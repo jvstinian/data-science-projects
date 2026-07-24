@@ -1,8 +1,7 @@
+#ifndef INC_RL_ENVS_TTT_H
+#define INC_RL_ENVS_TTT_H
 
-typedef enum Boolean {
-    FALSE,
-    TRUE
-} Boolean;
+#include <reinforcementlearning/bool.h>
 
 enum TTTPlayer {
     PlayerX,
@@ -15,18 +14,18 @@ enum TTTPlayer {
    type Col_Label is (A, B, C);
 */
 
-struct Action {
+struct TTTAction {
     unsigned short row;
     unsigned short col;
 };
 
-enum Mark {
+enum TTTMark {
     X,
     O,
     No_Mark
 };
 
-enum GameStatus {
+enum TTTGameStatus {
     X_Move,
     O_Move,
     Draw,
@@ -36,25 +35,27 @@ enum GameStatus {
 
 /*
 struct Board {
-    enum Mark position[3][3];
+    enum TTTMark position[3][3];
 };
 */
 
-struct State {
+struct TTTState {
     /*struct Board board; */
-    enum Mark board[3][3];
-    enum GameStatus status;
+    enum TTTMark board[3][3];
+    enum TTTGameStatus status;
 };
 
-struct ValidActions {
+struct TTTValidActions {
     unsigned short int num_actions;
-    struct Action actions[9];
+    struct TTTAction actions[9];
 };
 
-struct State initial_state();
-Boolean is_terminal(struct State s);
-enum TTTPlayer get_player(struct State s);
-struct State step(struct State s, struct Action a);
-float reward(enum TTTPlayer p, struct State s);
-struct ValidActions get_valid_actions(struct State s);
-void print_state(struct State s);
+struct TTTState initial_state();
+Boolean is_terminal(struct TTTState s);
+enum TTTPlayer get_player(struct TTTState s);
+struct TTTState step(struct TTTState s, struct TTTAction a);
+float reward(enum TTTPlayer p, struct TTTState s);
+struct TTTValidActions get_valid_actions(struct TTTState s);
+void print_state(struct TTTState s);
+
+#endif

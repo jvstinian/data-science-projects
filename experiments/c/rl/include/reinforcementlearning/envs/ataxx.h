@@ -1,12 +1,10 @@
+#ifndef INC_RL_ENVS_ATAXX_H
+#define INC_RL_ENVS_ATAXX_H
+
+#include <reinforcementlearning/bool.h>
 #include <stddef.h> /* size_t */
 
-typedef enum Boolean {
-    FALSE,
-    TRUE
-} Boolean;
-
 #define BOARD_WIDTH 7
-
 #define MAX_PLAYER_COUNT 4
 
 enum AtaxxPlayer {
@@ -19,28 +17,28 @@ enum AtaxxPlayer {
 /*
     subtype Axis_Label is Integer range 1 .. Board_Width;
 */
-struct CellIndices {
+struct AtaxxCellIndices {
     unsigned short row;
     unsigned short col;
 };
 
 struct AtaxxAction {
-    struct CellIndices source;
-    struct CellIndices target;
+    struct AtaxxCellIndices source;
+    struct AtaxxCellIndices target;
 };
 
 /*
-struct ValidActions;
+struct AtaxxValidActions;
     type Valid_Actions_Type is array (Natural range <>) of Action_Type;
 */
-struct ValidActionsList;
-typedef struct ValidActionsList ValidActionsList;
-ValidActionsList* ataxx_actions_list_create(size_t cpty);
-int ataxx_actions_list_realloc(ValidActionsList** lpp, size_t new_capacity);
-int ataxx_actions_list_push(ValidActionsList** lpp, struct AtaxxAction val);
-size_t ataxx_actions_list_length(ValidActionsList* lp);
-struct AtaxxAction ataxx_actions_list_get(ValidActionsList* lp, size_t i);
-void ataxx_actions_list_destroy(ValidActionsList* lp);
+struct AtaxxValidActionsList;
+typedef struct AtaxxValidActionsList AtaxxValidActionsList;
+AtaxxValidActionsList* ataxx_actions_list_create(size_t cpty);
+int ataxx_actions_list_realloc(AtaxxValidActionsList** lpp, size_t new_capacity);
+int ataxx_actions_list_push(AtaxxValidActionsList** lpp, struct AtaxxAction val);
+size_t ataxx_actions_list_length(AtaxxValidActionsList* lp);
+struct AtaxxAction ataxx_actions_list_get(AtaxxValidActionsList* lp, size_t i);
+void ataxx_actions_list_destroy(AtaxxValidActionsList* lp);
 
 enum AtaxxMark {
     Mark_Red,
@@ -51,7 +49,7 @@ enum AtaxxMark {
     No_Mark
 };
 
-enum GameStatus {
+enum AtaxxGameStatus {
     Active,
     Finished
 };
@@ -60,7 +58,7 @@ enum GameStatus {
     type Board_Type is array (Axis_Label, Axis_Label) of Mark;
 */
 
-enum PlayerCount {
+enum AtaxxPlayerCount {
     Two_Player,
     Four_Player
 };
@@ -69,13 +67,13 @@ enum PlayerCount {
 */
 
 struct AtaxxConfig {
-    enum PlayerCount player_count;
+    enum AtaxxPlayerCount player_count;
 };
 
 struct AtaxxState {
     Boolean player_indicators[MAX_PLAYER_COUNT];
     enum AtaxxMark board[BOARD_WIDTH][BOARD_WIDTH];
-    enum GameStatus status;
+    enum AtaxxGameStatus status;
     unsigned short int scores[MAX_PLAYER_COUNT];
     enum AtaxxPlayer current_player;
 };
@@ -85,9 +83,10 @@ Boolean is_terminal (struct AtaxxState state);
 enum AtaxxPlayer get_player(struct AtaxxState state);
 struct AtaxxState step(struct AtaxxState state, struct AtaxxAction action);
 float reward(enum AtaxxPlayer player, struct AtaxxState state);
-ValidActionsList* get_valid_actions (struct AtaxxState state);
+AtaxxValidActionsList* get_valid_actions (struct AtaxxState state);
 
 void print_state(struct AtaxxState state);
 
-int main();
+int ataxx_example_main();
 
+#endif
