@@ -23,6 +23,7 @@ add_library(reinforcementlearning
     src/hex.c
     src/array_ops.c
     src/epsilon_policies.c
+    src/mcts_unbounded.c
 )
 
 # link math library
