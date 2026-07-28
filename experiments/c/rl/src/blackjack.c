@@ -1,4 +1,4 @@
-#include "blackjack.h"
+#include <reinforcementlearning/envs/blackjack.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> /* memset */
@@ -23,8 +23,8 @@ enum Card {
 
 /* We use arrays for the hands.
  * These represent the count of each card type in the hand. */
-struct Environment {
-    struct Config config;
+struct BlackjackEnvironment {
+    struct BlackjackConfig config;
     /* Gen : Draw_Random.Generator; */ /* TODO: What to do for RNG */
     unsigned int player_hand[CARD_COUNT];
     unsigned int dealer_hand[CARD_COUNT];
@@ -87,18 +87,18 @@ static unsigned int sum_hand(unsigned int* hand) {
     return summary.hand_sum;
 }
 
-static struct Observation get_obs(struct Environment* env) {
+static struct BlackjackObservation get_obs(struct BlackjackEnvironment* env) {
     struct HandSummary temp_summary = hand_sum_and_usable_ace(env->player_hand);
     
-    return (struct Observation) {
+    return (struct BlackjackObservation) {
         temp_summary.hand_sum,
         card_values[env->dealer_showing_card],
         temp_summary.usable_ace
     };
 }
 
-struct Environment* blackjack_make(struct Config config) {
-    struct Environment* env = malloc(sizeof(struct Environment));
+struct BlackjackEnvironment* blackjack_make(struct BlackjackConfig config) {
+    struct BlackjackEnvironment* env = malloc(sizeof(struct BlackjackEnvironment));
     if (env == NULL) {
         fprintf(stderr, "blackjack_make: Failed to allocate memory for Environment\n");
         return NULL;
@@ -111,7 +111,7 @@ struct Environment* blackjack_make(struct Config config) {
     return env;
 };
 
-int blackjack_init(struct Config config, struct Environment* env) {
+int blackjack_init(struct BlackjackConfig config, struct BlackjackEnvironment* env) {
     env->config = config;
     /* placeholders until reset is called */
     memset(env->player_hand, 0, sizeof(env->player_hand));
@@ -128,7 +128,7 @@ static void hit_till_12(unsigned int* hand) {
     }
 }
 
-struct Observation blackjack_reset(struct Environment* env/*, Seed_Reset : Seed_Reset_Type*/) {
+struct BlackjackObservation blackjack_reset(struct BlackjackEnvironment* env/*, Seed_Reset : Seed_Reset_Type*/) {
     /* Helper function */
     enum Card dealer_card;
     enum Card other_dealer_card;
@@ -180,7 +180,7 @@ static Boolean is_natural(unsigned int* hand) {
     return has_one_10 && (hand[Ace] == 1);
 }
 
-struct StepReturn blackjack_step(struct Environment* env, enum Action action) {
+struct BlackjackStepReturn blackjack_step(struct BlackjackEnvironment* env, enum BlackjackAction action) {
     /* Temporary variables */
     float reward = 0.0;
     Boolean terminated = FALSE;
@@ -214,15 +214,15 @@ struct StepReturn blackjack_step(struct Environment* env, enum Action action) {
             }
             break;
     }
-    return (struct StepReturn) {
+    return (struct BlackjackStepReturn) {
         get_obs(env),
         reward,
         terminated
     };
 }
 
-void blackjack_render_text(struct Environment* env) {
-    struct Observation obs = get_obs(env);
+void blackjack_render_text(struct BlackjackEnvironment* env) {
+    struct BlackjackObservation obs = get_obs(env);
 
     printf(
         "Player Sum: %u, Usable Ace: %s, Dealer Showing Card Value: %u (%s)\n",

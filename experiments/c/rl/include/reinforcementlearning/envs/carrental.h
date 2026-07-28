@@ -1,9 +1,9 @@
-#include "poisson.h"
+#ifndef INC_RL_ENVS_CARRENTAL_H
+#define INC_RL_ENVS_CARRENTAL_H
 
-enum Boolean {
-    FALSE,
-    TRUE
-};
+#include <reinforcementlearning/bool.h>
+#include <reinforcementlearning/poisson.h>
+
 
 /*  ## Description
  *  The Car Rental environment involves an owner of a car rental business
@@ -93,11 +93,11 @@ enum Boolean {
 const unsigned int lot_size = LOT_SIZE;
 const unsigned int max_move = MAX_MOVE;
 
-struct Action {
+struct CarrentalAction {
     int cars_to_move;
 };
 
-struct Config {
+struct CarrentalConfig {
     float lot_a_request_lambda;
   	float lot_a_return_lambda;
   	float lot_b_request_lambda;
@@ -106,29 +106,29 @@ struct Config {
   	unsigned int lot_b_init_cars;
 };
 
-struct Config get_default_config();
+struct CarrentalConfig get_default_config();
 
-struct Environment;
+struct CarrentalEnvironment;
 
-struct Observation {
+struct CarrentalObservation {
     unsigned int lot_a_cars;
     unsigned int lot_b_cars;
 };
 
 struct Step_Return {
-    struct Observation observation;
+    struct CarrentalObservation observation;
     float reward;
     enum Boolean terminated;
 };
 
-struct Environment* carrental_make(struct Config config);
-int carrental_init(struct Config config, struct Environment*);
-struct Observation reset(struct Environment* env/*, Seed_Reset : Seed_Reset_Type*/);
-struct Step_Return step(struct Environment* env, struct Action action);
-void carrental_deinit(struct Environment* env);
-void carrental_close(struct Environment* env);
+struct CarrentalEnvironment* carrental_make(struct CarrentalConfig config);
+int carrental_init(struct CarrentalConfig config, struct CarrentalEnvironment*);
+struct CarrentalObservation reset(struct CarrentalEnvironment* env/*, Seed_Reset : Seed_Reset_Type*/);
+struct Step_Return step(struct CarrentalEnvironment* env, struct CarrentalAction action);
+void carrental_deinit(struct CarrentalEnvironment* env);
+void carrental_close(struct CarrentalEnvironment* env);
 
-void render_text(struct Environment* env);
+void render_text(struct CarrentalEnvironment* env);
 
 struct TransitionProbability {
     float probability;
@@ -138,7 +138,7 @@ struct TransitionProbability {
 /*
    type Discrete_State_Type is new Natural range 0 .. ((Lot_Size + 1) * (Lot_Size + 1) - 1);
 */
-struct DPModel {
+struct CarrentalDPModel {
     struct TransitionProbability model[NUM_DISCRETE_STATES][2 * MAX_MOVE + 1][NUM_DISCRETE_STATES];
 };
 
@@ -152,8 +152,8 @@ struct DPModel {
 /* NOTE: The following is the RL Ada tranlation of Get_Model
  *       We have chaged the function name to make it clear that
  *       a new model is allocated and returned. */
-struct DPModel* dpmodel_new(struct Config config);
-void dpmodel_free(struct DPModel* model);
+struct CarrentalDPModel* dpmodel_new(struct CarrentalConfig config);
+void dpmodel_free(struct CarrentalDPModel* model);
 
 struct TransitionArray {
     struct TransitionProbability transitions[NUM_DISCRETE_STATES];
@@ -162,11 +162,11 @@ struct TransitionArray {
 /* The following uses Calculate_Transition_Probability_Between_States
  * to calculate the transition probabilities for all possible next states
  * from the given state and action. */
-struct TransitionArray collect_transition_values (struct Config config, unsigned int dstate, struct Action action);
+struct TransitionArray collect_transition_values (struct CarrentalConfig config, unsigned int dstate, struct CarrentalAction action);
 /* The following uses Calculate_Transition_Probabilities_From_State
  * to calculate the transition probabilities for all possible next states
  * from the given state and action. */
-struct TransitionArray get_transition_values_from_state(struct Config config, unsigned int dstate, struct Action action);
+struct TransitionArray get_transition_values_from_state(struct CarrentalConfig config, unsigned int dstate, struct CarrentalAction action);
 
 float poisson_pmf(float lambda, unsigned int n);
 float poisson_cdf(float lambda, unsigned int n);
@@ -182,7 +182,7 @@ struct CarsPerLot from_discrete_state(unsigned int discrete_state);
 
 /* The following are for calculating the transition probabilities for the
  * dynamic programming model. */
-struct CarsAfterAction step_cars(struct CarsPerLot cars_count, struct Action action);
+struct CarsAfterAction step_cars(struct CarsPerLot cars_count, struct CarrentalAction action);
 /* There are two methods for calculating transition probabilities, though only one is
  * currently used in the discrete model calculations.
  * The first method calculates the transition probability between two specific states,
@@ -190,13 +190,15 @@ struct CarsAfterAction step_cars(struct CarsPerLot cars_count, struct Action act
  * (or more specifically after the cars have been moved between sites overnight
  * but before the rental requests and returns that occur the next day). */
 struct TransitionProbability calculate_transition_probability_between_states(
-    struct Config config, unsigned int cars_moved, struct CarsPerLot prev_cars, struct CarsPerLot next_cars
+    struct CarrentalConfig config, unsigned int cars_moved, struct CarsPerLot prev_cars, struct CarsPerLot next_cars
 );
 /* The second method calculates all the transition probabilities starting from the
  * post-action state.  The output is an array of transition probabilities for
  * all possible next states. */
 struct TransitionArray calculate_transition_probabilities_from_state(
-      struct Config config, unsigned int cars_moved, struct CarsPerLot prev_cars
+      struct CarrentalConfig config, unsigned int cars_moved, struct CarsPerLot prev_cars
 );
 
-int main();
+int carrental_example_main();
+
+#endif

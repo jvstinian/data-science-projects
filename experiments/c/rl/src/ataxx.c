@@ -1,4 +1,4 @@
-#include "ataxx.h"
+#include <reinforcementlearning/envs/ataxx.h>
 #include <stdio.h>
 #include <string.h> /* memset */
 #include <stdlib.h> /* abs */
@@ -52,7 +52,7 @@ struct AtaxxState initial_state(struct AtaxxConfig config) {
             ret.board[0][0] = Mark_Red;
             ret.board[BOARD_WIDTH-1][0] = Mark_Blue;
             ret.board[BOARD_WIDTH][BOARD_WIDTH-1] = Mark_White;
-            ret.board[0][BOARD_WIDTH] = Mark_Black;
+            ret.board[0][BOARD_WIDTH-1] = Mark_Black;
             ret.scores[Red] = 1;
             ret.scores[Blue] = 1;
             ret.scores[White] = 1;
@@ -135,6 +135,8 @@ static void can_move(enum AtaxxMark (*board)[BOARD_WIDTH], Boolean *players_can_
                     case Mark_Black:
                         players_can_move[Black] = TRUE;
                         break;
+                    case Mark_X:  /* Cannot happen, here for compiler */
+                    case No_Mark: /* Cannot happen, here for compiler */
                     default:
                         break;
                 }
@@ -193,6 +195,8 @@ enum AtaxxPlayer mark_to_player(enum AtaxxMark mark) {
             return White;
         case Mark_Black: 
             return Black;
+        case Mark_X:  /* Cannot happen, here for compiler */
+        case No_Mark: /* Cannot happen, here for compiler */
         default:
             /* Should not happen in practice */
             fprintf(stderr, "Attempting conversion from non-player mark to player");
@@ -221,7 +225,7 @@ static enum AtaxxPlayer next_player_in_ring(struct AtaxxState state, enum AtaxxP
     return res;
 }
 
-static unsigned short int distance(struct CellIndices from, struct CellIndices to) {
+static unsigned short int distance(struct AtaxxCellIndices from, struct AtaxxCellIndices to) {
     return max_ushort(
         (unsigned short int) abs(((int) from.row) - ((int) to.row)),
         (unsigned short int) abs(((int) from.col) - ((int) to.col))
@@ -230,8 +234,8 @@ static unsigned short int distance(struct CellIndices from, struct CellIndices t
     
 struct AtaxxState step(struct AtaxxState state, struct AtaxxAction action) {
     /* Helper functions */
-    struct CellIndices source = action.source;
-    struct CellIndices target = action.target;
+    struct AtaxxCellIndices source = action.source;
+    struct AtaxxCellIndices target = action.target;
     
     unsigned short int dist = distance(source, target);
     const enum AtaxxMark p_mark = player_to_mark(state.current_player);
@@ -317,18 +321,18 @@ float reward(enum AtaxxPlayer player, struct AtaxxState state) {
     return (float) state.scores[player];
 }
 
-typedef struct ValidActionsList {
+typedef struct AtaxxValidActionsList {
 	size_t capacity;
 	size_t length;
 	struct AtaxxAction list[1];
-} ValidActionsList;
+} AtaxxValidActionsList;
 
 /* AtaxxAction Array List */
-ValidActionsList* ataxx_actions_list_create(size_t cpty){
+AtaxxValidActionsList* ataxx_actions_list_create(size_t cpty){
     if (cpty < 1) {
         cpty = 1;
     }
-	ValidActionsList* ret = (ValidActionsList*) malloc(sizeof(ValidActionsList) + (cpty-1)*sizeof(struct AtaxxAction));
+	AtaxxValidActionsList* ret = (AtaxxValidActionsList*) malloc(sizeof(AtaxxValidActionsList) + (cpty-1)*sizeof(struct AtaxxAction));
 	if (ret != NULL) {
 		ret->capacity = cpty;
 		ret->length = 0;
@@ -336,8 +340,8 @@ ValidActionsList* ataxx_actions_list_create(size_t cpty){
 	return ret;
 }
 
-int ataxx_actions_list_realloc(ValidActionsList** lpp, size_t new_capacity){
-    *lpp = realloc(*lpp, sizeof(ValidActionsList) + (new_capacity-1)*sizeof(struct AtaxxAction));
+int ataxx_actions_list_realloc(AtaxxValidActionsList** lpp, size_t new_capacity){
+    *lpp = realloc(*lpp, sizeof(AtaxxValidActionsList) + (new_capacity-1)*sizeof(struct AtaxxAction));
     if (*lpp == NULL) {
         return -1;
     }
@@ -345,14 +349,14 @@ int ataxx_actions_list_realloc(ValidActionsList** lpp, size_t new_capacity){
 	return 0;
 }
 
-int ataxx_actions_list_push(ValidActionsList** lpp, struct AtaxxAction val){
+int ataxx_actions_list_push(AtaxxValidActionsList** lpp, struct AtaxxAction val){
 	(*lpp)->list[(*lpp)->length] = val;
 	(*lpp)->length++;
 
 	if ((*lpp)->length >= (*lpp)->capacity) {
 		/* realloc */
 		int newcap = 2 * (*lpp)->capacity;
-		*lpp = realloc(*lpp, sizeof(ValidActionsList) + (newcap-1)*sizeof(struct AtaxxAction));
+		*lpp = realloc(*lpp, sizeof(AtaxxValidActionsList) + (newcap-1)*sizeof(struct AtaxxAction));
 		if (*lpp == NULL) {
 			return -1;
 		}
@@ -361,19 +365,19 @@ int ataxx_actions_list_push(ValidActionsList** lpp, struct AtaxxAction val){
 	return 0;
 }
 
-size_t ataxx_actions_list_length(ValidActionsList* lp) {
+size_t ataxx_actions_list_length(AtaxxValidActionsList* lp) {
     return lp->length;
 }
 
-struct AtaxxAction ataxx_actions_list_get(ValidActionsList* lp, size_t i) {
+struct AtaxxAction ataxx_actions_list_get(AtaxxValidActionsList* lp, size_t i) {
     return lp->list[i];
 }
 
-void ataxx_actions_list_destroy(ValidActionsList* lp) {
+void ataxx_actions_list_destroy(AtaxxValidActionsList* lp) {
 	free(lp);
 }
 
-ValidActionsList* get_valid_actions (struct AtaxxState state) {
+AtaxxValidActionsList* get_valid_actions (struct AtaxxState state) {
     enum AtaxxPlayer player = state.current_player;
     /* We use player_to_mark in the following */
     /*
@@ -381,11 +385,11 @@ ValidActionsList* get_valid_actions (struct AtaxxState state) {
     */
     enum AtaxxMark player_mark = player_to_mark(player);
     const size_t max_actions = state.scores[player] * 24;
-    ValidActionsList* vas = ataxx_actions_list_create(max_actions);
+    AtaxxValidActionsList* vas = ataxx_actions_list_create(max_actions);
     int vas_status = 0;
 
     /* Temp variables for loop below */
-    struct CellIndices source;
+    struct AtaxxCellIndices source;
     struct AtaxxAction temp_action;
     unsigned short int i0, i1, j0, j1;
     unsigned short int r, c;
@@ -398,7 +402,7 @@ ValidActionsList* get_valid_actions (struct AtaxxState state) {
     for (r=0; r < BOARD_WIDTH; r++){
         for (c=0; c < BOARD_WIDTH; c++){
             if (state.board[r][c] == player_mark) {
-                source = (struct CellIndices) { r, c };
+                source = (struct AtaxxCellIndices) { r, c };
                 /*  We just want
                 i0 = (unsigned short int) max_short(0, ((short int) r) - 2);
                 i1 = (unsigned short int) min_short(BOARD_WIDTH - 1, ((short int) r) + 2);
@@ -429,7 +433,7 @@ ValidActionsList* get_valid_actions (struct AtaxxState state) {
                         ) {
                             temp_action = (struct AtaxxAction) {
                                 source,
-                                (struct CellIndices) { r_target, c_target }
+                                (struct AtaxxCellIndices) { r_target, c_target }
                              };
                             vas_status = ataxx_actions_list_push(&vas, temp_action);
                             if (vas_status) {
@@ -475,6 +479,7 @@ void print_board(struct AtaxxState state) {
                 case Mark_X: 
                     printf("X");
                     break;
+                case No_Mark:  /* Here for compiler warning */
                 default:
                     printf(" ");
                     break;
@@ -557,7 +562,7 @@ int main() {
     print_state(state);
 
     size_t i;
-    ValidActionsList* vas;
+    AtaxxValidActionsList* vas;
     struct AtaxxAction a;
     vas = get_valid_actions(state);
     if (vas == NULL) {
