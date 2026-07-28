@@ -2,6 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* TODO: LineWalk action list
+#define ENVIRONMENT_PREFIX linewalk
+#define ENVIRONMENT_STRUCT_PREFIX LineWalk
+#define ACTION_TYPE enum LineWalkAction
+#include <reinforcementlearning/action_array_template.inc>
+*/
+
 LineWalkState initial_state(LineWalkConfig config) {
     unsigned short int pos = (config.N + 1) / 2; /* Start at the middle position */
     LineWalkState state = { config, ACTIVE, pos, 0 }; /* Start at the leftmost position */

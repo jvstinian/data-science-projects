@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "reinforcementlearning/envs/linewalk.h"
 #include "reinforcementlearning/envs/frozenlake.h"
+#include "reinforcementlearning/algorithms/mcts_unbounded.h"
 
 enum Environments {
     LINEWALK,
@@ -88,7 +89,8 @@ int frozenlake_mc_policy_evaluation_example() {
 int main() {
     /*
     return linewalk_example();
-    */
     return frozenlake_mc_policy_evaluation_example();
+    */
+    return uct_main();
 }
 

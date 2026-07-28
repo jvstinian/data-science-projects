@@ -1,4 +1,4 @@
-#include "carrental.h"
+#include <reinforcementlearning/envs/carrental.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -14,8 +14,8 @@ unsigned int umin(unsigned int a, unsigned int b) {
     return (a < b) ? a : b;
 }
 
-struct Config get_default_config() {
-    return (struct Config) {
+struct CarrentalConfig get_default_config() {
+    return (struct CarrentalConfig) {
       3.0, 3.0, 4.0, 2.0, 0, 0
     };
 };
@@ -50,9 +50,9 @@ float poisson_sf(float lambda, unsigned int n) {
     return 1.0 - poisson_cdf(lambda, n);
 }
 
-struct Environment {
+struct CarrentalEnvironment {
     /* Gen: Float_Random.Generator; */
-    struct Config config;
+    struct CarrentalConfig config;
     unsigned int lot_a_cars;
     unsigned int lot_b_cars;
 };
@@ -81,8 +81,8 @@ struct CarsPerLot from_discrete_state(unsigned int d) {
     };
 }
  
-struct Environment* carrental_make(struct Config config) {
-    struct Environment* env = malloc(sizeof(struct Environment));
+struct CarrentalEnvironment* carrental_make(struct CarrentalConfig config) {
+    struct CarrentalEnvironment* env = malloc(sizeof(struct CarrentalEnvironment));
     if (env == NULL) {
         fprintf(stderr, "carrental_make: Failed to allocate memory for Environment\n");
         return NULL;
@@ -95,14 +95,14 @@ struct Environment* carrental_make(struct Config config) {
     return env;
 }
 
-int carrental_init(struct Config config, struct Environment* env) {
+int carrental_init(struct CarrentalConfig config, struct CarrentalEnvironment* env) {
     env->config = config;
     env->lot_a_cars = config.lot_a_init_cars;
     env->lot_b_cars = config.lot_b_init_cars;
     return 0;
 }
 
-struct Observation reset(struct Environment* env/*, Seed_Reset : Seed_Reset_Type*/) {
+struct CarrentalObservation reset(struct CarrentalEnvironment* env/*, Seed_Reset : Seed_Reset_Type*/) {
     /*
     case Seed_Reset.Kind is
         when Set_Default => Float_Random.Reset(Env.Gen);
@@ -112,13 +112,13 @@ struct Observation reset(struct Environment* env/*, Seed_Reset : Seed_Reset_Type
     */
     env->lot_a_cars = env->config.lot_a_init_cars;
     env->lot_b_cars = env->config.lot_b_init_cars;
-    return (struct Observation) {
+    return (struct CarrentalObservation) {
         env->lot_a_cars,
         env->lot_b_cars
     };
 }
 
-struct Step_Return step(struct Environment* env, struct Action action) {
+struct Step_Return step(struct CarrentalEnvironment* env, struct CarrentalAction action) {
     /* Requests and returns */
     unsigned int lot_a_requests = poisson(env->config.lot_a_request_lambda);
     unsigned int lot_b_requests = poisson(env->config.lot_b_request_lambda);
@@ -165,23 +165,23 @@ struct Step_Return step(struct Environment* env, struct Action action) {
     env->lot_b_cars = lot_b_updated_cars;
 
     return (struct Step_Return) {
-        (struct Observation) { env->lot_a_cars, env->lot_b_cars },
+        (struct CarrentalObservation) { env->lot_a_cars, env->lot_b_cars },
         10.0*((float) (lot_a_rented_cars + lot_b_rented_cars)) - 2.0 * ((float) local_cars_moved),
         FALSE
     };
 }
 
-void carrental_deinit(struct Environment* env) {
+void carrental_deinit(struct CarrentalEnvironment* env) {
     (void)env;
     /* Nothing to do */
 }
 
-void carrental_close(struct Environment* env) {
+void carrental_close(struct CarrentalEnvironment* env) {
     carrental_deinit(env);
     free(env);
 }
 
-void render_text(struct Environment* env) {
+void render_text(struct CarrentalEnvironment* env) {
     printf("Lot A Cars: %u, Lot B Cars: %u", env->lot_a_cars, env->lot_b_cars);
 }
 
@@ -230,7 +230,7 @@ static struct TransProbByReqs calculate_lot_request_probabilities(
 }
 
 struct TransitionProbability calculate_transition_probability_between_states(
-    struct Config config, unsigned int cars_moved, struct CarsPerLot prev_cars, struct CarsPerLot next_cars
+    struct CarrentalConfig config, unsigned int cars_moved, struct CarsPerLot prev_cars, struct CarsPerLot next_cars
 ) {
     /* In C we don't need the following as the TransProbByReqs struct
      * uses fixed length arrays with a length field and an array for
@@ -289,7 +289,7 @@ struct TransitionProbability calculate_transition_probability_between_states(
     }
 }
 
-struct CarsAfterAction step_cars(struct CarsPerLot cars_count, struct Action action) {
+struct CarsAfterAction step_cars(struct CarsPerLot cars_count, struct CarrentalAction action) {
     unsigned int cars_moved;
     struct CarsPerLot cars_per_lot;
 
@@ -311,13 +311,13 @@ struct CarsAfterAction step_cars(struct CarsPerLot cars_count, struct Action act
     };
 }
 
-struct DPModel* dpmodel_new(struct Config config) {
-    struct DPModel* model = malloc(sizeof(struct DPModel));
+struct CarrentalDPModel* dpmodel_new(struct CarrentalConfig config) {
+    struct CarrentalDPModel* model = malloc(sizeof(struct CarrentalDPModel));
     if (model == NULL) {
         fprintf(stderr, "carrental_get_model: Failed to allocate memory for DP model\n");
         return NULL;
     }
-    memset(model, 0, sizeof(struct DPModel)); /* Initialize all probabilities and rewards to 0.0 */
+    memset(model, 0, sizeof(struct CarrentalDPModel)); /* Initialize all probabilities and rewards to 0.0 */
 
     struct CarsPerLot cars_count0;
     struct CarsAfterAction cars_after_action;
@@ -326,7 +326,7 @@ struct DPModel* dpmodel_new(struct Config config) {
 
     unsigned int s0, s2;
     int cars_to_move;
-    struct Action a;
+    struct CarrentalAction a;
 
     for(s0 = 0; s0 < NUM_DISCRETE_STATES; s0++){
         cars_count0 = from_discrete_state(s0);
@@ -349,7 +349,7 @@ struct DPModel* dpmodel_new(struct Config config) {
     return model;
 }
 
-void dpmodel_free(struct DPModel* model) {
+void dpmodel_free(struct CarrentalDPModel* model) {
     free(model);
 }
 
@@ -366,7 +366,7 @@ struct ExpectedReward {
  *       from Get_Transition_Values and Get_Transition_Values2,
  *       which use the two different methods. */
 struct TransitionArray calculate_transition_probabilities_from_state(
-      struct Config config, unsigned int cars_moved, struct CarsPerLot prev_cars
+      struct CarrentalConfig config, unsigned int cars_moved, struct CarsPerLot prev_cars
 ) {
     struct TransitionArray res;
     memset(&res, 0, sizeof(res)); /* Initialize all probabilities and rewards to 0.0 */
@@ -453,7 +453,7 @@ struct TransitionArray calculate_transition_probabilities_from_state(
     return res;
 }
 
-struct TransitionArray collect_transition_values (struct Config config, unsigned int dstate, struct Action action) {
+struct TransitionArray collect_transition_values (struct CarrentalConfig config, unsigned int dstate, struct CarrentalAction action) {
     /* Declarations */
     struct TransitionArray res;
     memset(&res, 0, sizeof(res)); /* Initialize all probabilities and rewards to 0.0 */
@@ -477,7 +477,7 @@ struct TransitionArray collect_transition_values (struct Config config, unsigned
     return res;
 }
 
-struct TransitionArray get_transition_values_from_state(struct Config config, unsigned int dstate, struct Action action) {
+struct TransitionArray get_transition_values_from_state(struct CarrentalConfig config, unsigned int dstate, struct CarrentalAction action) {
     struct CarsPerLot cars_count0;
     struct CarsAfterAction cars_after_action;
     struct CarsPerLot cars_count1;
@@ -489,7 +489,7 @@ struct TransitionArray get_transition_values_from_state(struct Config config, un
     return calculate_transition_probabilities_from_state(config, cars_after_action.cars_moved, cars_count1);
 }
 
-int main() {
+int carrental_example_main() {
     unsigned int i = 0;
     printf("Hello, car rental environment users!\n");
 
