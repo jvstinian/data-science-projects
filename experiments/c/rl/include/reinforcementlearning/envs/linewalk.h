@@ -1,3 +1,6 @@
+#ifndef INC_RL_ENVS_LINEWALK_H
+#define INC_RL_ENVS_LINEWALK_H
+
 #include <stddef.h>
 #include <reinforcementlearning/bool.h>
 
@@ -25,6 +28,14 @@ typedef struct LineWalkState {
     unsigned short int position;
     int reward;
 } LineWalkState;
+
+/* TODO: LineWalk action list
+#define ENVIRONMENT_PREFIX linewalk
+#define ENVIRONMENT_STRUCT_PREFIX LineWalk
+#define ACTION_TYPE enum LineWalkAction
+#define AA_DECLS_ONLY
+#include <reinforcementlearning/action_array_template.inc>
+*/
 
 /* MCTS Interface */
 LineWalkState initial_state(LineWalkConfig config);
@@ -73,3 +84,4 @@ struct SimulationSummary linewalk_uniform_random_actions(struct LineWalkConfig c
 int main();
 */
 
+#endif

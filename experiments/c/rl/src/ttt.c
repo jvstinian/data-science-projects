@@ -1,18 +1,18 @@
-#include "ttt.h"
+#include <reinforcementlearning/envs/ttt.h>
 #include <stdio.h>
 
-struct State initial_state() {
+struct TTTState initial_state() {
     /* unsigned short int r, c; */
-    /* enum Mark board[3][3] = { { No_Mark } }; */
+    /* enum TTTMark board[3][3] = { { No_Mark } }; */
     /*struct Board board = {
         { { No_Mark } }
     };
     */
 
-    return (struct State) { {{ No_Mark }}, X_Move };
+    return (struct TTTState) { {{ No_Mark }}, X_Move };
 }
 
-Boolean is_terminal(struct State s) {
+Boolean is_terminal(struct TTTState s) {
     switch (s.status) {
         case X_Move:
         case O_Move:
@@ -27,7 +27,7 @@ Boolean is_terminal(struct State s) {
     }
 }
 
-enum TTTPlayer get_player(struct State s) {
+enum TTTPlayer get_player(struct TTTState s) {
     /* Returns PlayerX for a draw.  This is an arbitrary choice, and
      * should not be used in terminal state */
     switch (s.status) {
@@ -43,7 +43,7 @@ enum TTTPlayer get_player(struct State s) {
     }
 }
 
-static Boolean check_row_for_win(struct State s, enum Mark m, unsigned short r) {
+static Boolean check_row_for_win(struct TTTState s, enum TTTMark m, unsigned short r) {
     unsigned short c;
     for (c = 0; c < 3; c++){
         if (s.board[r][c] != m) {
@@ -53,7 +53,7 @@ static Boolean check_row_for_win(struct State s, enum Mark m, unsigned short r) 
     return TRUE;
 }
       
-static Boolean check_col_for_win(struct State s, enum Mark m, unsigned short c) {
+static Boolean check_col_for_win(struct TTTState s, enum TTTMark m, unsigned short c) {
     unsigned short r;
     for (r = 0; r < 3; r++) {
         if (s.board[r][c] != m) {
@@ -63,17 +63,17 @@ static Boolean check_col_for_win(struct State s, enum Mark m, unsigned short c) 
     return TRUE;
 }
       
-static Boolean is_move_on_diag1(struct Action a) {
+static Boolean is_move_on_diag1(struct TTTAction a) {
     return a.row == a.col;
 }
 
-static Boolean is_move_on_diag2(struct Action a) {
+static Boolean is_move_on_diag2(struct TTTAction a) {
     short r = (short) a.row;
     short c = (short) a.col;
     return (r + c) == 2;
 }
 
-static Boolean check_diag1_for_win(struct State s, enum Mark m) {
+static Boolean check_diag1_for_win(struct TTTState s, enum TTTMark m) {
     unsigned short rc;
     for (rc = 0; rc < 3; rc++) {
         if (s.board[rc][rc] != m) {
@@ -83,7 +83,7 @@ static Boolean check_diag1_for_win(struct State s, enum Mark m) {
     return TRUE;
 }
 
-static Boolean check_diag2_for_win(struct State s, enum Mark m) {
+static Boolean check_diag2_for_win(struct TTTState s, enum TTTMark m) {
     unsigned short r, c;
     for (r = 0; r < 3; r++) {
         c = 2 - r;
@@ -94,7 +94,7 @@ static Boolean check_diag2_for_win(struct State s, enum Mark m) {
     return TRUE;
 }
       
-static Boolean all_moves_exhausted(struct State s) {
+static Boolean all_moves_exhausted(struct TTTState s) {
     unsigned short r, c;
     for (r = 0; r < 3; r++) {
         for (c = 0; c < 3; c++) {
@@ -106,11 +106,11 @@ static Boolean all_moves_exhausted(struct State s) {
     return TRUE;
 }
 
-static enum GameStatus check_status_for_action(struct State s, struct Action a) {
+static enum TTTGameStatus check_status_for_action(struct TTTState s, struct TTTAction a) {
     /* Helper functions */
-    enum GameStatus result = s.status;  /* Default to current status */
-    enum Mark m = s.board[a.row][a.col];
-    enum GameStatus w;
+    enum TTTGameStatus result = s.status;  /* Default to current status */
+    enum TTTMark m = s.board[a.row][a.col];
+    enum TTTGameStatus w;
 
     switch (m) {
         case X:
@@ -145,8 +145,8 @@ static enum GameStatus check_status_for_action(struct State s, struct Action a) 
     }
 }
 
-struct State step(struct State s, struct Action a) {
-    struct State result = s;  /* Start with the current state and modify it */
+struct TTTState step(struct TTTState s, struct TTTAction a) {
+    struct TTTState result = s;  /* Start with the current state and modify it */
     if (result.status == X_Move) {
         result.board[a.row][a.col] = X;
         result.status = O_Move;  /* Next player's turn */
@@ -160,7 +160,7 @@ struct State step(struct State s, struct Action a) {
     return result;
 }
 
-float reward(enum TTTPlayer p, struct State s) {
+float reward(enum TTTPlayer p, struct TTTState s) {
     switch (s.status) {
         case X_Wins:
             if (p == PlayerX) {
@@ -182,16 +182,16 @@ float reward(enum TTTPlayer p, struct State s) {
     }
 }
 
-struct ValidActions get_valid_actions(struct State s) {
+struct TTTValidActions get_valid_actions(struct TTTState s) {
     /* Initialize with dummy values, will be overwritten */
-    struct ValidActions result;
+    struct TTTValidActions result;
     unsigned short i, r, c;
 
     i = 0;
     for (r = 0; r < 3; r++) {
         for (c = 0; c < 3; c++) {
             if (s.board[r][c] == No_Mark) {
-                result.actions[i++] = (struct Action) {r, c};
+                result.actions[i++] = (struct TTTAction) {r, c};
             }
         }
     }
@@ -199,7 +199,7 @@ struct ValidActions get_valid_actions(struct State s) {
     return result;
 }
       
-static void print_board(struct State s) {
+static void print_board(struct TTTState s) {
     unsigned int r, c;
 
     printf(" ABC\n");
@@ -222,7 +222,7 @@ static void print_board(struct State s) {
     }
 }
       
-static void print_game_status(struct State s) {
+static void print_game_status(struct TTTState s) {
     printf("Status: ");
     switch (s.status) {
         case X_Move:
@@ -244,7 +244,7 @@ static void print_game_status(struct State s) {
     printf("\n");
 }
 
-void print_state(struct State s) {
+void print_state(struct TTTState s) {
     print_board(s);
     print_game_status(s);
 }

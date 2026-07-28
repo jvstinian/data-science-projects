@@ -1,13 +1,13 @@
-#include "hex.h"
+#include <reinforcementlearning/envs/hex.h>
 #include <stdio.h>
 #include <string.h> /* memset, memcpy */
 #include <assert.h>
 
-struct State initial_state() {
-    /* enum Mark board[BOARD_WIDTH][BOARD_WIDTH] = {{No_Mark}}; */
+struct HexState initial_state() {
+    /* enum HexMark board[BOARD_WIDTH][BOARD_WIDTH] = {{No_Mark}}; */
     unsigned int b, r;
 
-    struct State ret;
+    struct HexState ret;
 
     ret.player_colors[0] = Red;
     ret.player_colors[1] = Blue;
@@ -24,18 +24,18 @@ struct State initial_state() {
     return ret;
 }
 
-Boolean is_terminal(struct State s) {
+Boolean is_terminal(struct HexState s) {
     if (s.status != Active) {
         return TRUE;  /* Game is already finished */
     }
     return FALSE;
 }
 
-enum HexPlayer get_player(struct State s) {
+enum HexPlayer get_player(struct HexState s) {
     return s.current_player;
 }
 
-static unsigned short get_number_of_stones(struct State s) {
+static unsigned short get_number_of_stones(struct HexState s) {
     unsigned short count = 0;
     unsigned short b, r;
     for (b = 0; b  < BOARD_WIDTH; b++) {
@@ -53,7 +53,7 @@ static unsigned short get_number_of_stones(struct State s) {
     return count;
 }
 
-static Boolean check_red_win(enum Mark (*board)[BOARD_WIDTH]) {
+static Boolean check_red_win(enum HexMark (*board)[BOARD_WIDTH]) {
     Boolean reachable_prev[BOARD_WIDTH] = {FALSE};
     Boolean reachable[BOARD_WIDTH] = {FALSE};
     /* Initialize */
@@ -99,7 +99,7 @@ static Boolean check_red_win(enum Mark (*board)[BOARD_WIDTH]) {
     return FALSE;
 }
 
-static Boolean check_blue_win(enum Mark (*board)[BOARD_WIDTH]) {
+static Boolean check_blue_win(enum HexMark (*board)[BOARD_WIDTH]) {
     Boolean reachable_prev[BOARD_WIDTH] = {FALSE};
     Boolean reachable[BOARD_WIDTH] = {FALSE};
     /* Initialize */
@@ -145,7 +145,7 @@ static Boolean check_blue_win(enum Mark (*board)[BOARD_WIDTH]) {
     return FALSE;
 }
 
-static Boolean check_win(enum Mark (*board)[BOARD_WIDTH], enum StoneColor stone) {
+static Boolean check_win(enum HexMark (*board)[BOARD_WIDTH], enum HexStoneColor stone) {
     switch (stone) {
         case Red:
             return check_red_win(board);
@@ -157,15 +157,15 @@ static Boolean check_win(enum Mark (*board)[BOARD_WIDTH], enum StoneColor stone)
     }
 }
 
-struct State step(struct State s, struct Action a) {
+struct HexState step(struct HexState s, struct HexAction a) {
     /* Helper values */
     const unsigned short number_of_stones = get_number_of_stones(s);
-    enum StoneColor player_color;  /* We could set here but instead set below */
-    enum Mark stone;
+    enum HexStoneColor player_color;  /* We could set here but instead set below */
+    enum HexMark stone;
 
     /* Return value */
     /* Start with a copy of the current state to modify */
-    struct State res = s;
+    struct HexState res = s;
 
     if ((number_of_stones == 1) && (res.board[a.row][a.col] == Red_Stone)) {
         /* Swap colors */
@@ -212,7 +212,7 @@ struct State step(struct State s, struct Action a) {
     return res;
 }
 
-float reward(enum HexPlayer player, struct State s) {
+float reward(enum HexPlayer player, struct HexState s) {
     switch (s.status) {
         case Player1_Wins:
             switch (player) {
@@ -236,6 +236,7 @@ float reward(enum HexPlayer player, struct State s) {
                     return 0.0;
             }
             break;
+        case Active:
         default:
             return 0.0;  /* Game is still active, so no reward */
     }
@@ -249,10 +250,10 @@ static unsigned short get_number_of_available_moves(unsigned short number_of_sto
     }
 }
 
-struct ValidActions get_valid_actions(struct State s) {
+struct HexValidActions get_valid_actions(struct HexState s) {
     unsigned short number_of_stones = get_number_of_stones(s);
     unsigned short number_of_available_moves = get_number_of_available_moves(number_of_stones);
-    struct ValidActions ret;
+    struct HexValidActions ret;
 
     ret.num_actions = number_of_available_moves;
     unsigned short next_index = 0;
@@ -263,14 +264,14 @@ struct ValidActions get_valid_actions(struct State s) {
         for (r = 0; r < BOARD_WIDTH; r++) {
             switch (s.board[b][r]) {
                 case No_Mark:
-                    ret.actions[next_index++] = (struct Action) {b, r};
+                    ret.actions[next_index++] = (struct HexAction) {b, r};
                     break;
                 case Red_Stone:
                     /* Only increment if there is exactly one stone on the board,
                      * which we are now encountering at (I, J). */
                     if (number_of_stones == 1) {
                         /* Allow for Player 2 to swap */
-                        ret.actions[next_index++] = (struct Action) {b, r};
+                        ret.actions[next_index++] = (struct HexAction) {b, r};
                     }
                     break;
                 case Blue_Stone:
@@ -283,7 +284,7 @@ struct ValidActions get_valid_actions(struct State s) {
     return ret;
 }
 
-static void print_board(struct State s) {
+static void print_board(struct HexState s) {
     /*  The maximum line length below is
      *  1 + 3*BOARD_WIDTH. */
 
@@ -326,7 +327,7 @@ static void print_board(struct State s) {
     }
 }
 
-static void print_game_status(struct State s) {
+static void print_game_status(struct HexState s) {
     switch (s.status) {
         case Active:
             printf("Next Player: %s\n", player_names[s.current_player]);
@@ -340,7 +341,7 @@ static void print_game_status(struct State s) {
     }
 }
 
-void print_state (struct State s) {
+void print_state (struct HexState s) {
     print_board(s);
     print_game_status(s);
 }
@@ -362,9 +363,9 @@ Boolean neighboring_hexagons(unsigned short b1, unsigned short r1, unsigned shor
     }
 }
 
-int main() {
+int hex_example_main() {
     printf("Hex example!\n");
-    struct State s = initial_state();
+    struct HexState s = initial_state();
     print_state(s);
     return 0;
 }
