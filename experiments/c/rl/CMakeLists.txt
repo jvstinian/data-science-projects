@@ -55,6 +55,12 @@ add_executable(test_core
 target_link_libraries(test_core PRIVATE reinforcementlearning check)
 add_test(NAME run_test_core COMMAND test_core)
 
+add_executable(test_env
+    tests/test_env.c
+)
+target_link_libraries(test_env PRIVATE check)
+add_test(NAME run_test_env COMMAND test_env)
+
 # Install
 include(GNUInstallDirs)
 install(TARGETS reinforcementlearning rl_examples)
