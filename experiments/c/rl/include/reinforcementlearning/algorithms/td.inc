@@ -3,55 +3,55 @@
 #endif
 
 #ifndef CONFIG_TYPE
-#error "CONFIG_TYPE is not defined in tc.inc"
+#error "CONFIG_TYPE is not defined in td.inc"
 #endif
 
 #ifndef ENVIRONMENT_TYPE
-#error "ENVIRONMENT_TYPE is not defined in tc.inc"
+#error "ENVIRONMENT_TYPE is not defined in td.inc"
 #endif
 
 #ifndef ACTION_TYPE
-#error "ACTION_TYPE is not defined in tc.inc"
+#error "ACTION_TYPE is not defined in td.inc"
 #endif
 
 #ifndef OBSERVATION_TYPE
-#error "OBSERVATION_TYPE is not defined in tc.inc"
+#error "OBSERVATION_TYPE is not defined in td.inc"
 #endif
 
 #ifndef STEP_RETURN_TYPE
-#error "STEP_RETURN_TYPE is not defined in tc.inc"
+#error "STEP_RETURN_TYPE is not defined in td.inc"
 #endif
 
 #ifndef ENVIRONMENT_ACTION_COUNT
-#error "ENVIRONMENT_ACTION_COUNT is not defined in tc.inc"
+#error "ENVIRONMENT_ACTION_COUNT is not defined in td.inc"
 #endif
 
 #ifndef GET_NUM_STATES_METHOD
-#error "GET_NUM_STATES_METHOD is not defined in tc.inc"
+#error "GET_NUM_STATES_METHOD is not defined in td.inc"
 #endif
 
 #ifndef MAKE_METHOD
-#error "MAKE_METHOD is not defined in tc.inc"
+#error "MAKE_METHOD is not defined in td.inc"
 #endif
 
 #ifndef RESET_METHOD
-#error "RESET_METHOD is not defined in tc.inc"
+#error "RESET_METHOD is not defined in td.inc"
 #endif
 
 #ifndef STEP_METHOD
-#error "STEP_METHOD is not defined in tc.inc"
+#error "STEP_METHOD is not defined in td.inc"
 #endif
 
 #ifndef CLOSE_METHOD
-#error "CLOSE_METHOD is not defined in tc.inc"
+#error "CLOSE_METHOD is not defined in td.inc"
 #endif
 
 #ifndef GET_RANDOM_ACTION_ES_METHOD
-#error "GET_RANDOM_ACTION_ES_METHOD is not defined in tc.inc"
+#error "GET_RANDOM_ACTION_ES_METHOD is not defined in td.inc"
 #endif
 
 #ifndef TO_DISCRETE_OBSERVATION_METHOD
-#error "TO_DISCRETE_OBSERVATION is not defined in tc.inc"
+#error "TO_DISCRETE_OBSERVATION is not defined in td.inc"
 #endif
 
 #include <reinforcementlearning/algorithms/td_config.h>
