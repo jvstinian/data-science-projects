@@ -2,6 +2,7 @@
 #define INC_RL_ENVS_LINEWALK_H
 
 #include <stddef.h>
+#include <reinforcementlearning/algorithms/result_types.h>
 #include <reinforcementlearning/bool.h>
 
 typedef struct LineWalkConfig {
@@ -71,11 +72,6 @@ void linewalk_close(struct LineWalkEnvironment* env);
 
 void linewalk_mctsenv_uniform_random_actions(const LineWalkConfig* config, unsigned int max_steps);
 
-
-struct SimulationSummary {
-    size_t num_steps;
-    float total_reward;
-};
 
 enum LineWalkAction linewalk_get_random_action(struct LineWalkEnvironment* env);
 struct SimulationSummary linewalk_uniform_random_actions(struct LineWalkConfig config, Boolean verbose);
