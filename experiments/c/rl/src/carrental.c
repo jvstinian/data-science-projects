@@ -340,6 +340,7 @@ struct CarrentalDPModel* dpmodel_new(struct CarrentalConfig config) {
         return NULL;
     }
     memset(model, 0, sizeof(struct CarrentalDPModel)); /* Initialize all probabilities and rewards to 0.0 */
+    model->num_states = NUM_DISCRETE_STATES;  /* Set number of states */
 
     struct CarsPerLot cars_count0;
     struct CarsAfterAction cars_after_action;
@@ -374,6 +375,53 @@ struct CarrentalDPModel* dpmodel_new(struct CarrentalConfig config) {
 void dpmodel_free(struct CarrentalDPModel* model) {
     free(model);
 }
+
+struct TransitionProbability carrental_get_transition(const struct CarrentalDPModel* model, unsigned int s, unsigned int da, unsigned int next_s) {
+    return model->model[s][da][next_s];
+}
+
+unsigned int carrental_get_discrete_random_action() {
+    return (unsigned int) (rand() % (2 * MAX_MOVE + 1));
+}
+
+static void carrental_discrete_print_policy(const unsigned int* dpolicy, unsigned int num_states) {
+    (void) num_states;
+    unsigned int lot_a_cars, lot_b_cars;
+    struct CarsPerLot cars;
+    unsigned int s;
+    unsigned int da;
+
+    printf("Policy: \n");
+    /* Print header row */
+    printf("    ");
+    for (lot_b_cars = 0; lot_b_cars < LOT_SIZE + 1; lot_b_cars++) {
+        printf(" %2d ", (int) lot_b_cars);
+    }
+    printf("\n");
+
+    for (lot_a_cars = 0; lot_a_cars < LOT_SIZE + 1; lot_a_cars++) {
+        printf(" %2u ", lot_a_cars);
+        for (lot_b_cars = 0; lot_b_cars < LOT_SIZE + 1; lot_b_cars++) {
+            cars = (struct CarsPerLot) { lot_a_cars, lot_b_cars };
+            s = to_discrete_state(cars);
+            da = dpolicy[s];
+            printf(" %2d ", ((int) da) - MAX_MOVE);
+        }
+        printf("\n");
+    }
+}
+
+
+/*
+#define ENVIRONMENT_PREFIX carrental
+#define DISCRETE_MODEL_TYPE struct CarrentalDPModel
+#define ACTION_TYPE unsigned int
+#define ENVIRONMENT_ACTION_COUNT (2*MAX_MOVE + 1)
+#define GET_TRANSITION_METHOD carrental_get_transition
+#define RANDOM_ACTION_METHOD carrental_get_discrete_random_action
+#define PRINT_POLICY_METHOD carrental_discrete_print_policy
+#include <reinforcementlearning/algorithms/dp.inc>
+*/
 
 /* Local types */
 struct ExpectedReward {
