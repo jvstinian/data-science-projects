@@ -1,4 +1,5 @@
 #include <reinforcementlearning/envs/carrental.h>
+#include <reinforcementlearning/algorithms/result_types.h> /* Simulation_Summary */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -13,6 +14,9 @@
 unsigned int umin(unsigned int a, unsigned int b) {
     return (a < b) ? a : b;
 }
+
+const unsigned int lot_size = LOT_SIZE;
+const unsigned int max_move = MAX_MOVE;
 
 struct CarrentalConfig get_default_config() {
     return (struct CarrentalConfig) {
@@ -102,7 +106,7 @@ int carrental_init(struct CarrentalConfig config, struct CarrentalEnvironment* e
     return 0;
 }
 
-struct CarrentalObservation reset(struct CarrentalEnvironment* env/*, Seed_Reset : Seed_Reset_Type*/) {
+struct CarrentalObservation carrental_reset(struct CarrentalEnvironment* env/*, Seed_Reset : Seed_Reset_Type*/) {
     /*
     case Seed_Reset.Kind is
         when Set_Default => Float_Random.Reset(Env.Gen);
@@ -118,7 +122,7 @@ struct CarrentalObservation reset(struct CarrentalEnvironment* env/*, Seed_Reset
     };
 }
 
-struct Step_Return step(struct CarrentalEnvironment* env, struct CarrentalAction action) {
+struct CarrentalStepReturn carrental_step(struct CarrentalEnvironment* env, struct CarrentalAction action) {
     /* Requests and returns */
     unsigned int lot_a_requests = poisson(env->config.lot_a_request_lambda);
     unsigned int lot_b_requests = poisson(env->config.lot_b_request_lambda);
@@ -164,7 +168,7 @@ struct Step_Return step(struct CarrentalEnvironment* env, struct CarrentalAction
     env->lot_a_cars = lot_a_updated_cars;
     env->lot_b_cars = lot_b_updated_cars;
 
-    return (struct Step_Return) {
+    return (struct CarrentalStepReturn) {
         (struct CarrentalObservation) { env->lot_a_cars, env->lot_b_cars },
         10.0*((float) (lot_a_rented_cars + lot_b_rented_cars)) - 2.0 * ((float) local_cars_moved),
         FALSE
@@ -179,6 +183,11 @@ void carrental_deinit(struct CarrentalEnvironment* env) {
 void carrental_close(struct CarrentalEnvironment* env) {
     carrental_deinit(env);
     free(env);
+}
+
+struct CarrentalAction carrental_get_random_action() {
+    int move = (rand() % (2 * MAX_MOVE + 1)) - MAX_MOVE;
+    return (struct CarrentalAction) { move };
 }
 
 void render_text(struct CarrentalEnvironment* env) {
@@ -310,6 +319,19 @@ struct CarsAfterAction step_cars(struct CarsPerLot cars_count, struct CarrentalA
          cars_per_lot, cars_moved
     };
 }
+
+#define ENVIRONMENT_PREFIX carrental
+#define CONFIG_TYPE struct CarrentalConfig
+#define ENVIRONMENT_TYPE struct CarrentalEnvironment
+#define OBSERVATION_TYPE struct CarrentalObservation
+#define STEPRETURN_TYPE struct CarrentalStepReturn
+#define ACTION_TYPE struct CarrentalAction
+#define MAKE_METHOD carrental_make
+#define RESET_METHOD carrental_reset
+#define RANDOM_ACTION_METHOD carrental_get_random_action
+#define STEP_METHOD carrental_step
+#define CLOSE_METHOD carrental_close
+#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
 
 struct CarrentalDPModel* dpmodel_new(struct CarrentalConfig config) {
     struct CarrentalDPModel* model = malloc(sizeof(struct CarrentalDPModel));
