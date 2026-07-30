@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <reinforcementlearning/envs/linewalk.h>
 #include <reinforcementlearning/envs/frozenlake.h>
+#include <reinforcementlearning/envs/carrental.h>
 
 
 START_TEST (test_example1)
@@ -110,6 +111,17 @@ START_TEST (test_frozenlake_dp_model_slippery) {
     frozenlake_dpmodel_free(model);
 }
 
+START_TEST (test_carrental_no_terminate)
+{
+    /* Test the slippery map */
+    struct CarrentalConfig config = get_default_config();
+    struct CarrentalEnvironment *env = carrental_make(config);
+    carrental_reset(env);  /* Output not used */
+    struct CarrentalAction a = carrental_get_random_action();
+    struct CarrentalStepReturn step_ret = carrental_step(env, a);
+    ck_assert_msg(!step_ret.terminated, "Carrental environment should not terminate");
+}
+
 Suite * example_test_suite(void)
 {
     Suite *s;
@@ -133,21 +145,24 @@ Suite * rl_environments_test_suite(void)
 {
     Suite *s;
     TCase *tc_linewalk_random_actions, *tc_frozenlake_random_actions,
-          *tc_frozenlake_dp_model;
+          *tc_frozenlake_dp_model, *tc_carrental_no_terminate;
 
     s = suite_create("RL Environments");
 
     tc_linewalk_random_actions = tcase_create("Linewalk Random Actions");
     tc_frozenlake_random_actions = tcase_create("Frozenlake Random Actions");
     tc_frozenlake_dp_model = tcase_create("Frozenlake DP Model");
+    tc_carrental_no_terminate = tcase_create("Carrental Not Terminated");
 
     tcase_add_test(tc_linewalk_random_actions, test_linewalk_random_actions);
     tcase_add_test(tc_frozenlake_random_actions, test_frozenlake_random_actions);
     tcase_add_test(tc_frozenlake_dp_model, test_frozenlake_dp_model_nonslippery);
     tcase_add_test(tc_frozenlake_dp_model, test_frozenlake_dp_model_slippery);
+    tcase_add_test(tc_carrental_no_terminate, test_carrental_no_terminate);
     suite_add_tcase(s, tc_linewalk_random_actions);
     suite_add_tcase(s, tc_frozenlake_random_actions);
     suite_add_tcase(s, tc_frozenlake_dp_model);
+    suite_add_tcase(s, tc_carrental_no_terminate);
     
     return s;
 }
