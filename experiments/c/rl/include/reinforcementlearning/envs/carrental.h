@@ -90,8 +90,8 @@
 #define NUM_DISCRETE_STATES ((LOT_SIZE + 1) * (LOT_SIZE + 1))
 #define MAX_MOVE 5
 
-const unsigned int lot_size = LOT_SIZE;
-const unsigned int max_move = MAX_MOVE;
+extern const unsigned int lot_size;
+extern const unsigned int max_move;
 
 struct CarrentalAction {
     int cars_to_move;
@@ -115,7 +115,7 @@ struct CarrentalObservation {
     unsigned int lot_b_cars;
 };
 
-struct Step_Return {
+struct CarrentalStepReturn {
     struct CarrentalObservation observation;
     float reward;
     enum Boolean terminated;
@@ -123,10 +123,11 @@ struct Step_Return {
 
 struct CarrentalEnvironment* carrental_make(struct CarrentalConfig config);
 int carrental_init(struct CarrentalConfig config, struct CarrentalEnvironment*);
-struct CarrentalObservation reset(struct CarrentalEnvironment* env/*, Seed_Reset : Seed_Reset_Type*/);
-struct Step_Return step(struct CarrentalEnvironment* env, struct CarrentalAction action);
+struct CarrentalObservation carrental_reset(struct CarrentalEnvironment* env/*, Seed_Reset : Seed_Reset_Type*/);
+struct CarrentalStepReturn carrental_step(struct CarrentalEnvironment* env, struct CarrentalAction action);
 void carrental_deinit(struct CarrentalEnvironment* env);
 void carrental_close(struct CarrentalEnvironment* env);
+struct CarrentalAction carrental_get_random_action();
 
 void render_text(struct CarrentalEnvironment* env);
 
@@ -134,6 +135,20 @@ struct TransitionProbability {
     float probability;
     float reward;
 };
+
+#define ENVIRONMENT_PREFIX carrental
+#define CONFIG_TYPE struct CarrentalConfig
+#define ENVIRONMENT_TYPE struct CarrentalEnvironment
+#define OBSERVATION_TYPE struct CarrentalObservation
+#define STEPRETURN_TYPE struct CarrentalStepReturn
+#define ACTION_TYPE enum CarrentalAction
+#define MAKE_METHOD carrental_make
+#define RESET_METHOD carrental_reset
+#define RANDOM_ACTION_METHOD carrental_get_random_action
+#define STEP_METHOD carrental_step
+#define CLOSE_METHOD carrental_close
+#define URA_DECLS_ONLY
+#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
 
 /*
    type Discrete_State_Type is new Natural range 0 .. ((Lot_Size + 1) * (Lot_Size + 1) - 1);
