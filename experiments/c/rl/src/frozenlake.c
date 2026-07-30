@@ -375,7 +375,7 @@ package body Frozen_Lake is
 
 struct FrozenlakeDPModel {
     unsigned int num_states;
-    struct TransitionProbabilityType* transition_probabilities;
+    struct TransitionProbability* transition_probabilities;
 };
       
 struct LocalExpectedRewardType {
@@ -384,7 +384,7 @@ struct LocalExpectedRewardType {
 };
 
 
-struct TransitionProbabilityType frozenlake_get_transition(const struct FrozenlakeDPModel* model, unsigned int s, enum FrozenlakeAction action, unsigned int next_s) {
+struct TransitionProbability frozenlake_get_transition(const struct FrozenlakeDPModel* model, unsigned int s, enum FrozenlakeAction action, unsigned int next_s) {
     size_t idx = s * FROZENLAKE_ACTION_COUNT * model->num_states + action * model->num_states + next_s;
     return model->transition_probabilities[idx];
 }
@@ -418,14 +418,14 @@ int frozenlake_model_create(struct FrozenlakeConfig config, struct FrozenlakeDPM
     }
 
     arr_size = model->num_states * model->num_states * FROZENLAKE_ACTION_COUNT;
-    model->transition_probabilities = malloc(arr_size * sizeof(struct TransitionProbabilityType));
+    model->transition_probabilities = malloc(arr_size * sizeof(struct TransitionProbability));
     if (model->transition_probabilities == NULL) {
         fprintf(stderr, "frozenlake_get_model: could not creaate list for transition data");
         return 1;
     }
 
     /* Assign 0 throughout */
-    memset(model->transition_probabilities, 0, arr_size * sizeof(struct TransitionProbabilityType));
+    memset(model->transition_probabilities, 0, arr_size * sizeof(struct TransitionProbability));
     if (frozenlake_init(config, &env)) {
         fprintf(stderr, "frozenlake_get_model: could not initialize environment");
         frozenlake_model_destroy(model);
@@ -872,7 +872,7 @@ int frozenlake_example_main() {
     /* Changing to a slippery map */
     config.slippery = TRUE;
     struct FrozenlakeDPModel model;
-    struct TransitionProbabilityType transition_info;
+    struct TransitionProbability transition_info;
     if (frozenlake_model_create(config, &model)) {
         return 1;
     }
@@ -942,6 +942,7 @@ int frozenlake_example_main() {
 #define ACTION_TYPE enum FrozenlakeAction
 #define ENVIRONMENT_ACTION_COUNT FROZENLAKE_ACTION_COUNT 
 #define GET_TRANSITION_METHOD frozenlake_get_transition
+#define RANDOM_ACTION_METHOD frozenlake_get_random_action
 #define PRINT_POLICY_METHOD print_policy
 #include <reinforcementlearning/algorithms/dp.inc>
 
