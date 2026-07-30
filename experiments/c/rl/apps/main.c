@@ -91,6 +91,7 @@ int main() {
     return linewalk_example();
     return frozenlake_mc_policy_evaluation_example();
     */
+    frozenlake_example_main();
     return uct_main();
 }
 
