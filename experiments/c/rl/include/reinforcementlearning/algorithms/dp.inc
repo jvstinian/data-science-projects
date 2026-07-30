@@ -18,6 +18,10 @@
 #error "GET_TRANSITION_METHOD not defined in dp.inc"
 #endif
 
+#ifndef RANDOM_ACTION_METHOD
+#error "RANDOM_ACTION_METHOD is not defined in dp.inc"
+#endif
+
 #ifndef PRINT_POLICY_METHOD
 #error "PRINT_POLICY_METHOD not defined in dp.inc"
 #endif
@@ -63,7 +67,7 @@ int DP_FUNC_NAME(iterative_policy_evaluation) (DISCRETE_MODEL_TYPE* model, const
 
     unsigned int s, s1;
     ACTION_TYPE a;
-    struct TransitionProbabilityType trprob;
+    struct TransitionProbability trprob;
 
     int iteration_count = 0;
 
@@ -108,7 +112,7 @@ int DP_FUNC_NAME(iterative_deterministic_policy_evaluation) (
 
     unsigned int s, s1;
     ACTION_TYPE a;
-    struct TransitionProbabilityType trprob;
+    struct TransitionProbability trprob;
 
     int iteration_count = 0;
     
@@ -121,7 +125,7 @@ int DP_FUNC_NAME(iterative_deterministic_policy_evaluation) (
             a = dpolicy[s];
             new_value = 0.0;
             for (s1 = 0; s1 < num_states;  s1++) {
-                trprob = frozenlake_get_transition(model, s, a, s1);
+                trprob = GET_TRANSITION_METHOD(model, s, a, s1);
                 new_value += trprob.probability * (trprob.reward + df * value_array[s1]);
             }
             value_array[s] = new_value;
@@ -154,7 +158,7 @@ int DP_FUNC_NAME(policy_iteration_with_init) (
     ACTION_TYPE prev_action;
     float action_values[ENVIRONMENT_ACTION_COUNT];
 
-    struct TransitionProbabilityType trprob;
+    struct TransitionProbability trprob;
 
     int iteration_count = 0;
 
@@ -204,7 +208,7 @@ int DP_FUNC_NAME(policy_iteration) (
     /* Initialize value function to 0 */
     memset(value_array, 0, sizeof(float) * num_states);
 
-    ACTION_TYPE* dpolicy = malloc(num_states * sizeof(enum FrozenlakeAction));
+    ACTION_TYPE* dpolicy = malloc(num_states * sizeof(ACTION_TYPE));
     if (dpolicy == NULL) {
         fprintf(stderr, "policy_iteration: could not allocate deterministic policy array");
         free(value_array);
@@ -213,7 +217,7 @@ int DP_FUNC_NAME(policy_iteration) (
 
     /* Initialize policy using uniform distribution over actions */
     for (s = 0; s < num_states; s++) {
-        dpolicy[s] = frozenlake_get_random_action();
+        dpolicy[s] = RANDOM_ACTION_METHOD();
     }
 
     PRINT_POLICY_METHOD (dpolicy, num_states);  /* TODO: Remove after debugging */
@@ -225,7 +229,7 @@ static void DP_FUNC_NAME(get_action_values_for_state) (DISCRETE_MODEL_TYPE* mode
     float new_value;
     unsigned int s1;
     ACTION_TYPE a;
-    struct TransitionProbabilityType trprob;
+    struct TransitionProbability trprob;
 
     unsigned int num_states = model->num_states;
 
@@ -281,7 +285,7 @@ int DP_FUNC_NAME(value_iteration) (DISCRETE_MODEL_TYPE* model, float df, ACTION_
 
     for (s=0; s < num_states; s++) {
         /* Initialize to random policy */
-        dpolicy_out[s] = frozenlake_get_random_action();
+        dpolicy_out[s] = RANDOM_ACTION_METHOD();
     }
     
     /* Local values */
@@ -294,7 +298,7 @@ int DP_FUNC_NAME(value_iteration) (DISCRETE_MODEL_TYPE* model, float df, ACTION_
 
     float action_values[ENVIRONMENT_ACTION_COUNT];
 
-    print_policy(dpolicy_out, num_states);  /* TODO: Remove after debugging */
+    PRINT_POLICY_METHOD(dpolicy_out, num_states);  /* TODO: Remove after debugging */
     DP_FUNC_NAME(value_max_action_update) (model, df, value_function);
 
     for (s=0; s < num_states; s++) {
@@ -311,6 +315,7 @@ int DP_FUNC_NAME(value_iteration) (DISCRETE_MODEL_TYPE* model, float df, ACTION_
 #undef ACTION_TYPE
 #undef ENVIRONMENT_ACTION_COUNT
 #undef GET_TRANSITION_METHOD
+#undef RANDOM_ACTION_METHOD
 #undef PRINT_POLICY_METHOD
 #undef DP_ITER_DET_POL_EVAL_METHOD
 #ifdef DP_DECLS_ONLY
