@@ -20,6 +20,7 @@ add_library(reinforcementlearning
     src/cartpole.c
     src/blackjack.c
     src/carrental.c
+    src/poisson.c
     src/ttt.c
     src/ataxx.c
     src/hex.c
