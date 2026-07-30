@@ -2,17 +2,55 @@
 #error "ENVIRONMENT_PREFIX must be defined in uniform_random_actions_c.inc"
 #endif
 
+#ifndef CONFIG_TYPE
+#error "CONFIG_TYPE is not defined in uniform_random_actions_c.inc"
+#endif
+
+#ifndef ENVIRONMENT_TYPE
+#error "ENVIRONMENT_TYPE is not defined in uniform_random_actions_c.inc"
+#endif
+
+#ifndef ACTION_TYPE
+#error "ACTION_TYPE is not defined in uniform_random_actions_c.inc"
+#endif
+
+#ifndef OBSERVATION_TYPE
+#error "OBSERVATION_TYPE is not defined in uniform_random_actions_c.inc"
+#endif
+
+#ifndef MAKE_METHOD
+#error "MAKE_METHOD is not defined in uniform_random_actions_c.inc"
+#endif
+
+#ifndef RESET_METHOD
+#error "RESET_METHOD is not defined in uniform_random_actions_c.inc"
+#endif
+
+#ifndef STEP_METHOD
+#error "STEP_METHOD is not defined in uniform_random_actions_c.inc"
+#endif
+
+#ifndef CLOSE_METHOD
+#error "CLOSE_METHOD is not defined in uniform_random_actions_c.inc"
+#endif
+
 #ifndef RANDOM_ACTION_METHOD
 #error "RANDOM_ACTION_METHOD is not defined in uniform_random_actions_c.inc"
 #endif
 
-#define FUNC_NAME_CONCAT(PREFIX) PREFIX##_uniform_random_actions
 
-#define FUNC_NAME(PREFIX) FUNC_NAME_CONCAT(PREFIX)
+#define URA_FUNC_NAME_CONCAT(PREFIX) PREFIX##_uniform_random_actions
 
+#define URA_FUNC_NAME(PREFIX) URA_FUNC_NAME_CONCAT(PREFIX)
+
+#ifdef URA_DECLS_ONLY
+
+struct SimulationSummary URA_FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config, Boolean verbose);
+
+#else
 
 /* X-macro approach */
-struct SimulationSummary FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config, Boolean verbose) {
+struct SimulationSummary URA_FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config, Boolean verbose) {
     ENVIRONMENT_TYPE* env = MAKE_METHOD(config);
     if (env == NULL) {
         fprintf(stderr, "uniform_random_actions: failed to create environment\n");
@@ -53,3 +91,18 @@ struct SimulationSummary FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config, Bool
     return (struct SimulationSummary) { i, total_reward };
 }
 
+#endif
+
+#undef ENVIRONMENT_PREFIX
+#undef CONFIG_TYPE
+#undef ENVIRONMENT_TYPE
+#undef ACTION_TYPE
+#undef OBSERVATION_TYPE
+#undef MAKE_METHOD
+#undef RESET_METHOD
+#undef STEP_METHOD
+#undef CLOSE_METHOD
+#undef RANDOM_ACTION_METHOD
+#ifdef URA_DECLS_ONLY
+#undef URA_DECLS_ONLY
+#endif
