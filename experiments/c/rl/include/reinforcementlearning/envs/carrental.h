@@ -169,7 +169,6 @@ void dpmodel_free(struct CarrentalDPModel* model);
 struct TransitionProbability carrental_get_transition(const struct CarrentalDPModel* model, unsigned int s, unsigned int action, unsigned int next_s);
 unsigned int carrental_get_discrete_random_action();
 
-/*
 #define ENVIRONMENT_PREFIX carrental
 #define DISCRETE_MODEL_TYPE struct CarrentalDPModel
 #define ACTION_TYPE unsigned int
@@ -179,7 +178,6 @@ unsigned int carrental_get_discrete_random_action();
 #define PRINT_POLICY_METHOD carrental_print_policy
 #define DP_DECLS_ONLY
 #include <reinforcementlearning/algorithms/dp.inc>
-*/
 
 struct TransitionArray {
     struct TransitionProbability transitions[NUM_DISCRETE_STATES];

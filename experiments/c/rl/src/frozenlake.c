@@ -1,4 +1,4 @@
-#include <reinforcementlearning/algorithms/array_ops.h>
+/* #include <reinforcementlearning/algorithms/array_ops.h> */
 #include <reinforcementlearning/algorithms/epsilon_policies.h>
 #include <reinforcementlearning/envs/frozenlake.h>
 #include <assert.h>
@@ -8,20 +8,7 @@
 #include <alloca.h>
 #include <time.h> /* For setting the RNG */
 #include <float.h> /* FLT_MAX */
-#include <math.h> /* abs */
-
-/* TODO: Need to consolidate the math definitions */
-#if defined(__STDC__) && !defined(__STDC_VERSION__)
-    float fmaxf(float x, float y) {
-        return (x > y) ? x : y;
-    }
-    float fabsf(float x) {
-        return (float) fabs((double) x);
-    }
-    float floorf(float arg) {
-        return (float) floor((double) arg);
-    }
-#endif
+#include <reinforcementlearning/math.h>
 
 float rand_float() {
     return (float)rand() / (float)RAND_MAX;

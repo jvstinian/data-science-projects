@@ -412,7 +412,6 @@ static void carrental_discrete_print_policy(const unsigned int* dpolicy, unsigne
 }
 
 
-/*
 #define ENVIRONMENT_PREFIX carrental
 #define DISCRETE_MODEL_TYPE struct CarrentalDPModel
 #define ACTION_TYPE unsigned int
@@ -421,7 +420,6 @@ static void carrental_discrete_print_policy(const unsigned int* dpolicy, unsigne
 #define RANDOM_ACTION_METHOD carrental_get_discrete_random_action
 #define PRINT_POLICY_METHOD carrental_discrete_print_policy
 #include <reinforcementlearning/algorithms/dp.inc>
-*/
 
 /* Local types */
 struct ExpectedReward {

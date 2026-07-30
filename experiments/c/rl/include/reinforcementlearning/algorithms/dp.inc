@@ -53,6 +53,10 @@ int DP_FUNC_NAME(value_iteration) (DISCRETE_MODEL_TYPE* model, float df, ACTION_
 
 #else
 
+#include <time.h>
+#include <reinforcementlearning/math.h>
+#include <reinforcementlearning/algorithms/array_ops.h>
+
 int DP_FUNC_NAME(iterative_policy_evaluation) (DISCRETE_MODEL_TYPE* model, const float (*policy)[ENVIRONMENT_ACTION_COUNT], float df, float *value_array) {
     unsigned int num_states = model->num_states;
 
