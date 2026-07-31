@@ -6,6 +6,8 @@ set(CMAKE_C_STANDARD 90)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+# set(CMAKE_C_FLAGS_DEBUG "-g -O0" CACHE STRING "Debug flags" FORCE)
+
 add_compile_options(-Wall -Wextra -Wswitch -Wswitch-enum)
 
 # Look for the math library
@@ -18,6 +20,7 @@ add_library(reinforcementlearning
     src/cartpole.c
     src/blackjack.c
     src/carrental.c
+    src/poisson.c
     src/ttt.c
     src/ataxx.c
     src/hex.c
@@ -52,8 +55,19 @@ enable_testing()
 add_executable(test_core
     tests/test_example.c
 )
+# set_target_properties(test_core PROPERTIES
+#     C_STANDARD 99
+#     C_STANDARD_REQUIRED ON
+#     C_EXTENSIONS OFF
+# )
 target_link_libraries(test_core PRIVATE reinforcementlearning check)
 add_test(NAME run_test_core COMMAND test_core)
+
+add_executable(test_env
+    tests/test_env.c
+)
+target_link_libraries(test_env PRIVATE check)
+add_test(NAME run_test_env COMMAND test_env)
 
 # Install
 include(GNUInstallDirs)

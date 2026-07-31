@@ -1,26 +1,14 @@
-#include <reinforcementlearning/algorithms/array_ops.h>
+/* #include <reinforcementlearning/algorithms/array_ops.h> */
 #include <reinforcementlearning/algorithms/epsilon_policies.h>
 #include <reinforcementlearning/envs/frozenlake.h>
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h> /* memset */
 #include <alloca.h>
 #include <time.h> /* For setting the RNG */
 #include <float.h> /* FLT_MAX */
-#include <math.h> /* abs */
-
-/* TODO: Need to consolidate the math definitions */
-#if defined(__STDC__) && !defined(__STDC_VERSION__)
-    float fmaxf(float x, float y) {
-        return (x > y) ? x : y;
-    }
-    float fabsf(float x) {
-        return (float) fabs((double) x);
-    }
-    float floorf(float arg) {
-        return (float) floor((double) arg);
-    }
-#endif
+#include <reinforcementlearning/math.h>
 
 float rand_float() {
     return (float)rand() / (float)RAND_MAX;
@@ -158,7 +146,7 @@ struct PositionType position_inc(unsigned int rows, unsigned int cols, struct Po
 int can_slip(enum FrozenlakeAction intended_action, enum FrozenlakeAction actual_action) {
     switch (intended_action) {
         case LEFT:
-            return (actual_action == LEFT) || (actual_action == UP) || (actual_action = DOWN);
+            return (actual_action == LEFT) || (actual_action == UP) || (actual_action == DOWN);
         case DOWN:
             return (actual_action == DOWN) || (actual_action == LEFT) || (actual_action == RIGHT);
         case RIGHT:
@@ -296,7 +284,7 @@ void frozenlake_render_text(struct FrozenlakeEnvironment env) {
         printf("\n");
     }
 }
-   
+ 
 struct FrozenlakeStepReturn frozenlake_step(struct FrozenlakeEnvironment* env, enum FrozenlakeAction action) {
     float cumprob = 0.0f;
     float u = rand_float();
@@ -319,6 +307,19 @@ struct FrozenlakeStepReturn frozenlake_step(struct FrozenlakeEnvironment* env, e
     obs.position_index = transition.position.row * env->cols + transition.position.col;
     return (struct FrozenlakeStepReturn) { obs, transition.reward, transition.terminated };
 }
+
+#define ENVIRONMENT_PREFIX frozenlake
+#define CONFIG_TYPE struct FrozenlakeConfig
+#define ENVIRONMENT_TYPE struct FrozenlakeEnvironment
+#define OBSERVATION_TYPE struct FrozenlakeObservation
+#define STEPRETURN_TYPE struct FrozenlakeStepReturn
+#define ACTION_TYPE enum FrozenlakeAction
+#define MAKE_METHOD frozenlake_make
+#define RESET_METHOD frozenlake_reset
+#define RANDOM_ACTION_METHOD frozenlake_get_random_action
+#define STEP_METHOD frozenlake_step
+#define CLOSE_METHOD frozenlake_close
+#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
 
 /*
 package body Frozen_Lake is
@@ -359,9 +360,9 @@ package body Frozen_Lake is
     --     return (int(s), r, t, False, {"prob": p})
 */
 
-struct DiscreteModelType {
+struct FrozenlakeDPModel {
     unsigned int num_states;
-    struct TransitionProbabilityType* transition_probabilities;
+    struct TransitionProbability* transition_probabilities;
 };
       
 struct LocalExpectedRewardType {
@@ -370,7 +371,7 @@ struct LocalExpectedRewardType {
 };
 
 
-struct TransitionProbabilityType frozenlake_get_transition(const struct DiscreteModelType* model, unsigned int s, enum FrozenlakeAction action, unsigned int next_s) {
+struct TransitionProbability frozenlake_get_transition(const struct FrozenlakeDPModel* model, unsigned int s, enum FrozenlakeAction action, unsigned int next_s) {
     size_t idx = s * FROZENLAKE_ACTION_COUNT * model->num_states + action * model->num_states + next_s;
     return model->transition_probabilities[idx];
 }
@@ -379,7 +380,7 @@ static unsigned int to_position_index(unsigned int cols, struct PositionType pos
     return position.row * cols + position.col;
 }
 
-int frozenlake_model_create(struct FrozenlakeConfig config, struct DiscreteModelType* model){
+int frozenlake_model_create(struct FrozenlakeConfig config, struct FrozenlakeDPModel* model){
     struct FrozenlakeEnvironment env;
     size_t arr_size;
     unsigned int prev_dpos, next_dpos;
@@ -404,14 +405,14 @@ int frozenlake_model_create(struct FrozenlakeConfig config, struct DiscreteModel
     }
 
     arr_size = model->num_states * model->num_states * FROZENLAKE_ACTION_COUNT;
-    model->transition_probabilities = malloc(arr_size * sizeof(struct TransitionType));
+    model->transition_probabilities = malloc(arr_size * sizeof(struct TransitionProbability));
     if (model->transition_probabilities == NULL) {
         fprintf(stderr, "frozenlake_get_model: could not creaate list for transition data");
         return 1;
     }
 
     /* Assign 0 throughout */
-    memset(model->transition_probabilities, 0, arr_size * sizeof(struct TransitionType));
+    memset(model->transition_probabilities, 0, arr_size * sizeof(struct TransitionProbability));
     if (frozenlake_init(config, &env)) {
         fprintf(stderr, "frozenlake_get_model: could not initialize environment");
         frozenlake_model_destroy(model);
@@ -449,18 +450,39 @@ int frozenlake_model_create(struct FrozenlakeConfig config, struct DiscreteModel
            }
         }
     }
-    frozenlake_close(&env);
+    frozenlake_deinit(&env);
     return 0;
 }
 
-void frozenlake_model_destroy(const struct DiscreteModelType* model){
+void frozenlake_model_destroy(const struct FrozenlakeDPModel* model){
     free(model->transition_probabilities);
 }
+
+struct FrozenlakeDPModel* frozenlake_dpmodel_new(struct FrozenlakeConfig config) {
+    struct FrozenlakeDPModel* model = malloc(sizeof(struct FrozenlakeDPModel));
+    if (model == NULL) {
+        fprintf(stderr, "frozenlake_dpmodel_new: Failed to allocate memory for DP model\n");
+        return NULL;
+    }
+
+    if (frozenlake_model_create(config, model)) {
+        fprintf(stderr, "frozenlake_dpmodel_new: Failed to initialize DP model\n");
+        free(model);
+        return NULL;
+    }
+    return model;
+}
+
+void frozenlake_dpmodel_free(struct FrozenlakeDPModel* model) {
+    frozenlake_model_destroy(model);
+    free(model);
+}
+
 
 /* TODO: policy should probably be coerced to have const values */
 /* TODO: Complete move to dp.inc.  I've checked and the following can be replaced. */
 /*
-int iterative_policy_evaluation(struct DiscreteModelType* model, const float (*policy)[FROZENLAKE_ACTION_COUNT], float df, float *value_array) {
+int iterative_policy_evaluation(struct FrozenlakeDPModel* model, const float (*policy)[FROZENLAKE_ACTION_COUNT], float df, float *value_array) {
     unsigned int num_states = model->num_states;
 
     \/\* Set the value function to 0 \*\/
@@ -508,7 +530,7 @@ int iterative_policy_evaluation(struct DiscreteModelType* model, const float (*p
 /* TODO: Move to dp.inc */
 /*
 int iterative_deterministic_policy_evaluation(
-    struct DiscreteModelType* model, const enum FrozenlakeAction* dpolicy, float df, float *value_array
+    struct FrozenlakeDPModel* model, const enum FrozenlakeAction* dpolicy, float df, float *value_array
 ) {
     unsigned int num_states = model->num_states;
 
@@ -568,7 +590,7 @@ static void print_policy(const enum FrozenlakeAction* dpolicy, unsigned int num_
 /* TODO: Move to dp.inc */
 /*
 int policy_iteration_with_init(
-    struct DiscreteModelType* model, float df, float *value_array, enum FrozenlakeAction* dpolicy
+    struct FrozenlakeDPModel* model, float df, float *value_array, enum FrozenlakeAction* dpolicy
 ) {
     \/\* Init_Value_Func : Value_Function_Type;
      * Init_Policy : Deterministic_Policy_Type
@@ -624,7 +646,7 @@ int policy_iteration_with_init(
 /* TODO: Move to dp.inc */
 /*
 int policy_iteration(
-    struct DiscreteModelType* model, float df, int* num_iterations
+    struct FrozenlakeDPModel* model, float df, int* num_iterations
 ) {
     \/\* Reset seed \*\/
     srand(time(NULL));
@@ -662,7 +684,7 @@ int policy_iteration(
 
 /* TODO: Move to dp.inc */
 /*
-static void get_action_values_for_state(struct DiscreteModelType* model, unsigned int s, const float* value_function, float df, float* action_values_out) {
+static void get_action_values_for_state(struct FrozenlakeDPModel* model, unsigned int s, const float* value_function, float df, float* action_values_out) {
     float new_value;
     unsigned int s1;
     enum FrozenlakeAction a;
@@ -684,7 +706,7 @@ static void get_action_values_for_state(struct DiscreteModelType* model, unsigne
 /* TODO: Perhaps return number of iterations? */
 /* TODO: Move to dp.inc */
 /*
-static void value_max_action_update(struct DiscreteModelType* model, float df, float* value_function_out) {
+static void value_max_action_update(struct FrozenlakeDPModel* model, float df, float* value_function_out) {
     \/\* Value_Function: Value_Function_Type := (others => 0.0); \*\/
     unsigned int num_states = model->num_states;
 
@@ -723,7 +745,7 @@ static void value_max_action_update(struct DiscreteModelType* model, float df, f
  
 /* TODO: Move to dp.inc */
 /*
-int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAction* dpolicy_out) {
+int value_iteration(struct FrozenlakeDPModel* model, float df, enum FrozenlakeAction* dpolicy_out) {
     unsigned int num_states = model->num_states;
     unsigned int s;
 
@@ -755,7 +777,7 @@ int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAc
 
 /* NOTE: Keeping the example defined here for now rather than moving to dp.inc */
 int frozenlake_value_iteration_example(struct FrozenlakeConfig config, float df) {
-    struct DiscreteModelType model;
+    struct FrozenlakeDPModel model;
 
     if (frozenlake_model_create(config, &model)) {
         return 1;
@@ -832,12 +854,12 @@ int frozenlake_example_main() {
             break;
         }
     }
-    frozenlake_close(&state);
+    frozenlake_deinit(&state);
 
     /* Changing to a slippery map */
-    config.slippery = FALSE;
-    struct DiscreteModelType model;
-    struct TransitionProbabilityType transition_info;
+    config.slippery = TRUE;
+    struct FrozenlakeDPModel model;
+    struct TransitionProbability transition_info;
     if (frozenlake_model_create(config, &model)) {
         return 1;
     }
@@ -871,6 +893,28 @@ int frozenlake_example_main() {
         printf("Value function for state %u: %f\n", s, value_array[s]);
     }
 
+    /* TODO: For testing
+    unsigned int num_states = model.num_states;
+    float total_transition_prob;
+    unsigned int s1;
+    enum FrozenlakeAction a;
+    printf("PRINTING EXCESSIVE TRANSITIONS\n");
+    for(s = 0; s < num_states; s++) {
+        for (a = 0; a < FROZENLAKE_ACTION_COUNT; a++) {
+            total_transition_prob = 0.0f;
+            for(s1 = 0; s1 < num_states; s1++) {
+                total_transition_prob += frozenlake_get_transition(&model, s, a, s1).probability;
+            }
+            if (total_transition_prob > 1.0f) {
+                printf("State %u, action %d, total transition probability: %f\n", s, a, total_transition_prob);
+                for(s1 = 0; s1 < num_states; s1++) {
+                    printf("\tState %u, action %d, next state %u, transition probability: %f\n", s, a, s1, frozenlake_get_transition(&model, s, a, s1).probability);
+                }
+            }
+        }
+    }
+    */
+
     frozenlake_model_destroy(&model);
 
     printf("Value Iteration: \n");
@@ -881,10 +925,11 @@ int frozenlake_example_main() {
 }
 
 #define ENVIRONMENT_PREFIX frozenlake
-#define DISCRETE_MODEL_TYPE struct DiscreteModelType
+#define DISCRETE_MODEL_TYPE struct FrozenlakeDPModel
 #define ACTION_TYPE enum FrozenlakeAction
 #define ENVIRONMENT_ACTION_COUNT FROZENLAKE_ACTION_COUNT 
 #define GET_TRANSITION_METHOD frozenlake_get_transition
+#define RANDOM_ACTION_METHOD frozenlake_get_random_action
 #define PRINT_POLICY_METHOD print_policy
 #include <reinforcementlearning/algorithms/dp.inc>
 
