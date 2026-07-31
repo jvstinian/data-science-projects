@@ -10,12 +10,6 @@
 #include <reinforcementlearning/math.h>
 #include <reinforcementlearning/random.h>
 
-/* TODO
-float rand_float() {
-    return (float)rand() / (float)RAND_MAX;
-};
-*/
-
 enum FrozenlakeAction frozenlake_get_random_action() {
     return (enum FrozenlakeAction) rand() % FROZENLAKE_ACTION_COUNT;
 };

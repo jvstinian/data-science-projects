@@ -40,12 +40,6 @@ static const float polemass_length = masspole * length;
 static const float force_mag = 10.0;
 static const float tau = 0.02; /* seconds between state updates */
 
-/* TODO
-float rand_float() {
-    return (float)rand() / (float)RAND_MAX;
-};
-*/
-
 struct CartpoleObservation cartpole_reset(struct CartpoleEnvironment* env) {
     const float low = -0.05;
     const float high = 0.05;

@@ -1,12 +1,5 @@
-/* #include <stdlib.h> */
 #include <reinforcementlearning/random.h>
 #include <math.h>
-
-/* TODO
-static float rand_float() {
-    return (float)rand() / (float)RAND_MAX;
-};
-*/
 
 unsigned int poisson(float lambda) {
     float lower_limit, product;
