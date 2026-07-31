@@ -122,6 +122,34 @@ START_TEST (test_carrental_no_terminate)
     ck_assert_msg(!step_ret.terminated, "Carrental environment should not terminate");
 }
 
+START_TEST (test_carrental_dp_model) {
+    struct CarrentalConfig config = get_default_config();
+    struct CarrentalDPModel *model;
+    float total_transition_prob;
+    unsigned int s, s1;
+    unsigned int a; /* Discrete action */
+
+    if ((model = carrental_dpmodel_new(config)) == NULL) {
+        ck_assert_msg(FALSE, "Failed to initialize Carrental DP model");
+    }
+    unsigned int num_states = model->num_states;
+
+    for(s = 0; s < num_states; s++) {
+        for (a = 0; a < (2*MAX_MOVE + 1); a++) {
+            total_transition_prob = 0.0f;
+            for(s1 = 0; s1 < num_states; s1++) {
+                total_transition_prob += carrental_get_transition(model, s, a, s1).probability;
+            }
+            /* See discussion regarding ck_assert_float_eq_tol above */
+            ck_assert_msg(
+                    fabs(total_transition_prob - 1.0f) < 1e-6f,
+                    "Total transition probability not approximately equal to 1"
+            );
+        }
+    }
+    carrental_dpmodel_free(model);
+}
+
 Suite * example_test_suite(void)
 {
     Suite *s;
@@ -145,7 +173,8 @@ Suite * rl_environments_test_suite(void)
 {
     Suite *s;
     TCase *tc_linewalk_random_actions, *tc_frozenlake_random_actions,
-          *tc_frozenlake_dp_model, *tc_carrental_no_terminate;
+          *tc_frozenlake_dp_model, *tc_carrental_no_terminate,
+          *tc_carrental_dp_model;
 
     s = suite_create("RL Environments");
 
@@ -153,16 +182,19 @@ Suite * rl_environments_test_suite(void)
     tc_frozenlake_random_actions = tcase_create("Frozenlake Random Actions");
     tc_frozenlake_dp_model = tcase_create("Frozenlake DP Model");
     tc_carrental_no_terminate = tcase_create("Carrental Not Terminated");
+    tc_carrental_dp_model = tcase_create("Carrental DP Model");
 
     tcase_add_test(tc_linewalk_random_actions, test_linewalk_random_actions);
     tcase_add_test(tc_frozenlake_random_actions, test_frozenlake_random_actions);
     tcase_add_test(tc_frozenlake_dp_model, test_frozenlake_dp_model_nonslippery);
     tcase_add_test(tc_frozenlake_dp_model, test_frozenlake_dp_model_slippery);
     tcase_add_test(tc_carrental_no_terminate, test_carrental_no_terminate);
+    tcase_add_test(tc_carrental_dp_model, test_carrental_dp_model);
     suite_add_tcase(s, tc_linewalk_random_actions);
     suite_add_tcase(s, tc_frozenlake_random_actions);
     suite_add_tcase(s, tc_frozenlake_dp_model);
     suite_add_tcase(s, tc_carrental_no_terminate);
+    suite_add_tcase(s, tc_carrental_dp_model);
     
     return s;
 }
