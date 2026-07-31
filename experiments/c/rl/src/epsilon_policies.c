@@ -1,11 +1,5 @@
 #include <reinforcementlearning/algorithms/epsilon_policies.h>
-
-/* TODO: Need to consolidate the math definitions */
-#if defined(__STDC__) && !defined(__STDC_VERSION__)
-    static float fmaxf(float x, float y) {
-        return (x > y) ? x : y;
-    }
-#endif
+#include <reinforcementlearning/math.h> /* fmaxf */
 
 /* TODO: The epsilon trajectory in the following needs improvement */
 float update_epsilon(struct SARSAConfig sarsa_config, unsigned int episode) {

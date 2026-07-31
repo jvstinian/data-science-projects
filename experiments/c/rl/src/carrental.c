@@ -460,7 +460,6 @@ struct TransitionArray calculate_transition_probabilities_from_state(
     unsigned int lot_a_returns;
     unsigned int lot_b_requests;
     unsigned int lot_b_returns;
-    /* const unsigned int num_discrete_states = (LOT_SIZE + 1) * (LOT_SIZE + 1); */ /* TODO */
     unsigned int s2;
 
     for(lot_a_requests = 0; lot_a_requests <= prev_cars.lot_a_cars; lot_a_requests++) {
@@ -531,7 +530,6 @@ struct TransitionArray collect_transition_values (struct CarrentalConfig config,
     struct CarsPerLot cars_count1;
     struct CarsPerLot cars_count2;
     unsigned int s2;
-    /* const unsigned int num_discrete_states = (LOT_SIZE + 1) * (LOT_SIZE + 1); */ /* TODO */
 
     cars_count0 = from_discrete_state(dstate);
     cars_after_action = step_cars(cars_count0, action);

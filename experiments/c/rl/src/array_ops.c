@@ -1,7 +1,6 @@
 #include <reinforcementlearning/algorithms/array_ops.h>
 #include <float.h> /* FLT_MAX */
 
-/* TODO: Move to dp.inc or to another header */
 size_t arg_max(float* values, size_t length) {
     float max_value = -FLT_MAX;
     size_t best_idx = 0;
