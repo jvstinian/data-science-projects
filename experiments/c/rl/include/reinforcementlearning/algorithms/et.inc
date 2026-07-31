@@ -58,9 +58,7 @@
 #include <reinforcementlearning/algorithms/et_config.h>
 /*
 #include <reinforcementlearning/algorithms/epsilon_policies.h>
-#include <string.h>
-#include <time.h>
-#include <math.h> */ /* abs */
+*/
 
 #define ET_FUNC_NAME(name) ET_CONCAT1(ENVIRONMENT_PREFIX, name)
 

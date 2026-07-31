@@ -1,8 +1,9 @@
 #ifndef INC_RL_ENVS_FROZENLAKE_H
 #define INC_RL_ENVS_FROZENLAKE_H
 
-#include <stdio.h>
+#include <reinforcementlearning/algorithms/result_types.h> /* Simulation_Summary */
 #include <reinforcementlearning/bool.h>
+#include <reinforcementlearning/algorithms/dp_transitions.h>
 
 enum FrozenlakeMapType {
     MAP_4X4,
@@ -45,30 +46,52 @@ void frozenlake_deinit(struct FrozenlakeEnvironment* env);
 void frozenlake_close(struct FrozenlakeEnvironment* env);
 void frozenlake_render_text(struct FrozenlakeEnvironment env);
 
+/* TODO: Remove
 struct TransitionProbabilityType {
    float probability;
    float reward;
 };
+*/
 
-struct DiscreteModelType;
-
-int frozenlake_model_create(struct FrozenlakeConfig config, struct DiscreteModelType* model);
-void frozenlake_model_destroy(const struct DiscreteModelType* model);
-struct TransitionProbabilityType frozenlake_get_transition(const struct DiscreteModelType* model, unsigned int s, enum FrozenlakeAction action, unsigned int next_s);
-
-/* int iterative_policy_evaluation(struct DiscreteModelType* model, const float (*policy)[FROZENLAKE_ACTION_COUNT], float df, float *value_array); */
 #define ENVIRONMENT_PREFIX frozenlake
-#define DISCRETE_MODEL_TYPE struct DiscreteModelType
+#define CONFIG_TYPE struct FrozenlakeConfig
+#define ENVIRONMENT_TYPE struct FrozenlakeEnvironment
+#define OBSERVATION_TYPE struct FrozenlakeObservation
+#define STEPRETURN_TYPE struct FrozenlakeStepReturn
+#define ACTION_TYPE enum FrozenlakeAction
+#define MAKE_METHOD frozenlake_make
+#define RESET_METHOD frozenlake_reset
+#define RANDOM_ACTION_METHOD frozenlake_get_random_action
+#define STEP_METHOD frozenlake_step
+#define CLOSE_METHOD frozenlake_close
+#define URA_DECLS_ONLY
+#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
+
+struct FrozenlakeDPModel;
+
+int frozenlake_model_create(struct FrozenlakeConfig config, struct FrozenlakeDPModel* model);
+void frozenlake_model_destroy(const struct FrozenlakeDPModel* model);
+/* New interface */
+/* TODO: remove model_create and model_destroy when ready */
+struct FrozenlakeDPModel* frozenlake_dpmodel_new(struct FrozenlakeConfig config);
+void frozenlake_dpmodel_free(struct FrozenlakeDPModel* model);
+/* End of new interface */
+struct TransitionProbability frozenlake_get_transition(const struct FrozenlakeDPModel* model, unsigned int s, enum FrozenlakeAction action, unsigned int next_s);
+
+/* int iterative_policy_evaluation(struct FrozenlakeDPModel* model, const float (*policy)[FROZENLAKE_ACTION_COUNT], float df, float *value_array); */
+#define ENVIRONMENT_PREFIX frozenlake
+#define DISCRETE_MODEL_TYPE struct FrozenlakeDPModel
 #define ACTION_TYPE enum FrozenlakeAction
 #define ENVIRONMENT_ACTION_COUNT FROZENLAKE_ACTION_COUNT 
 #define GET_TRANSITION_METHOD frozenlake_get_transition
+#define RANDOM_ACTION_METHOD frozenlake_get_random_action
 #define PRINT_POLICY_METHOD print_policy
 #define DP_DECLS_ONLY
 #include <reinforcementlearning/algorithms/dp.inc>
 
-int iterative_deterministic_policy_evaluation(struct DiscreteModelType* model, enum FrozenlakeAction* dpolicy, float df, float *value_array);
+int iterative_deterministic_policy_evaluation(struct FrozenlakeDPModel* model, enum FrozenlakeAction* dpolicy, float df, float *value_array);
 
-int value_iteration(struct DiscreteModelType* model, float df, enum FrozenlakeAction* dpolicy_out);
+int value_iteration(struct FrozenlakeDPModel* model, float df, enum FrozenlakeAction* dpolicy_out);
 int frozenlake_value_iteration_example(struct FrozenlakeConfig config, float df);
 
 int frozenlake_example_main();
