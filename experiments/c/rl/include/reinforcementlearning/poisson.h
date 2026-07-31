@@ -42,6 +42,9 @@
 --  http://www.opensource.org/licenses/mit-license.php
 */
 
+#ifndef INC_POISSON_H
+#define INC_POISSON_H
+
 /*
 -----------------------------------------
 --  1.2 Discrete random distributions  --
@@ -60,3 +63,4 @@
 */
 unsigned int poisson(float lambda);
 
+#endif

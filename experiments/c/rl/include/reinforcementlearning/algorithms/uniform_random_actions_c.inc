@@ -18,6 +18,10 @@
 #error "OBSERVATION_TYPE is not defined in uniform_random_actions_c.inc"
 #endif
 
+#ifndef STEPRETURN_TYPE
+#error "STEPRETURN_TYPE is not defined in uniform_random_actions_c.inc"
+#endif
+
 #ifndef MAKE_METHOD
 #error "MAKE_METHOD is not defined in uniform_random_actions_c.inc"
 #endif
@@ -98,6 +102,7 @@ struct SimulationSummary URA_FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config, 
 #undef ENVIRONMENT_TYPE
 #undef ACTION_TYPE
 #undef OBSERVATION_TYPE
+#undef STEPRETURN_TYPE
 #undef MAKE_METHOD
 #undef RESET_METHOD
 #undef STEP_METHOD

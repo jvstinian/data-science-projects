@@ -35,14 +35,7 @@ void AA_FUNC_NAME(action_list_destroy) (AA_ACTION_LIST_TYPE* lp);
 
 #else
 
-#include <math.h> /* floor */
-/* TODO: Need to consolidate the math definitions */
-#if defined(__STDC__) && !defined(__STDC_VERSION__)
-    /* Defining as static to avoid name collisions */
-    static float floorf(float arg) {
-        return (float) floor((double) arg);
-    }
-#endif
+#include <reinforcementlearning/math.h> /* floorf */
 
 /* TODO: Need to consolidate the rand definitions */
 /* Defining as static to avoid name collisions */

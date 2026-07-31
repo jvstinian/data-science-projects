@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "reinforcementlearning/envs/linewalk.h"
 #include "reinforcementlearning/envs/frozenlake.h"
+#include "reinforcementlearning/envs/carrental.h"
 #include "reinforcementlearning/algorithms/mcts_unbounded.h"
 
 enum Environments {
@@ -91,6 +92,7 @@ int main() {
     return linewalk_example();
     return frozenlake_mc_policy_evaluation_example();
     */
+    carrental_dp_example();
     frozenlake_example_main();
     return uct_main();
 }
