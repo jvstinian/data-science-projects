@@ -333,13 +333,14 @@ struct CarsAfterAction step_cars(struct CarsPerLot cars_count, struct CarrentalA
 #define CLOSE_METHOD carrental_close
 #include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
 
-struct CarrentalDPModel* dpmodel_new(struct CarrentalConfig config) {
+struct CarrentalDPModel* carrental_dpmodel_new(struct CarrentalConfig config) {
     struct CarrentalDPModel* model = malloc(sizeof(struct CarrentalDPModel));
     if (model == NULL) {
         fprintf(stderr, "carrental_get_model: Failed to allocate memory for DP model\n");
         return NULL;
     }
     memset(model, 0, sizeof(struct CarrentalDPModel)); /* Initialize all probabilities and rewards to 0.0 */
+    model->num_states = NUM_DISCRETE_STATES;  /* Set number of states */
 
     struct CarsPerLot cars_count0;
     struct CarsAfterAction cars_after_action;
@@ -371,9 +372,54 @@ struct CarrentalDPModel* dpmodel_new(struct CarrentalConfig config) {
     return model;
 }
 
-void dpmodel_free(struct CarrentalDPModel* model) {
+void carrental_dpmodel_free(struct CarrentalDPModel* model) {
     free(model);
 }
+
+struct TransitionProbability carrental_get_transition(const struct CarrentalDPModel* model, unsigned int s, unsigned int da, unsigned int next_s) {
+    return model->model[s][da][next_s];
+}
+
+unsigned int carrental_get_discrete_random_action() {
+    return (unsigned int) (rand() % (2 * MAX_MOVE + 1));
+}
+
+static void carrental_discrete_print_policy(const unsigned int* dpolicy, unsigned int num_states) {
+    (void) num_states;
+    unsigned int lot_a_cars, lot_b_cars;
+    struct CarsPerLot cars;
+    unsigned int s;
+    unsigned int da;
+
+    printf("Policy: \n");
+    /* Print header row */
+    printf("    ");
+    for (lot_b_cars = 0; lot_b_cars < LOT_SIZE + 1; lot_b_cars++) {
+        printf(" %2d ", (int) lot_b_cars);
+    }
+    printf("\n");
+
+    for (lot_a_cars = 0; lot_a_cars < LOT_SIZE + 1; lot_a_cars++) {
+        printf(" %2u ", lot_a_cars);
+        for (lot_b_cars = 0; lot_b_cars < LOT_SIZE + 1; lot_b_cars++) {
+            cars = (struct CarsPerLot) { lot_a_cars, lot_b_cars };
+            s = to_discrete_state(cars);
+            da = dpolicy[s];
+            printf(" %2d ", ((int) da) - MAX_MOVE);
+        }
+        printf("\n");
+    }
+}
+
+
+#define ENVIRONMENT_PREFIX carrental
+#define DISCRETE_MODEL_TYPE struct CarrentalDPModel
+#define ACTION_TYPE unsigned int
+#define ENVIRONMENT_ACTION_COUNT (2*MAX_MOVE + 1)
+#define GET_TRANSITION_METHOD carrental_get_transition
+#define RANDOM_ACTION_METHOD carrental_get_discrete_random_action
+#define PRINT_POLICY_METHOD carrental_discrete_print_policy
+#include <reinforcementlearning/algorithms/dp.inc>
 
 /* Local types */
 struct ExpectedReward {
@@ -523,5 +569,54 @@ int carrental_example_main() {
         printf("Poisson random number with lambda=3: %u\n", poisson(3.0));
     }
     
+    return 0;
+}
+
+int carrental_dp_example() {
+    struct CarrentalConfig config = get_default_config();
+    struct CarrentalDPModel *model;
+    unsigned int s;
+    /* unsigned int a; Discrete action */
+
+    unsigned int num_iterations;
+
+    if ((model = carrental_dpmodel_new(config)) == NULL) {
+        fprintf(stderr, "Failed to initialize Carrental DP model");
+        return 1;
+    }
+    unsigned int num_states = model->num_states;
+
+    /* TODO: The reset is basically a repeat of carrental_policy_iteration */
+    /* Reset seed */
+    srand(time(NULL));
+    
+    float* value_array = malloc(num_states * sizeof(float));
+    if (value_array == NULL) {
+        fprintf(stderr, "policy_iteration: could not allocate state value array");
+        carrental_dpmodel_free(model);
+        return 1;
+    }
+    /* Initialize value function to 0 */
+    memset(value_array, 0, sizeof(float) * num_states);
+
+    unsigned int* dpolicy = malloc(num_states * sizeof(unsigned int));
+    if (dpolicy == NULL) {
+        fprintf(stderr, "policy_iteration: could not allocate deterministic policy array");
+        free(value_array);
+        carrental_dpmodel_free(model);
+        return 2;
+    }
+
+    /* Initialize policy using uniform distribution over actions */
+    for (s = 0; s < num_states; s++) {
+        dpolicy[s] = carrental_get_discrete_random_action();
+    }
+
+    num_iterations = carrental_policy_iteration_with_init(model, 0.9, value_array, dpolicy);
+
+    carrental_discrete_print_policy(dpolicy, num_states);
+    printf("Number of iterations required in the policy iteration: %u", num_iterations);
+
+    carrental_dpmodel_free(model);
     return 0;
 }

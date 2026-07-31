@@ -59,23 +59,6 @@
 #include <string.h>
 #include <time.h>
 #include <math.h> /* abs */
-/*
-#include <assert.h>
-*/
-/* TODO: Consider creating a math header */
-/*
-#if defined(__STDC__) && !defined(__STDC_VERSION__)
-    float fmaxf(float x, float y) {
-        return (x > y) ? x : y;
-    }
-    float fabsf(float x) {
-        return (float) fabs((double) x);
-    }
-    float floorf(float arg) {
-        return (float) floor((double) arg);
-    }
-#endif
-*/
 
 #define TD_FUNC_NAME(name) TD_CONCAT1(ENVIRONMENT_PREFIX, name)
 
@@ -83,14 +66,6 @@
 #define TD_CONCAT2(prefix, name) prefix##_##name
 
 #ifdef TD_DECLS_ONLY
-
-    /*
-#if defined(__STDC__) && !defined(__STDC_VERSION__)
-    float fmaxf(float x, float y);
-    float fabsf(float x);
-    float floorf(float arg);
-#endif
-    */
 
 int TD_FUNC_NAME(td_iterative_policy_evaluation) (CONFIG_TYPE config, struct TDConfig td_config, ACTION_TYPE* policy, float* value_function_out);
 int TD_FUNC_NAME(sarsa_on_policy) (CONFIG_TYPE config, struct SARSAConfig sarsa_config, float (*q)[ENVIRONMENT_ACTION_COUNT]);

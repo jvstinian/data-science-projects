@@ -3,6 +3,7 @@
 
 #include <reinforcementlearning/algorithms/result_types.h> /* Simulation_Summary */
 #include <reinforcementlearning/bool.h>
+#include <reinforcementlearning/algorithms/dp_transitions.h>
 
 enum FrozenlakeMapType {
     MAP_4X4,
@@ -45,10 +46,12 @@ void frozenlake_deinit(struct FrozenlakeEnvironment* env);
 void frozenlake_close(struct FrozenlakeEnvironment* env);
 void frozenlake_render_text(struct FrozenlakeEnvironment env);
 
+/* TODO: Remove
 struct TransitionProbabilityType {
    float probability;
    float reward;
 };
+*/
 
 #define ENVIRONMENT_PREFIX frozenlake
 #define CONFIG_TYPE struct FrozenlakeConfig
@@ -73,7 +76,7 @@ void frozenlake_model_destroy(const struct FrozenlakeDPModel* model);
 struct FrozenlakeDPModel* frozenlake_dpmodel_new(struct FrozenlakeConfig config);
 void frozenlake_dpmodel_free(struct FrozenlakeDPModel* model);
 /* End of new interface */
-struct TransitionProbabilityType frozenlake_get_transition(const struct FrozenlakeDPModel* model, unsigned int s, enum FrozenlakeAction action, unsigned int next_s);
+struct TransitionProbability frozenlake_get_transition(const struct FrozenlakeDPModel* model, unsigned int s, enum FrozenlakeAction action, unsigned int next_s);
 
 /* int iterative_policy_evaluation(struct FrozenlakeDPModel* model, const float (*policy)[FROZENLAKE_ACTION_COUNT], float df, float *value_array); */
 #define ENVIRONMENT_PREFIX frozenlake
@@ -81,6 +84,7 @@ struct TransitionProbabilityType frozenlake_get_transition(const struct Frozenla
 #define ACTION_TYPE enum FrozenlakeAction
 #define ENVIRONMENT_ACTION_COUNT FROZENLAKE_ACTION_COUNT 
 #define GET_TRANSITION_METHOD frozenlake_get_transition
+#define RANDOM_ACTION_METHOD frozenlake_get_random_action
 #define PRINT_POLICY_METHOD print_policy
 #define DP_DECLS_ONLY
 #include <reinforcementlearning/algorithms/dp.inc>

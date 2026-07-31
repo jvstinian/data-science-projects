@@ -3,6 +3,7 @@
 
 #include <reinforcementlearning/bool.h>
 #include <reinforcementlearning/poisson.h>
+#include <reinforcementlearning/algorithms/dp_transitions.h>
 
 
 /*  ## Description
@@ -131,11 +132,6 @@ struct CarrentalAction carrental_get_random_action();
 
 void render_text(struct CarrentalEnvironment* env);
 
-struct TransitionProbability {
-    float probability;
-    float reward;
-};
-
 #define ENVIRONMENT_PREFIX carrental
 #define CONFIG_TYPE struct CarrentalConfig
 #define ENVIRONMENT_TYPE struct CarrentalEnvironment
@@ -154,6 +150,7 @@ struct TransitionProbability {
    type Discrete_State_Type is new Natural range 0 .. ((Lot_Size + 1) * (Lot_Size + 1) - 1);
 */
 struct CarrentalDPModel {
+    unsigned int num_states;
     struct TransitionProbability model[NUM_DISCRETE_STATES][2 * MAX_MOVE + 1][NUM_DISCRETE_STATES];
 };
 
@@ -167,8 +164,20 @@ struct CarrentalDPModel {
 /* NOTE: The following is the RL Ada tranlation of Get_Model
  *       We have chaged the function name to make it clear that
  *       a new model is allocated and returned. */
-struct CarrentalDPModel* dpmodel_new(struct CarrentalConfig config);
-void dpmodel_free(struct CarrentalDPModel* model);
+struct CarrentalDPModel* carrental_dpmodel_new(struct CarrentalConfig config);
+void carrental_dpmodel_free(struct CarrentalDPModel* model);
+struct TransitionProbability carrental_get_transition(const struct CarrentalDPModel* model, unsigned int s, unsigned int action, unsigned int next_s);
+unsigned int carrental_get_discrete_random_action();
+
+#define ENVIRONMENT_PREFIX carrental
+#define DISCRETE_MODEL_TYPE struct CarrentalDPModel
+#define ACTION_TYPE unsigned int
+#define ENVIRONMENT_ACTION_COUNT (2*MAX_MOVE + 1)
+#define GET_TRANSITION_METHOD carrental_get_transition
+#define RANDOM_ACTION_METHOD carrental_get_discrete_random_action
+#define PRINT_POLICY_METHOD carrental_print_policy
+#define DP_DECLS_ONLY
+#include <reinforcementlearning/algorithms/dp.inc>
 
 struct TransitionArray {
     struct TransitionProbability transitions[NUM_DISCRETE_STATES];
@@ -215,5 +224,6 @@ struct TransitionArray calculate_transition_probabilities_from_state(
 );
 
 int carrental_example_main();
+int carrental_dp_example();
 
 #endif

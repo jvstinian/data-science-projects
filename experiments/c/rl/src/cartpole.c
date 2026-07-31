@@ -2,16 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <math.h>
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338327
-#endif
-/* Using macro definition specified in GNU documentation
- * https://ftp.gnu.org/old-gnu/Manuals/glibc-2.2.3/html_chapter/libc_19.html
- * Looks like the next digit is 9 so it should probably be rounded to
- * 3.14...328.
- * Alternatively: M_PI acos(-1.0) */
+#include <reinforcementlearning/math.h>
 
 struct CartpoleConfig cartpole_default_config() {
     return (struct CartpoleConfig) { FALSE, Euler };
