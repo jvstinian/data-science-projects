@@ -36,12 +36,15 @@ void AA_FUNC_NAME(action_list_destroy) (AA_ACTION_LIST_TYPE* lp);
 #else
 
 #include <reinforcementlearning/math.h> /* floorf */
+#include <reinforcementlearning/random.h> /* rand_float */
 
 /* TODO: Need to consolidate the rand definitions */
 /* Defining as static to avoid name collisions */
+/*
 static float rand_float() {
     return (float)rand() / (float)RAND_MAX;
 };
+*/
 
 AA_ACTION_LIST_TYPE {
 	size_t capacity;

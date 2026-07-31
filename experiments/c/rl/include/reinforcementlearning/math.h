@@ -4,7 +4,6 @@
 #include <math.h> /* floor, fabs */
 
 #if defined(__STDC__) && !defined(__STDC_VERSION__)
-    /* Defining as static to avoid name collisions */
     float fmaxf(float x, float y);
     float fabsf(float x);
     float floorf(float arg);

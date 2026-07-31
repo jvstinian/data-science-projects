@@ -27,6 +27,7 @@ add_library(reinforcementlearning
     src/array_ops.c
     src/epsilon_policies.c
     src/mcts_unbounded.c
+    src/random.c
 )
 
 # link math library
