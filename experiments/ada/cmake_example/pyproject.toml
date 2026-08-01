@@ -1,0 +1,20 @@
+[build-system]
+# requires = ["scikit-build", "scikit-build-core", "cmake>=3.15", "Cython"] # , "cython-cmake"] # , "ninja"]
+requires = ["scikit-build-core", "cmake>=3.15", "Cython", "cython-cmake"] # , "cython-cmake"] # , "ninja"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "ada_wrapper_pkg"
+version = "0.0.1"
+dependencies = []
+description = "A scikit-build example using cython"
+requires-python = ">=3.12"
+license = "MIT"
+
+# [tool.scikit-build]
+# # Ensures your compiled artifacts go into the right folder structure
+# install.components = ["python"]
+# cmake.version = ">=3.20"
+
+# [tool.scikit-build]
+# search.site-packages = false

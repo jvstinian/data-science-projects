@@ -1,0 +1,28 @@
+-- This works, but if Languages is ("Ada", "C"), then main.c must be
+-- in a separate directory from the library code
+-- otherwise the main method will be built twice.
+-- If we only build the Ada code here then the main.c can be in the source
+-- directory as well.
+project Export_Logic is
+   -- for Languages use ("Ada", "C");
+   for Library_Name use "export_logic";
+   for Source_Dirs use ("src");
+   for Library_Dir use "lib";
+   for Object_Dir use "obj";
+   -- for Main use ("main.c");
+   for Library_Kind use "relocatable"; -- "static-pic"; -- "static"; -- "relocatable"; -- "static"; -- "dynamic"; -- "relocatable";  -- NOTE
+   for Library_Standalone use "encapsulated";
+   for Library_Auto_Init use "true";
+   for Library_Interface use ("Export_Logic");
+   -- for Library_Options use ("-fPIC"); 
+   -- package Compiler is
+   --     for Default_Switches ("Ada") use ("-fPIC"); -- Example: adding -fPIC along with -O2
+   --     for Default_Switches ("C") use ("-fPIC"); -- Example: adding -fPIC along with -O2
+   -- end Compiler;
+   -- package Compiler is
+   --    for Switches ("Ada") use ("-gnata", "-gnato"); -- , "-fstack-check");
+   -- end Compiler;
+   -- package Binder is
+   --    for Switches ("Ada") use ("-n");
+   -- end Binder;
+end Export_Logic;
