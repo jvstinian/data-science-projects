@@ -42,7 +42,6 @@ struct PartialTransitionType {
 };
 
 struct CliffwalkingEnvironment {
-    enum MapElement map[CLIFFWALK_NUM_ROWS][CLIFFWALK_NUM_COLS];
     struct TransitionType p[CLIFFWALK_NUM_ROWS][CLIFFWALK_NUM_COLS][CLIFFWALK_ACTION_COUNT][CLIFFWALK_ACTION_COUNT];
     struct PositionType agent_position;
 };
@@ -204,7 +203,6 @@ static int cliffwalking_init(struct CliffwalkingConfig config, struct Cliffwalki
             }
         }
     }
-    memcpy(env->map, cliffwalk_map, sizeof(cliffwalk_map));
     memcpy(env->p, p, sizeof(p));
     env->agent_position = start_position;
     return 0;
@@ -229,7 +227,7 @@ struct CliffwalkingObservation cliffwalking_reset(struct CliffwalkingEnvironment
     struct CliffwalkingObservation result;
     /* Determine how we want to reset the random number generator. */
     srand(time(NULL));
-    env->agent_position = get_start_position(env->map);
+    env->agent_position = get_start_position(cliffwalk_map);
     result.position_index = to_position_index(env->agent_position);
     return result;
 }
@@ -277,7 +275,7 @@ void cliffwalking_render_text(const struct CliffwalkingEnvironment* env) {
             if ((env->agent_position.row == r) && (env->agent_position.col == c)) {
                 printf("A");
             } else {
-                switch (env->map[r][c]) {
+                switch (cliffwalk_map[r][c]) {
                     case START:
                         printf("o");
                         break;
