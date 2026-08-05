@@ -48,14 +48,14 @@ struct CliffwalkingEnvironment {
   
 static int can_slip(enum CliffwalkingAction intended_action, enum CliffwalkingAction actual_action) {
     switch (intended_action) {
-        case LEFT:
-            return (actual_action == LEFT) || (actual_action == UP) || (actual_action == DOWN);
-        case DOWN:
-            return (actual_action == DOWN) || (actual_action == LEFT) || (actual_action == RIGHT);
-        case RIGHT:
-            return (actual_action == RIGHT) || (actual_action == DOWN) || (actual_action == UP);
-        case UP: 
-            return (actual_action == UP) || (actual_action == RIGHT) || (actual_action == LEFT);
+        case CLIFFWALK_LEFT:
+            return (actual_action == CLIFFWALK_LEFT) || (actual_action == CLIFFWALK_UP) || (actual_action == CLIFFWALK_DOWN);
+        case CLIFFWALK_DOWN:
+            return (actual_action == CLIFFWALK_DOWN) || (actual_action == CLIFFWALK_LEFT) || (actual_action == CLIFFWALK_RIGHT);
+        case CLIFFWALK_RIGHT:
+            return (actual_action == CLIFFWALK_RIGHT) || (actual_action == CLIFFWALK_DOWN) || (actual_action == CLIFFWALK_UP);
+        case CLIFFWALK_UP: 
+            return (actual_action == CLIFFWALK_UP) || (actual_action == CLIFFWALK_RIGHT) || (actual_action == CLIFFWALK_LEFT);
         default:
             return 0;
     };
@@ -65,7 +65,7 @@ static int can_slip(enum CliffwalkingAction intended_action, enum CliffwalkingAc
  * the default is the lower left corner (3, 0) rather than the upper left corner.
  * Since there's only one map and one start position when Cliff Walking,
  * we could simplify this to just return the unique start position (3, 0). */
-struct PositionType get_start_position(const enum MapElement map[CLIFFWALK_NUM_ROWS][CLIFFWALK_NUM_COLS]) {
+static struct PositionType get_start_position(const enum MapElement map[CLIFFWALK_NUM_ROWS][CLIFFWALK_NUM_COLS]) {
     struct PositionType start_position = { 3, 0 };
     unsigned int r, c;
     /* Determine the start position
@@ -93,25 +93,25 @@ static unsigned int to_position_index(struct PositionType position) {
 /* The following is similar to the version in frozenlake,
  * except that we don't need to provide the number of rows
  * and columns as inputs as they are constants in Cliff Walking. */
-struct PositionType position_inc(struct PositionType position, enum CliffwalkingAction action) {
+static struct PositionType position_inc(struct PositionType position, enum CliffwalkingAction action) {
     struct PositionType new_position = position;
     switch (action) {
-        case LEFT:
+        case CLIFFWALK_LEFT:
             if (new_position.col > 0) {
                 new_position.col--;
             }
             break;
-        case DOWN:
+        case CLIFFWALK_DOWN:
             if (new_position.row < CLIFFWALK_NUM_ROWS - 1) {
                 new_position.row++;
             }
             break;
-        case RIGHT:
+        case CLIFFWALK_RIGHT:
             if (new_position.col < CLIFFWALK_NUM_COLS - 1) {
                 new_position.col++;
             }
             break;
-        case UP:
+        case CLIFFWALK_UP:
             if (new_position.row > 0) {
                 new_position.row--;
             }
@@ -162,8 +162,8 @@ static int cliffwalking_init(struct CliffwalkingConfig config, struct Cliffwalki
                     /* We handle the case where the Agent is already at the goal or 
                      * somehow permanently fell off the cliff.
                      * This case should not occur in practice */
-                    for (ai = LEFT; ai <= UP; ai++) {
-                        for (aa = LEFT; aa <= UP; aa++) {
+                    for (ai = CLIFFWALK_LEFT; ai <= CLIFFWALK_UP; ai++) {
+                        for (aa = CLIFFWALK_LEFT; aa <= CLIFFWALK_UP; aa++) {
                             if (ai == aa) {
                                 p[r][c][ai][aa] = (struct TransitionType) { 1.0, { r, c }, 0.0, TRUE };
                             } else {
@@ -174,8 +174,8 @@ static int cliffwalking_init(struct CliffwalkingConfig config, struct Cliffwalki
                     break;
                 case START:
                 case GROUND:
-                    for (ai = LEFT; ai <= UP; ai++) {
-                        for (aa = LEFT; aa <= UP; aa++) {
+                    for (ai = CLIFFWALK_LEFT; ai <= CLIFFWALK_UP; ai++) {
+                        for (aa = CLIFFWALK_LEFT; aa <= CLIFFWALK_UP; aa++) {
                             temp_cpos = (struct PositionType) { r, c };
                             temp_partial_transition = update_probability_matrix(cliffwalk_map, temp_cpos, aa);
                             if (config.is_slippery) {
@@ -246,13 +246,13 @@ struct CliffwalkingStepReturn cliffwalking_step(struct CliffwalkingEnvironment* 
     /* Obtain the actual action for the transition based on the
      * current position, the action taken by the Agent, and
      * the random number generated. */
-    for(actual_action = LEFT; actual_action <= UP; actual_action++) {
+    for(actual_action = CLIFFWALK_LEFT; actual_action <= CLIFFWALK_UP; actual_action++) {
         cumprob += env->p[r][c][action][actual_action].probability;
         if (u <= cumprob) {
             break;
         }
     }
-    assert(actual_action <= UP);
+    assert(actual_action <= CLIFFWALK_UP);
 
     transition = env->p[r][c][action][actual_action];
     
@@ -347,7 +347,7 @@ static int cliffwalking_model_init(struct CliffwalkingConfig config, struct Clif
     for (r = 0; r < CLIFFWALK_NUM_ROWS; r++) {
         for (c = 0; c < CLIFFWALK_NUM_COLS; c++) {
             prev_dpos = to_position_index((struct PositionType) { r, c });
-            for(a = LEFT; a <= UP; a++) {
+            for(a = CLIFFWALK_LEFT; a <= CLIFFWALK_UP; a++) {
                /* When the cliff is slippery, an action can lead to state transitions
                 * with different probabilities.
                 * This can be seen when in a corner cell of the map, in which case
@@ -360,7 +360,7 @@ static int cliffwalking_model_init(struct CliffwalkingConfig config, struct Clif
                 /* Reset temp_expected_rewards for each action */
                 memset(temp_expected_rewards, 0, model->num_states * sizeof(struct LocalExpectedRewardType));
 
-                for(a_act = LEFT; a_act <= UP; a_act++) {
+                for(a_act = CLIFFWALK_LEFT; a_act <= CLIFFWALK_UP; a_act++) {
                     next_dpos = to_position_index(env.p[r][c][a][a_act].position);
                     temp_probability = env.p[r][c][a][a_act].probability;
                     temp_reward = env.p[r][c][a][a_act].reward;
@@ -405,3 +405,52 @@ void cliffwalking_dpmodel_free(struct CliffwalkingDPModel* model) {
 struct TransitionProbability cliffwalking_get_transition(const struct CliffwalkingDPModel* model, unsigned int s, enum CliffwalkingAction action, unsigned int next_s) {
     return model->transition_probabilities[s][action][next_s];
 }
+
+unsigned int cliffwalking_get_num_states(const struct CliffwalkingDPModel* model) {
+    return model->num_states;
+}
+
+/* Simulating Random Actions */
+#define ENVIRONMENT_PREFIX cliffwalking
+#define CONFIG_TYPE struct CliffwalkingConfig
+#define ENVIRONMENT_TYPE struct CliffwalkingEnvironment
+#define OBSERVATION_TYPE struct CliffwalkingObservation
+#define STEPRETURN_TYPE struct CliffwalkingStepReturn
+#define ACTION_TYPE enum CliffwalkingAction
+#define MAKE_METHOD cliffwalking_make
+#define RESET_METHOD cliffwalking_reset
+#define RANDOM_ACTION_METHOD cliffwalking_get_random_action
+#define STEP_METHOD cliffwalking_step
+#define CLOSE_METHOD cliffwalking_close
+#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
+
+/* Dynamic Programming Methods */
+enum CliffwalkingAction cliffwalking_get_random_action() {
+    return (enum CliffwalkingAction) rand() % CLIFFWALK_ACTION_COUNT;
+};
+
+/* TODO: Eventually remove this, or at least don't pass it to dp.inc */
+static void cliffwalking_print_policy(const enum CliffwalkingAction* dpolicy, unsigned int num_states) {
+    unsigned int s;
+    enum CliffwalkingAction a;
+
+    const char* action_names[CLIFFWALK_ACTION_COUNT] = { 
+        "LEFT", "DOWN", "RIGHT", "UP"
+    };
+
+    printf("Policy: \n");
+    for (s = 0; s < num_states; s++) {
+        a = dpolicy[s];
+        printf("%d: %s\n", s, action_names[a]);
+    }
+}
+
+#define ENVIRONMENT_PREFIX cliffwalking
+#define DISCRETE_MODEL_TYPE struct CliffwalkingDPModel
+#define ACTION_TYPE enum CliffwalkingAction
+#define ENVIRONMENT_ACTION_COUNT CLIFFWALK_ACTION_COUNT
+#define GET_TRANSITION_METHOD cliffwalking_get_transition
+#define RANDOM_ACTION_METHOD cliffwalking_get_random_action
+#define PRINT_POLICY_METHOD cliffwalking_print_policy
+#include <reinforcementlearning/algorithms/dp.inc>
+

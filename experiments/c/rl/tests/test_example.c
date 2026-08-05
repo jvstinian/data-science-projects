@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <reinforcementlearning/envs/linewalk.h>
 #include <reinforcementlearning/envs/frozenlake.h>
+#include <reinforcementlearning/envs/cliffwalking.h>
 #include <reinforcementlearning/envs/carrental.h>
 
 
@@ -111,6 +112,80 @@ START_TEST (test_frozenlake_dp_model_slippery) {
     frozenlake_dpmodel_free(model);
 }
 
+START_TEST (test_cliffwalking_random_actions)
+{
+    /* Test the slippery map */
+    struct CliffwalkingConfig config = { TRUE };
+    struct SimulationSummary sim_summary;
+    sim_summary = cliffwalking_uniform_random_actions(config, /* verbose */ FALSE);
+
+    ck_assert_msg(sim_summary.num_steps <= 1000, "Steps exceeded 1000");
+    ck_assert_msg(sim_summary.total_reward <= 0.0, "Reward exceeds 0");
+}
+
+START_TEST (test_cliffwalking_dp_model_nonslippery) {
+    /* Test the non-slippery map */
+    struct CliffwalkingConfig config = { FALSE };
+    struct CliffwalkingDPModel *model;
+    float total_transition_prob;
+    unsigned int s, s1;
+    enum CliffwalkingAction a;
+    unsigned int num_states;
+
+    if ((model = cliffwalking_dpmodel_new(config)) == NULL) {
+        ck_assert_msg(FALSE, "Failed to initialize Cliffwalking DP model");
+    }
+    /* NOTE: In frozenlake, we used frozenlake_get_num_states(config) to get the
+     *       number of states, but here we use the value provided with the model. */
+    num_states = cliffwalking_get_num_states(model);
+
+    for(s = 0; s < num_states; s++) {
+        for (a = 0; a < CLIFFWALK_ACTION_COUNT; a++) {
+            total_transition_prob = 0.0f;
+            for(s1 = 0; s1 < num_states; s1++) {
+                total_transition_prob += cliffwalking_get_transition(model, s, a, s1).probability;
+            }
+            /* See discussion regarding ck_assert_float_eq_tol above */
+            ck_assert_msg(
+                    fabs(total_transition_prob - 1.0f) < 1e-6f,
+                    "Total transition probability not approximately equal to 1"
+            );
+        }
+    }
+    cliffwalking_dpmodel_free(model);
+}
+
+START_TEST (test_cliffwalking_dp_model_slippery) {
+    /* Test the slippery map */
+    struct CliffwalkingConfig config = { TRUE };
+    struct CliffwalkingDPModel *model;
+    float total_transition_prob;
+    unsigned int s, s1;
+    enum CliffwalkingAction a;
+    unsigned int num_states;
+
+    if ((model = cliffwalking_dpmodel_new(config)) == NULL) {
+        ck_assert_msg(FALSE, "Failed to initialize Cliffwalking DP model");
+    }
+    num_states = cliffwalking_get_num_states(model);
+
+    for(s = 0; s < num_states; s++) {
+        for (a = 0; a < CLIFFWALK_ACTION_COUNT; a++) {
+            total_transition_prob = 0.0f;
+            for(s1 = 0; s1 < num_states; s1++) {
+                total_transition_prob += cliffwalking_get_transition(model, s, a, s1).probability;
+            }
+            /* See discussion regarding ck_assert_float_eq_tol above */
+            ck_assert_msg(
+                    fabs(total_transition_prob - 1.0f) < 1e-6f,
+                    "Total transition probability not approximately equal to 1"
+            );
+        }
+    }
+    cliffwalking_dpmodel_free(model);
+}
+
+
 START_TEST (test_carrental_no_terminate)
 {
     /* Test the slippery map */
@@ -172,15 +247,18 @@ Suite * example_test_suite(void)
 Suite * rl_environments_test_suite(void)
 {
     Suite *s;
-    TCase *tc_linewalk_random_actions, *tc_frozenlake_random_actions,
-          *tc_frozenlake_dp_model, *tc_carrental_no_terminate,
-          *tc_carrental_dp_model;
+    TCase *tc_linewalk_random_actions,
+          *tc_frozenlake_random_actions, *tc_frozenlake_dp_model,
+          *tc_cliffwalking_random_actions, *tc_cliffwalking_dp_model,
+          *tc_carrental_no_terminate, *tc_carrental_dp_model;
 
     s = suite_create("RL Environments");
 
     tc_linewalk_random_actions = tcase_create("Linewalk Random Actions");
     tc_frozenlake_random_actions = tcase_create("Frozenlake Random Actions");
     tc_frozenlake_dp_model = tcase_create("Frozenlake DP Model");
+    tc_cliffwalking_random_actions = tcase_create("Cliffwalking Random Actions");
+    tc_cliffwalking_dp_model = tcase_create("Cliffwalking DP Model");
     tc_carrental_no_terminate = tcase_create("Carrental Not Terminated");
     tc_carrental_dp_model = tcase_create("Carrental DP Model");
 
@@ -188,11 +266,16 @@ Suite * rl_environments_test_suite(void)
     tcase_add_test(tc_frozenlake_random_actions, test_frozenlake_random_actions);
     tcase_add_test(tc_frozenlake_dp_model, test_frozenlake_dp_model_nonslippery);
     tcase_add_test(tc_frozenlake_dp_model, test_frozenlake_dp_model_slippery);
+    tcase_add_test(tc_cliffwalking_random_actions, test_cliffwalking_random_actions);
+    tcase_add_test(tc_cliffwalking_dp_model, test_cliffwalking_dp_model_nonslippery);
+    tcase_add_test(tc_cliffwalking_dp_model, test_cliffwalking_dp_model_slippery);
     tcase_add_test(tc_carrental_no_terminate, test_carrental_no_terminate);
     tcase_add_test(tc_carrental_dp_model, test_carrental_dp_model);
     suite_add_tcase(s, tc_linewalk_random_actions);
     suite_add_tcase(s, tc_frozenlake_random_actions);
     suite_add_tcase(s, tc_frozenlake_dp_model);
+    suite_add_tcase(s, tc_cliffwalking_random_actions);
+    suite_add_tcase(s, tc_cliffwalking_dp_model);
     suite_add_tcase(s, tc_carrental_no_terminate);
     suite_add_tcase(s, tc_carrental_dp_model);
     

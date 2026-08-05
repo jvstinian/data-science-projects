@@ -64,16 +64,17 @@
 
 #include <reinforcementlearning/bool.h>
 #include <reinforcementlearning/algorithms/dp_transitions.h>
+#include <reinforcementlearning/algorithms/result_types.h> /* Simulation_Summary */
 
 struct CliffwalkingConfig {
   Boolean is_slippery;
 };
-   
+ 
 enum CliffwalkingAction {
-    LEFT,
-    DOWN,
-    RIGHT,
-    UP
+    CLIFFWALK_LEFT,
+    CLIFFWALK_DOWN,
+    CLIFFWALK_RIGHT,
+    CLIFFWALK_UP
 };
 
 #define CLIFFWALK_ACTION_COUNT 4
@@ -104,5 +105,34 @@ struct CliffwalkingDPModel;
 struct CliffwalkingDPModel* cliffwalking_dpmodel_new(struct CliffwalkingConfig config);
 void cliffwalking_dpmodel_free(struct CliffwalkingDPModel* model);
 struct TransitionProbability cliffwalking_get_transition(const struct CliffwalkingDPModel* model, unsigned int s, enum CliffwalkingAction action, unsigned int next_s);
+unsigned int cliffwalking_get_num_states(const struct CliffwalkingDPModel* model);
+
+/* Simulating Random Actions */
+#define ENVIRONMENT_PREFIX cliffwalking
+#define CONFIG_TYPE struct CliffwalkingConfig
+#define ENVIRONMENT_TYPE struct CliffwalkingEnvironment
+#define OBSERVATION_TYPE struct CliffwalkingObservation
+#define STEPRETURN_TYPE struct CliffwalkingStepReturn
+#define ACTION_TYPE enum CliffwalkingAction
+#define MAKE_METHOD cliffwalking_make
+#define RESET_METHOD cliffwalking_reset
+#define RANDOM_ACTION_METHOD cliffwalking_get_random_action
+#define STEP_METHOD cliffwalking_step
+#define CLOSE_METHOD cliffwalking_close
+#define URA_DECLS_ONLY
+#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
+
+/* Dynamic Programming Methods */
+enum CliffwalkingAction cliffwalking_get_random_action();
+
+#define ENVIRONMENT_PREFIX cliffwalking
+#define DISCRETE_MODEL_TYPE struct CliffwalkingDPModel
+#define ACTION_TYPE enum CliffwalkingAction
+#define ENVIRONMENT_ACTION_COUNT CLIFFWALK_ACTION_COUNT
+#define GET_TRANSITION_METHOD cliffwalking_get_transition
+#define RANDOM_ACTION_METHOD cliffwalking_get_random_action
+#define PRINT_POLICY_METHOD print_policy
+#define DP_DECLS_ONLY
+#include <reinforcementlearning/algorithms/dp.inc>
 
 #endif
