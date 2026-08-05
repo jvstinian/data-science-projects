@@ -29,6 +29,17 @@ START_TEST (test_linewalk_random_actions)
     ck_assert_msg(sim_summary.total_reward <= 1.0, "Reward exceeds 1");
 }
 
+START_TEST (test_linewalk_mcts_random_actions)
+{
+    struct LineWalkConfig config = { 5 };
+    struct SimulationSummary sim_summary;
+    sim_summary = linewalk_mctsenv_uniform_random_actions(config, 10);
+
+    ck_assert_msg(sim_summary.num_steps <= 10, "Steps exceeded 10");
+    ck_assert_msg(sim_summary.total_reward >= -1.0, "Reward is less than -1");
+    ck_assert_msg(sim_summary.total_reward <= 1.0, "Reward exceeds 1");
+}
+
 START_TEST (test_frozenlake_random_actions)
 {
     /* Test the slippery map */
@@ -110,6 +121,80 @@ START_TEST (test_frozenlake_dp_model_slippery) {
         }
     }
     frozenlake_dpmodel_free(model);
+}
+
+START_TEST (test_frozenlake_dp_iterative_policy_evaluation) {
+    struct FrozenlakeConfig config = { MAP_4X4, TRUE };
+    struct FrozenlakeDPModel* model = frozenlake_dpmodel_new(config);
+    if (model == NULL) {
+        ck_assert_msg(FALSE, "Failed to initialize Frozenlake DP model");
+    }
+
+    unsigned int s;
+    int iterations;
+    float stoch_policy[16][FROZENLAKE_ACTION_COUNT];
+    float value_array[16];
+    for (s = 0; s < 16; s++) {
+        stoch_policy[s][LEFT] = 0.25;
+        stoch_policy[s][DOWN] = 0.25;
+        stoch_policy[s][RIGHT] = 0.25;
+        stoch_policy[s][UP] = 0.25;
+    }
+    iterations = frozenlake_iterative_policy_evaluation(model, stoch_policy, 0.9, value_array);
+
+    ck_assert_msg(iterations <= 30, "frozenlake_iterative_policy_evaluation iterations exceeded 30");
+
+    for (s = 0; s < 16; s++) {
+        ck_assert_msg(
+            value_array[s] >= 0.0,
+            "value function is negative"
+        );
+    }
+
+    frozenlake_dpmodel_free(model);
+}
+
+START_TEST (test_frozenlake_mc_policy_evaluation) {
+    unsigned int s;
+    struct FrozenlakeConfig config = { MAP_4X4, FALSE };
+    enum FrozenlakeAction dpolicy[16];
+    dpolicy[0] = DOWN;
+    dpolicy[1] = RIGHT;
+    dpolicy[2] = DOWN;
+    dpolicy[3] = LEFT;
+    dpolicy[4] = DOWN;
+    dpolicy[5] = LEFT;
+    dpolicy[6] = DOWN;
+    dpolicy[7] = LEFT;
+    dpolicy[8] = RIGHT;
+    dpolicy[9] = DOWN;
+    dpolicy[10] = DOWN;
+    dpolicy[11] = LEFT;
+    dpolicy[12] = LEFT;
+    dpolicy[13] = RIGHT;
+    dpolicy[14] = RIGHT;
+    dpolicy[15] = LEFT;
+    struct MCConfig mc_config = { 100, 50, FIRST_VISIT, 0.9 };
+    float svalue_func[16];
+    /* In the current implementation, MC policy evaluation for a
+     * deterministic policy results in zero for those states that
+     * are not reachable. */
+    float exp_value_func[16] = { 
+        0.5905, 0.0 , 0.0, 0.0, 
+        0.6561, 0.0 , 0.0, 0.0, 
+        0.7290, 0.81, 0.0, 0.0,
+        0.0   , 0.9 , 1.0, 0.0
+    };
+
+    int status = frozenlake_mc_policy_evaluation(config, dpolicy, mc_config, svalue_func);
+
+    ck_assert_msg(status == 0, "frozenlake_mc_policy_evaluation failed");
+    for (s = 0; s < 16; s++) {
+        ck_assert_msg(
+            fabs(svalue_func[s] - exp_value_func[s]) < 1e-4f,
+            "the expected and actual state value functions differ"
+        );
+    }
 }
 
 START_TEST (test_cliffwalking_random_actions)
@@ -247,15 +332,20 @@ Suite * example_test_suite(void)
 Suite * rl_environments_test_suite(void)
 {
     Suite *s;
-    TCase *tc_linewalk_random_actions,
-          *tc_frozenlake_random_actions, *tc_frozenlake_dp_model,
+    TCase *tc_linewalk_random_actions, *tc_linewalk_mcts_random_actions,
+          *tc_frozenlake_random_actions, *tc_frozenlake_mc_policy_evaluation,
+          *tc_frozenlake_dp_iterative_policy_evaluation,
+          *tc_frozenlake_dp_model,
           *tc_cliffwalking_random_actions, *tc_cliffwalking_dp_model,
           *tc_carrental_no_terminate, *tc_carrental_dp_model;
 
     s = suite_create("RL Environments");
 
     tc_linewalk_random_actions = tcase_create("Linewalk Random Actions");
+    tc_linewalk_mcts_random_actions = tcase_create("Linewalk MCTS Random Actions");
     tc_frozenlake_random_actions = tcase_create("Frozenlake Random Actions");
+    tc_frozenlake_mc_policy_evaluation = tcase_create("Frozenlake MC Policy Evaluation");
+    tc_frozenlake_dp_iterative_policy_evaluation = tcase_create("Frozenlake DP Iterative Policy Evaluation");
     tc_frozenlake_dp_model = tcase_create("Frozenlake DP Model");
     tc_cliffwalking_random_actions = tcase_create("Cliffwalking Random Actions");
     tc_cliffwalking_dp_model = tcase_create("Cliffwalking DP Model");
@@ -263,7 +353,10 @@ Suite * rl_environments_test_suite(void)
     tc_carrental_dp_model = tcase_create("Carrental DP Model");
 
     tcase_add_test(tc_linewalk_random_actions, test_linewalk_random_actions);
+    tcase_add_test(tc_linewalk_mcts_random_actions, test_linewalk_mcts_random_actions);
     tcase_add_test(tc_frozenlake_random_actions, test_frozenlake_random_actions);
+    tcase_add_test(tc_frozenlake_mc_policy_evaluation, test_frozenlake_mc_policy_evaluation);
+    tcase_add_test(tc_frozenlake_dp_iterative_policy_evaluation, test_frozenlake_dp_iterative_policy_evaluation);
     tcase_add_test(tc_frozenlake_dp_model, test_frozenlake_dp_model_nonslippery);
     tcase_add_test(tc_frozenlake_dp_model, test_frozenlake_dp_model_slippery);
     tcase_add_test(tc_cliffwalking_random_actions, test_cliffwalking_random_actions);
@@ -272,7 +365,10 @@ Suite * rl_environments_test_suite(void)
     tcase_add_test(tc_carrental_no_terminate, test_carrental_no_terminate);
     tcase_add_test(tc_carrental_dp_model, test_carrental_dp_model);
     suite_add_tcase(s, tc_linewalk_random_actions);
+    suite_add_tcase(s, tc_linewalk_mcts_random_actions);
     suite_add_tcase(s, tc_frozenlake_random_actions);
+    suite_add_tcase(s, tc_frozenlake_mc_policy_evaluation);
+    suite_add_tcase(s, tc_frozenlake_dp_iterative_policy_evaluation);
     suite_add_tcase(s, tc_frozenlake_dp_model);
     suite_add_tcase(s, tc_cliffwalking_random_actions);
     suite_add_tcase(s, tc_cliffwalking_dp_model);
