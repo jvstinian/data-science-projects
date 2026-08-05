@@ -1,5 +1,5 @@
-# wrapper.pyx
-# cdef extern from "ada_library.h":
+# ada_wrapper.pyx
+# Use * as we don't have a header with the definitions
 cdef extern from *:
     """
     // This raw C code is injected directly into the generated .c file.

@@ -29,9 +29,10 @@
  *  Left, Down, Right, or Up.
  * 
  *  ## Observation Space
- *  There are 3 x 12 + 1 possible states. The player cannot be at the cliff,
- *  nor at the goal as the latter results in the end of the episode. What
- *  remains are all the positions of the first 3 rows plus the bottom-left cell.
+ *  There are 3 x 12 + 1 possible non-terminal states. The player cannot be at
+ *  the cliff, nor at the goal as the latter results in the end of the episode.
+ *  What remains are all the positions of the first 3 rows plus the bottom-left
+ *  cell.
  * 
  *  The observation is a value representing the player's current position as
  *  current_row * ncols + current_col (where both the row and col start at 0).
@@ -59,27 +60,21 @@
  *  - the Python version returns probability info (e.g., {"prob": 1})
  *    in the reset and step methods, whereas this implementation
  *    omits this info
- *  - contrary to the description above, in this Ada implementation the
- *    position of the agent is represented using a 1-based index for the row
- *    and column, but the public observation type is the flattened 0-based
- *    position index (the description above is taken from the Python 
- *    implementation with a few adjustments, and we decided to keep the
- *    explanation that consistently uses the 0-based indices to avoid
- *    confusion, particularly since the use of 1-based indices is 
- *    only used in the private part of the specification) */
+ * */
 
 #include <reinforcementlearning/bool.h>
 #include <reinforcementlearning/algorithms/dp_transitions.h>
+#include <reinforcementlearning/algorithms/result_types.h> /* Simulation_Summary */
 
 struct CliffwalkingConfig {
   Boolean is_slippery;
 };
-   
+ 
 enum CliffwalkingAction {
-    LEFT,
-    DOWN,
-    RIGHT,
-    UP
+    CLIFFWALK_LEFT,
+    CLIFFWALK_DOWN,
+    CLIFFWALK_RIGHT,
+    CLIFFWALK_UP
 };
 
 #define CLIFFWALK_ACTION_COUNT 4
@@ -103,11 +98,41 @@ struct CliffwalkingEnvironment* cliffwalking_make(struct CliffwalkingConfig conf
 struct CliffwalkingObservation cliffwalking_reset(struct CliffwalkingEnvironment* env);
 struct CliffwalkingStepReturn cliffwalking_step(struct CliffwalkingEnvironment* env, enum CliffwalkingAction action);
 void cliffwalking_close(struct CliffwalkingEnvironment* env);
-void cliffwalking_render_text(struct CliffwalkingEnvironment env);
+void cliffwalking_render_text(const struct CliffwalkingEnvironment* env);
 
 struct CliffwalkingDPModel;
+
 struct CliffwalkingDPModel* cliffwalking_dpmodel_new(struct CliffwalkingConfig config);
 void cliffwalking_dpmodel_free(struct CliffwalkingDPModel* model);
 struct TransitionProbability cliffwalking_get_transition(const struct CliffwalkingDPModel* model, unsigned int s, enum CliffwalkingAction action, unsigned int next_s);
+unsigned int cliffwalking_get_num_states(const struct CliffwalkingDPModel* model);
+
+/* Simulating Random Actions */
+#define ENVIRONMENT_PREFIX cliffwalking
+#define CONFIG_TYPE struct CliffwalkingConfig
+#define ENVIRONMENT_TYPE struct CliffwalkingEnvironment
+#define OBSERVATION_TYPE struct CliffwalkingObservation
+#define STEPRETURN_TYPE struct CliffwalkingStepReturn
+#define ACTION_TYPE enum CliffwalkingAction
+#define MAKE_METHOD cliffwalking_make
+#define RESET_METHOD cliffwalking_reset
+#define RANDOM_ACTION_METHOD cliffwalking_get_random_action
+#define STEP_METHOD cliffwalking_step
+#define CLOSE_METHOD cliffwalking_close
+#define URA_DECLS_ONLY
+#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
+
+/* Dynamic Programming Methods */
+enum CliffwalkingAction cliffwalking_get_random_action();
+
+#define ENVIRONMENT_PREFIX cliffwalking
+#define DISCRETE_MODEL_TYPE struct CliffwalkingDPModel
+#define ACTION_TYPE enum CliffwalkingAction
+#define ENVIRONMENT_ACTION_COUNT CLIFFWALK_ACTION_COUNT
+#define GET_TRANSITION_METHOD cliffwalking_get_transition
+#define RANDOM_ACTION_METHOD cliffwalking_get_random_action
+#define PRINT_POLICY_METHOD print_policy
+#define DP_DECLS_ONLY
+#include <reinforcementlearning/algorithms/dp.inc>
 
 #endif
