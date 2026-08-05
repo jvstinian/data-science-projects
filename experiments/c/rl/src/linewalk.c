@@ -171,8 +171,11 @@ void linewalk_close(struct LineWalkEnvironment* env) {
 #define STATE_TYPE LineWalkState
 #define ACTION_TYPE enum LineWalkAction
 #define STEP_METHOD step
+#define PLAYER_TYPE enum LineWalkPlayer
+#define GET_PLAYER_METHOD get_player
 #define RANDOM_ACTION_METHOD linewalk_mctsenv_get_random_action
 #define IS_TERMINAL_METHOD is_terminal
+#define REWARD_METHOD reward
 #include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions_c.inc>
 
 

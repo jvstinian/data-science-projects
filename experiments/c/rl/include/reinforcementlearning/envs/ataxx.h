@@ -86,6 +86,12 @@ float reward(enum AtaxxPlayer player, struct AtaxxState state);
 AtaxxValidActionsList* get_valid_actions (struct AtaxxState state);
 
 void print_state(struct AtaxxState state);
+struct AtaxxAction ataxx_mctsenv_get_random_action(struct AtaxxState state);
+
+#define ENVIRONMENT_PREFIX ataxx
+#define CONFIG_TYPE struct AtaxxConfig
+#define MURA_DECLS_ONLY
+#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions_c.inc>
 
 int ataxx_example_main();
 

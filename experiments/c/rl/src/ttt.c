@@ -1,5 +1,6 @@
 #include <reinforcementlearning/envs/ttt.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 struct TTTState initial_state() {
     /* unsigned short int r, c; */
@@ -248,3 +249,30 @@ void print_state(struct TTTState s) {
     print_board(s);
     print_game_status(s);
 }
+
+struct TTTAction ttt_mctsenv_get_random_action(struct TTTState state) {
+    struct TTTAction available_actions[9];
+    unsigned int num_actions = 0;
+    unsigned int r, c;
+    for (r = 0; r < 3; r++) {
+        for (c = 0; c < 3; c++) {
+            if (state.board[r][c] == No_Mark) {
+                available_actions[num_actions++] = (struct TTTAction) {r, c};
+            }
+        }
+    }
+    return available_actions[rand() % num_actions];
+}
+
+#define ENVIRONMENT_PREFIX ttt
+#define CONFIG_TYPE struct TTTConfig
+#define STATE_TYPE struct TTTState
+#define ACTION_TYPE struct TTTAction
+#define PLAYER_TYPE enum TTTPlayer
+#define STEP_METHOD step
+#define GET_PLAYER_METHOD get_player
+#define RANDOM_ACTION_METHOD ttt_mctsenv_get_random_action
+#define IS_TERMINAL_METHOD is_terminal
+#define REWARD_METHOD reward
+#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions_c.inc>
+

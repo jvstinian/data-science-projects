@@ -553,8 +553,81 @@ void print_state(struct AtaxxState state) {
     print_board(state);
     print_game_status(state);
 }
+
+struct AtaxxAction ataxx_mctsenv_get_random_action(struct AtaxxState state) {
+    struct AtaxxAction vas[BOARD_WIDTH * BOARD_WIDTH * 24];
+    unsigned int num_actions = 0;
+
+    enum AtaxxPlayer player = state.current_player;
+    /* We use player_to_mark in the following */
+    enum AtaxxMark player_mark = player_to_mark(player);
+
+    /* Temp variables for loop below */
+    struct AtaxxCellIndices source;
+    struct AtaxxAction temp_action;
+    unsigned short int i0, i1, j0, j1;
+    unsigned short int r, c;
+    unsigned short int r_target, c_target;
+
+    for (r=0; r < BOARD_WIDTH; r++){
+        for (c=0; c < BOARD_WIDTH; c++){
+            if (state.board[r][c] == player_mark) {
+                source = (struct AtaxxCellIndices) { r, c };
+                /*  We just want
+                i0 = (unsigned short int) max_short(0, ((short int) r) - 2);
+                i1 = (unsigned short int) min_short(BOARD_WIDTH - 1, ((short int) r) + 2);
+                but below rather we set the extreme value and then adjust to the
+                range value if valid.  This way we avoid type casts but introduce
+                branches. */
+                i0 = 0;
+                if (r >= 2) {
+                    i0 = r - 2;
+                }
+                i1 = BOARD_WIDTH - 1;
+                if (r < (BOARD_WIDTH - 2)) {
+                    i1 = r + 2;
+                }
+                j0 = 0;
+                if (c >= 2) {
+                    j0 = c - 2;
+                }
+                j1 = BOARD_WIDTH - 1;
+                if (c < (BOARD_WIDTH - 2)) {
+                    j1 = c + 2;
+                }
+                for (r_target = i0; r_target <= i1; r_target++) {
+                    for (c_target = j0; c_target <= j1; c_target++) {
+                        if (
+                            !((r_target == r) && (c_target == c))
+                            && (state.board[r_target][c_target] == No_Mark)
+                        ) {
+                            temp_action = (struct AtaxxAction) {
+                                source,
+                                (struct AtaxxCellIndices) { r_target, c_target }
+                             };
+                            vas[num_actions++] = temp_action;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return vas[rand() % num_actions];
+}
+
+#define ENVIRONMENT_PREFIX ataxx
+#define CONFIG_TYPE struct AtaxxConfig
+#define STATE_TYPE struct AtaxxState
+#define ACTION_TYPE struct AtaxxAction
+#define PLAYER_TYPE enum AtaxxPlayer
+#define STEP_METHOD step
+#define GET_PLAYER_METHOD get_player
+#define RANDOM_ACTION_METHOD ataxx_mctsenv_get_random_action
+#define IS_TERMINAL_METHOD is_terminal
+#define REWARD_METHOD reward
+#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions_c.inc>
     
-int main() {
+int ataxx_example_main() {
     printf("Ataxx prototype under construction.\n");
     struct AtaxxConfig conf = { Two_Player };
     struct AtaxxState state = initial_state(conf);
