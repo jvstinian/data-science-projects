@@ -53,7 +53,7 @@ struct SimulationSummary URA_FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config, 
 
 #else
 
-/* X-macro approach */
+/* Template header approach */
 struct SimulationSummary URA_FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config, Boolean verbose) {
     ENVIRONMENT_TYPE* env = MAKE_METHOD(config);
     if (env == NULL) {
