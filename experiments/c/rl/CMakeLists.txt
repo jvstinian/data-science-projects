@@ -17,6 +17,7 @@ find_library(MATH_LIBRARY m)
 add_library(reinforcementlearning
     src/linewalk.c
     src/frozenlake.c
+    src/cliffwalking.c
     src/cartpole.c
     src/blackjack.c
     src/carrental.c
@@ -27,6 +28,7 @@ add_library(reinforcementlearning
     src/array_ops.c
     src/epsilon_policies.c
     src/mcts_unbounded.c
+    src/random.c
 )
 
 # link math library

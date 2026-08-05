@@ -1,4 +1,3 @@
-/* #include <reinforcementlearning/algorithms/array_ops.h> */
 #include <reinforcementlearning/algorithms/epsilon_policies.h>
 #include <reinforcementlearning/envs/frozenlake.h>
 #include <assert.h>
@@ -9,10 +8,7 @@
 #include <time.h> /* For setting the RNG */
 #include <float.h> /* FLT_MAX */
 #include <reinforcementlearning/math.h>
-
-float rand_float() {
-    return (float)rand() / (float)RAND_MAX;
-};
+#include <reinforcementlearning/random.h>
 
 enum FrozenlakeAction frozenlake_get_random_action() {
     return (enum FrozenlakeAction) rand() % FROZENLAKE_ACTION_COUNT;
@@ -92,7 +88,7 @@ struct FrozenlakeEnvironment {
     struct PositionType agent_position;
 };
   
-struct PositionType get_start_position(unsigned int rows, unsigned int cols, const enum MapElement* map) {
+static struct PositionType get_start_position(unsigned int rows, unsigned int cols, const enum MapElement* map) {
     struct PositionType start_position = { 0, 0 };
     unsigned int r, c, i;
     /* Determine the start position
@@ -114,7 +110,7 @@ struct PositionType get_start_position(unsigned int rows, unsigned int cols, con
 }
 
 
-struct PositionType position_inc(unsigned int rows, unsigned int cols, struct PositionType position, enum FrozenlakeAction action) {
+static struct PositionType position_inc(unsigned int rows, unsigned int cols, struct PositionType position, enum FrozenlakeAction action) {
     assert((rows > 0) && (cols > 0));
     unsigned int i = position.row;
     unsigned int j = position.col;
@@ -479,98 +475,6 @@ void frozenlake_dpmodel_free(struct FrozenlakeDPModel* model) {
 }
 
 
-/* TODO: policy should probably be coerced to have const values */
-/* TODO: Complete move to dp.inc.  I've checked and the following can be replaced. */
-/*
-int iterative_policy_evaluation(struct FrozenlakeDPModel* model, const float (*policy)[FROZENLAKE_ACTION_COUNT], float df, float *value_array) {
-    unsigned int num_states = model->num_states;
-
-    \/\* Set the value function to 0 \*\/
-    memset(value_array, 0, sizeof(float) * num_states);
-    float theta = 1.0e-6; \/\* Convergence threshold \*\/
-    float local_delta = 0.0;
-
-    float prev_value;
-    float transition_value;
-    float new_value;
-
-    unsigned int s, s1;
-    enum FrozenlakeAction a;
-    struct TransitionProbabilityType trprob;
-
-    int iteration_count = 0;
-
-    while (1) {
-        iteration_count += 1;
-        \/\* printf("Iteration %d\n", iteration_count); \*\/
-
-        local_delta = 0.0;
-        for (s = 0; s < num_states;  s++) {
-            prev_value = value_array[s];
-            new_value = 0.0;
-            for (a = 0; a < FROZENLAKE_ACTION_COUNT; a++) {
-                transition_value = 0.0;
-                for (s1 = 0; s1 < num_states;  s1++) {
-                    trprob = frozenlake_get_transition(model, s, a, s1);
-                    transition_value += trprob.probability * (trprob.reward + df * value_array[s1]);
-                }
-                new_value += policy[s][a] * transition_value;
-            }
-            value_array[s] = new_value;
-            local_delta = fmaxf(local_delta, fabsf(new_value - prev_value));
-        }
-        if (local_delta < theta) {
-            break;
-        }
-    }
-    return iteration_count;
-}
-*/
-
-/* TODO: Move to dp.inc */
-/*
-int iterative_deterministic_policy_evaluation(
-    struct FrozenlakeDPModel* model, const enum FrozenlakeAction* dpolicy, float df, float *value_array
-) {
-    unsigned int num_states = model->num_states;
-
-    \/\* We assume the value_array has been initialized prior to calling
-     * the method \*\/
-    float theta = 1.0e-6; \/\* Convergence threshold \*\/
-    float local_delta = 0.0;
-
-    float prev_value;
-    float new_value;
-
-    unsigned int s, s1;
-    enum FrozenlakeAction a;
-    struct TransitionProbabilityType trprob;
-
-    int iteration_count = 0;
-    
-    while (1) {
-        iteration_count += 1;
-
-        local_delta = 0.0;
-        for (s = 0; s < num_states;  s++) {
-            prev_value = value_array[s];
-            a = dpolicy[s];
-            new_value = 0.0;
-            for (s1 = 0; s1 < num_states;  s1++) {
-                trprob = frozenlake_get_transition(model, s, a, s1);
-                new_value += trprob.probability * (trprob.reward + df * value_array[s1]);
-            }
-            value_array[s] = new_value;
-            local_delta = fmaxf(local_delta, fabsf(new_value - prev_value));
-        }
-        if (local_delta < theta) {
-            break;
-        }
-    }
-    return iteration_count;
-}
-*/
- 
 static void print_policy(const enum FrozenlakeAction* dpolicy, unsigned int num_states) {
     unsigned int s;
     enum FrozenlakeAction a;
@@ -585,195 +489,6 @@ static void print_policy(const enum FrozenlakeAction* dpolicy, unsigned int num_
         printf("%d: %s\n", s, action_names[a]);
     }
 }
-
-/* TODO: Consider changing the name to "_given_init" */
-/* TODO: Move to dp.inc */
-/*
-int policy_iteration_with_init(
-    struct FrozenlakeDPModel* model, float df, float *value_array, enum FrozenlakeAction* dpolicy
-) {
-    \/\* Init_Value_Func : Value_Function_Type;
-     * Init_Policy : Deterministic_Policy_Type
-      type Action_Value_Array_Type is array (Action_Type) of Float;
-
-      Value_Function : Value_Function_Type := Init_Value_Func;
-      Policy : Deterministic_Policy_Type := Init_Policy;
-     \*\/
-    unsigned int num_states = model->num_states;
-
-    Boolean stable;
-
-    unsigned int s, s1;
-    enum FrozenlakeAction a;
-
-    enum FrozenlakeAction prev_action;
-    float action_values[FROZENLAKE_ACTION_COUNT];
-
-    struct TransitionProbabilityType trprob;
-
-    int iteration_count = 0;
-
-    while (1) {
-        iteration_count += frozenlake_iterative_deterministic_policy_evaluation(model, dpolicy, df, value_array);
-   
-        stable = TRUE;
-
-        for (s = 0; s < num_states; s++) {
-            \/\* For state S, record the value of each action in Action_Values. \*\/
-            for (a = 0; a < FROZENLAKE_ACTION_COUNT; a++) {
-                action_values[a] = 0.0;
-                for (s1 = 0; s1 < num_states; s1++) {
-                    trprob = frozenlake_get_transition(model, s, a, s1);
-                    action_values[a] += trprob.probability * (trprob.reward + df * value_array[s1]);
-                }
-            }
-            \/\* Get the arg max \*\/
-            prev_action = dpolicy[s];
-            dpolicy[s] = (enum FrozenlakeAction) arg_max(action_values, FROZENLAKE_ACTION_COUNT);
-            if (dpolicy[s] != prev_action) {
-               stable = FALSE;
-            }
-        }
-        if (stable) {
-            break;
-        }
-    }
-    return iteration_count;
-}
-*/
-
-/* TODO: We need to pass value_array and dpolicy */
-/* TODO: Move to dp.inc */
-/*
-int policy_iteration(
-    struct FrozenlakeDPModel* model, float df, int* num_iterations
-) {
-    \/\* Reset seed \*\/
-    srand(time(NULL));
-    
-    unsigned int num_states = model->num_states;
-
-    unsigned int s;
-
-    float* value_array = malloc(num_states * sizeof(float));
-    if (value_array == NULL) {
-        fprintf(stderr, "policy_iteration: could not allocate state value array");
-        return 1;
-    }
-    \/\* Initialize value function to 0 \*\/
-    memset(value_array, 0, sizeof(float) * num_states);
-
-    enum FrozenlakeAction* dpolicy = malloc(num_states * sizeof(enum FrozenlakeAction));
-    if (dpolicy == NULL) {
-        fprintf(stderr, "policy_iteration: could not allocate deterministic policy array");
-        free(value_array);
-        return 2;
-    }
-
-    \/\* Initialize policy using uniform distribution over actions \*\/
-    for (s = 0; s < num_states; s++) {
-        dpolicy[s] = frozenlake_get_random_action();
-    }
-
-    print_policy(dpolicy, num_states);  \/\* TODO: Remove after debugging \*\/
-    *num_iterations = frozenlake_policy_iteration_with_init(model, df, value_array, dpolicy);
-    return 0;
-}
-*/
-
-
-/* TODO: Move to dp.inc */
-/*
-static void get_action_values_for_state(struct FrozenlakeDPModel* model, unsigned int s, const float* value_function, float df, float* action_values_out) {
-    float new_value;
-    unsigned int s1;
-    enum FrozenlakeAction a;
-    struct TransitionProbabilityType trprob;
-
-    unsigned int num_states = model->num_states;
-
-    for (a = 0; a < FROZENLAKE_ACTION_COUNT; a++) {
-        new_value = 0.0;
-        for (s1 = 0; s1 < num_states; s1++) {
-            trprob = frozenlake_get_transition(model, s, a, s1);
-            new_value += trprob.probability * (trprob.reward + df * value_function[s1]);
-        }
-        action_values_out[a] = new_value;
-    }
-}
-*/
-
-/* TODO: Perhaps return number of iterations? */
-/* TODO: Move to dp.inc */
-/*
-static void value_max_action_update(struct FrozenlakeDPModel* model, float df, float* value_function_out) {
-    \/\* Value_Function: Value_Function_Type := (others => 0.0); \*\/
-    unsigned int num_states = model->num_states;
-
-    \/\* Overwrite value function with 0s \*\/
-    memset(value_function_out, 0, num_states * sizeof(float));
-
-    unsigned int s;
-
-    float theta = 1.0e-6;  \/\* Convergence threshold \*\/
-    float local_delta = 0.0;
-
-    float prev_value;
-    float new_value;
-    float next_values[FROZENLAKE_ACTION_COUNT];
-
-    int iteration_count = 0;
-
-    while (1) {
-        iteration_count++;
-        printf("Iteration %d", iteration_count); \/\* TODO: Remove \*\/
-
-        local_delta = 0.0;
-        for (s = 0; s < num_states; s++) {
-            prev_value = value_function_out[s];
-            get_action_values_for_state(model, s, value_function_out, df, next_values);
-            new_value = (enum FrozenlakeAction) max_value(next_values, FROZENLAKE_ACTION_COUNT);
-            value_function_out[s] = new_value;
-            local_delta = fmaxf(local_delta, fabsf(new_value - prev_value));
-        }
-        if (local_delta < theta) {
-            break;
-        }
-    }
-}
-*/
- 
-/* TODO: Move to dp.inc */
-/*
-int value_iteration(struct FrozenlakeDPModel* model, float df, enum FrozenlakeAction* dpolicy_out) {
-    unsigned int num_states = model->num_states;
-    unsigned int s;
-
-    for (s=0; s < num_states; s++) {
-        \/\* Initialize to random policy \*\/
-        dpolicy_out[s] = frozenlake_get_random_action();
-    }
-    
-    \/\* Local values \*\/
-    \/\* TODO: Consider returning value as well \*\/
-    float* value_function = malloc(num_states * sizeof(float));
-    if (value_function == NULL) {
-        fprintf(stderr, "value_iteration: error allocating state value array");
-        return 1;
-    }
-
-    float action_values[FROZENLAKE_ACTION_COUNT];
-
-    print_policy(dpolicy_out, num_states);  \/\* TODO: Remove after debugging \*\/
-    value_max_action_update(model, df, value_function);
-
-    for (s=0; s < num_states; s++) {
-        get_action_values_for_state(model, s, value_function, df, action_values);
-        dpolicy_out[s] = (enum FrozenlakeAction) arg_max(action_values, FROZENLAKE_ACTION_COUNT);
-    }
-    return 0;
-}
-*/
 
 /* NOTE: Keeping the example defined here for now rather than moving to dp.inc */
 int frozenlake_value_iteration_example(struct FrozenlakeConfig config, float df) {
@@ -932,13 +647,6 @@ int frozenlake_example_main() {
 #define RANDOM_ACTION_METHOD frozenlake_get_random_action
 #define PRINT_POLICY_METHOD print_policy
 #include <reinforcementlearning/algorithms/dp.inc>
-
-/*
-struct TDConfig {
-    float alpha;
-    float gamma;
-};
-*/
 
 /* TODO: Move to td.inc */
 /* TODO: This method has been moved */
