@@ -25,12 +25,16 @@ const char *env_names[4] = {
 enum Algorithm {
     ALG_RL_RANDOM_ACTIONS,
     ALG_DP_POLICY_ITERATION,
+    ALG_DP_VALUE_ITERATION,
+    ALG_MCTS_UCT,
     ALG_UNKNOWN
 };
 
-const char *alg_names[3] = {
+const char *alg_names[5] = {
     "rl_random_actions",
     "dp_policy_iteration",
+    "dp_value_iteration",
+    "mcts_uct",
     "unknown"
 };
 
@@ -73,6 +77,10 @@ int process_algorithm_value(char *argv, struct RunConfig *run_config) {
         run_config->alg = ALG_RL_RANDOM_ACTIONS;
     } else if (strcmp(alg_value, "dp_policy_iteration") == 0) {
         run_config->alg = ALG_DP_POLICY_ITERATION;
+    } else if (strcmp(alg_value, "dp_value_iteration") == 0) {
+        run_config->alg = ALG_DP_VALUE_ITERATION;
+    } else if (strcmp(alg_value, "mcts_uct") == 0) {
+        run_config->alg = ALG_MCTS_UCT;
     } else {
         run_config->alg = ALG_UNKNOWN;
         fprintf(stderr, "Unknown algorithm: %s\n", argv);
@@ -92,9 +100,9 @@ void print_help() {
 }
 
 Boolean supported_env_alg[ENV_UNKNOWN][ALG_UNKNOWN] = {
-    {  TRUE, FALSE },  /* ENV_LINEWALK */
-    { FALSE,  TRUE },   /* ENV_FROZENLAKE */
-    { FALSE,  TRUE }   /* ENV_CARRENTAL */
+    {  TRUE, FALSE, FALSE,  TRUE },  /* ENV_LINEWALK */
+    { FALSE,  TRUE, FALSE, FALSE },  /* ENV_FROZENLAKE */
+    { FALSE,  TRUE, FALSE, FALSE }   /* ENV_CARRENTAL */
 };
 
 int process_arguments(int argc, char *argv[], struct RunConfig *run_config) {
@@ -166,7 +174,38 @@ int main(int argc, char *argv[]) {
     if (process_arguments(argc, argv, &run_config) != 0) {
         return 1;
     }
-    carrental_dp_example();
-    return uct_main();
+    switch (run_config.env) {
+        case ENV_LINEWALK:
+            switch (run_config.alg) {
+                case ALG_MCTS_UCT:
+                    return uct_main();
+                case ALG_RL_RANDOM_ACTIONS:
+                case ALG_DP_POLICY_ITERATION:
+                case ALG_DP_VALUE_ITERATION:
+                case ALG_UNKNOWN:  /* Should be unreachable */
+                default:
+                    fprintf(stderr, "Unsupported algorithm for Linewalk environment.\n");
+                    return 1;
+            }
+        case ENV_CARRENTAL:
+            switch (run_config.alg) {
+                case ALG_DP_POLICY_ITERATION:
+                    return carrental_dp_example();
+                case ALG_RL_RANDOM_ACTIONS:
+                case ALG_MCTS_UCT:
+                case ALG_DP_VALUE_ITERATION:
+                case ALG_UNKNOWN:  /* Should be unreachable */
+                default:
+                    fprintf(stderr, "Unsupported algorithm for Carrental environment.\n");
+                    return 1;
+            }
+        case ENV_FROZENLAKE:
+        case ENV_UNKNOWN:  /* Should be unreachable */
+        default:
+            fprintf(stderr, "No example for environment %s and algorithm %s\n", 
+                    env_names[run_config.env], alg_names[run_config.alg]
+            );
+            return 1;
+    }
 }
 

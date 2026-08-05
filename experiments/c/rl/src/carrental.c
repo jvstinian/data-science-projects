@@ -555,21 +555,6 @@ struct TransitionArray get_transition_values_from_state(struct CarrentalConfig c
     return calculate_transition_probabilities_from_state(config, cars_after_action.cars_moved, cars_count1);
 }
 
-int carrental_example_main() {
-    unsigned int i = 0;
-    printf("Hello, car rental environment users!\n");
-
-    for (i = 0; i < 10; i++) {
-        printf("Poisson PMFs for lambda=3 and i=%u: %f\n", i, poisson_pmf(3.0, i));
-    }
-
-    for (i = 0; i < 10; i++) {
-        printf("Poisson random number with lambda=3: %u\n", poisson(3.0));
-    }
-    
-    return 0;
-}
-
 int carrental_dp_example() {
     struct CarrentalConfig config = get_default_config();
     struct CarrentalDPModel *model;

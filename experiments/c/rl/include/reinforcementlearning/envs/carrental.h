@@ -223,7 +223,6 @@ struct TransitionArray calculate_transition_probabilities_from_state(
       struct CarrentalConfig config, unsigned int cars_moved, struct CarsPerLot prev_cars
 );
 
-int carrental_example_main();
 int carrental_dp_example();
 
 #endif
