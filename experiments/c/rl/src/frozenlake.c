@@ -8,10 +8,7 @@
 #include <time.h> /* For setting the RNG */
 #include <float.h> /* FLT_MAX */
 #include <reinforcementlearning/math.h>
-
-float rand_float() {
-    return (float)rand() / (float)RAND_MAX;
-};
+#include <reinforcementlearning/random.h>
 
 enum FrozenlakeAction frozenlake_get_random_action() {
     return (enum FrozenlakeAction) rand() % FROZENLAKE_ACTION_COUNT;
@@ -91,7 +88,7 @@ struct FrozenlakeEnvironment {
     struct PositionType agent_position;
 };
   
-struct PositionType get_start_position(unsigned int rows, unsigned int cols, const enum MapElement* map) {
+static struct PositionType get_start_position(unsigned int rows, unsigned int cols, const enum MapElement* map) {
     struct PositionType start_position = { 0, 0 };
     unsigned int r, c, i;
     /* Determine the start position
@@ -113,7 +110,7 @@ struct PositionType get_start_position(unsigned int rows, unsigned int cols, con
 }
 
 
-struct PositionType position_inc(unsigned int rows, unsigned int cols, struct PositionType position, enum FrozenlakeAction action) {
+static struct PositionType position_inc(unsigned int rows, unsigned int cols, struct PositionType position, enum FrozenlakeAction action) {
     assert((rows > 0) && (cols > 0));
     unsigned int i = position.row;
     unsigned int j = position.col;

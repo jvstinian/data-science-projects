@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <reinforcementlearning/math.h>
+#include <reinforcementlearning/random.h>
 
 struct CartpoleConfig cartpole_default_config() {
     return (struct CartpoleConfig) { FALSE, Euler };
@@ -38,11 +39,6 @@ static const float length = 0.5;  /* actually half the pole's length */
 static const float polemass_length = masspole * length;
 static const float force_mag = 10.0;
 static const float tau = 0.02; /* seconds between state updates */
-
-
-float rand_float() {
-    return (float)rand() / (float)RAND_MAX;
-};
 
 struct CartpoleObservation cartpole_reset(struct CartpoleEnvironment* env) {
     const float low = -0.05;
