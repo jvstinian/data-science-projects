@@ -315,7 +315,7 @@ struct FrozenlakeStepReturn frozenlake_step(struct FrozenlakeEnvironment* env, e
 #define RANDOM_ACTION_METHOD frozenlake_get_random_action
 #define STEP_METHOD frozenlake_step
 #define CLOSE_METHOD frozenlake_close
-#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
+#include <reinforcementlearning/algorithms/uniform_random_actions.inc>
 
 /*
 package body Frozen_Lake is

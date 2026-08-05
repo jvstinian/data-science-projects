@@ -274,5 +274,5 @@ struct TTTAction ttt_mctsenv_get_random_action(struct TTTState state) {
 #define RANDOM_ACTION_METHOD ttt_mctsenv_get_random_action
 #define IS_TERMINAL_METHOD is_terminal
 #define REWARD_METHOD reward
-#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions_c.inc>
+#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions.inc>
 

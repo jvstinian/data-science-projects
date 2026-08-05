@@ -625,7 +625,7 @@ struct AtaxxAction ataxx_mctsenv_get_random_action(struct AtaxxState state) {
 #define RANDOM_ACTION_METHOD ataxx_mctsenv_get_random_action
 #define IS_TERMINAL_METHOD is_terminal
 #define REWARD_METHOD reward
-#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions_c.inc>
+#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions.inc>
     
 int ataxx_example_main() {
     printf("Ataxx prototype under construction.\n");
