@@ -88,7 +88,7 @@ struct FrozenlakeEnvironment {
     struct PositionType agent_position;
 };
   
-struct PositionType get_start_position(unsigned int rows, unsigned int cols, const enum MapElement* map) {
+static struct PositionType get_start_position(unsigned int rows, unsigned int cols, const enum MapElement* map) {
     struct PositionType start_position = { 0, 0 };
     unsigned int r, c, i;
     /* Determine the start position
@@ -110,7 +110,7 @@ struct PositionType get_start_position(unsigned int rows, unsigned int cols, con
 }
 
 
-struct PositionType position_inc(unsigned int rows, unsigned int cols, struct PositionType position, enum FrozenlakeAction action) {
+static struct PositionType position_inc(unsigned int rows, unsigned int cols, struct PositionType position, enum FrozenlakeAction action) {
     assert((rows > 0) && (cols > 0));
     unsigned int i = position.row;
     unsigned int j = position.col;
