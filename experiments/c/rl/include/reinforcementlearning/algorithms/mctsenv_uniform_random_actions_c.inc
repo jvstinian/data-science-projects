@@ -6,6 +6,23 @@
 #error "CONFIG_TYPE is not defined in mctsenv_uniform_random_actions_c.inc"
 #endif
 
+
+
+#define MURA_FUNC_NAME_CONCAT(PREFIX) PREFIX##_mctsenv_uniform_random_actions
+
+#define MURA_FUNC_NAME(PREFIX) MURA_FUNC_NAME_CONCAT(PREFIX)
+
+#ifdef MURA_DECLS_ONLY
+
+
+#include <reinforcementlearning/algorithms/result_types.h>
+struct SimulationSummary MURA_FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config, unsigned int max_steps);
+
+
+#else
+
+
+/* The following macros are only needed for the implementation */
 #ifndef STATE_TYPE
 #error "STATE_TYPE is not defined in mctsenv_uniform_random_actions_c.inc"
 #endif
@@ -26,25 +43,19 @@
 #error "IS_TERMINAL_METHODis not defined in mctsenv_uniform_random_actions_c.inc"
 #endif
 
-
-#include <stdlib.h>
-
-#define FUNC_NAME_CONCAT(PREFIX) PREFIX##_mctsenv_uniform_random_actions
-
-#define FUNC_NAME(PREFIX) FUNC_NAME_CONCAT(PREFIX)
-
-
-/* Using an X-macro approach */
-void FUNC_NAME(ENVIRONMENT_PREFIX) (const CONFIG_TYPE * config, unsigned int max_steps) {
-    STATE_TYPE state = initial_state(*config);
+/* Template header approach */
+struct SimulationSummary MURA_FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config, unsigned int max_steps) {
+    STATE_TYPE state = initial_state(config);
     size_t i;
     ACTION_TYPE action;
     Boolean terminated = FALSE;
 
     srand(125);
 
+    /* TODO: Remove print statements
     printf("\n");
     printf("Using MCTS interface, taking random actions...\n");
+    */
     for(i = 0; i < max_steps; i++) {
         action = RANDOM_ACTION_METHOD(state);
         state = STEP_METHOD(state, action);
@@ -53,13 +64,29 @@ void FUNC_NAME(ENVIRONMENT_PREFIX) (const CONFIG_TYPE * config, unsigned int max
         }
     }
 
+    /* TODO: Remove print statements
     if (terminated) {
         printf("Terminated after %lu steps\n", i + 1);
     } else {
         printf("Environment stopped after %u steps\n", max_steps);
     }
     printf("Reward: %f", reward(PLAYER1, state));
+    */
+    return (struct SimulationSummary) { i, reward(PLAYER1, state) };
 }
 
-#undef FUNC_NAME
-#undef FUNC_NAME_CONCAT
+#undef IS_TERMINAL_METHOD
+#undef RANDOM_ACTION_METHOD
+#undef STEP_METHOD
+#undef ACTION_TYPE
+#undef STATE_TYPE
+
+#endif  /* MURA_DECLS_ONLY */
+
+#undef MURA_FUNC_NAME
+#undef MURA_FUNC_NAME_CONCAT
+#undef CONFIG_TYPE
+#undef ENVIRONMENT_PREFIX
+#ifdef MURA_DECLS_ONLY
+#undef MURA_DECLS_ONLY
+#endif

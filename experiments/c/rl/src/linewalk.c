@@ -174,13 +174,7 @@ void linewalk_close(struct LineWalkEnvironment* env) {
 #define RANDOM_ACTION_METHOD linewalk_mctsenv_get_random_action
 #define IS_TERMINAL_METHOD is_terminal
 #include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions_c.inc>
-#undef IS_TERMINAL_METHOD
-#undef RANDOM_ACTION_METHOD 
-#undef STEP_METHOD
-#undef ACTION_TYPE
-#undef STATE_TYPE
-#undef CONFIG_TYPE
-#undef ENVIRONMENT_PREFIX
+
 
 enum LineWalkAction linewalk_get_random_action(struct LineWalkEnvironment* env) {
     (void)env;
