@@ -331,7 +331,7 @@ struct CarsAfterAction step_cars(struct CarsPerLot cars_count, struct CarrentalA
 #define RANDOM_ACTION_METHOD carrental_get_random_action
 #define STEP_METHOD carrental_step
 #define CLOSE_METHOD carrental_close
-#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
+#include <reinforcementlearning/algorithms/uniform_random_actions.inc>
 
 struct CarrentalDPModel* carrental_dpmodel_new(struct CarrentalConfig config) {
     struct CarrentalDPModel* model = malloc(sizeof(struct CarrentalDPModel));
@@ -553,21 +553,6 @@ struct TransitionArray get_transition_values_from_state(struct CarrentalConfig c
     cars_count1 = cars_after_action.cars_per_lot;
 
     return calculate_transition_probabilities_from_state(config, cars_after_action.cars_moved, cars_count1);
-}
-
-int carrental_example_main() {
-    unsigned int i = 0;
-    printf("Hello, car rental environment users!\n");
-
-    for (i = 0; i < 10; i++) {
-        printf("Poisson PMFs for lambda=3 and i=%u: %f\n", i, poisson_pmf(3.0, i));
-    }
-
-    for (i = 0; i < 10; i++) {
-        printf("Poisson random number with lambda=3: %u\n", poisson(3.0));
-    }
-    
-    return 0;
 }
 
 int carrental_dp_example() {

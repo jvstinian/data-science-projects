@@ -3,6 +3,10 @@
 
 #include <reinforcementlearning/bool.h>
 
+struct TTTConfig {
+    int unused;
+};
+
 enum TTTPlayer {
     PlayerX,
     PlayerO
@@ -57,5 +61,12 @@ struct TTTState step(struct TTTState s, struct TTTAction a);
 float reward(enum TTTPlayer p, struct TTTState s);
 struct TTTValidActions get_valid_actions(struct TTTState s);
 void print_state(struct TTTState s);
+
+struct TTTAction ttt_mctsenv_get_random_action(struct TTTState state);
+
+#define ENVIRONMENT_PREFIX ttt
+#define CONFIG_TYPE struct TTTConfig
+#define MURA_DECLS_ONLY
+#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions.inc>
 
 #endif

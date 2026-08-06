@@ -65,7 +65,7 @@ struct TransitionProbabilityType {
 #define STEP_METHOD frozenlake_step
 #define CLOSE_METHOD frozenlake_close
 #define URA_DECLS_ONLY
-#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
+#include <reinforcementlearning/algorithms/uniform_random_actions.inc>
 
 struct FrozenlakeDPModel;
 
@@ -93,8 +93,6 @@ int iterative_deterministic_policy_evaluation(struct FrozenlakeDPModel* model, e
 
 int value_iteration(struct FrozenlakeDPModel* model, float df, enum FrozenlakeAction* dpolicy_out);
 int frozenlake_value_iteration_example(struct FrozenlakeConfig config, float df);
-
-int frozenlake_example_main();
 
 unsigned int frozenlake_get_num_states(struct FrozenlakeConfig config);
 unsigned int frozenlake_to_discrete_observation(struct FrozenlakeObservation obs);

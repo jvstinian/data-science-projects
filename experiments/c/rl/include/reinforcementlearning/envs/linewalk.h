@@ -9,10 +9,10 @@ typedef struct LineWalkConfig {
     int N; /* Number of positions in the line */
 } LineWalkConfig;
 
-typedef enum StateKind {
+enum StateKind {
     ACTIVE,
     TERMINAL
-} StateKind;
+};
 
 enum LineWalkAction {
     MOVE_LEFT,
@@ -25,7 +25,7 @@ enum LineWalkPlayer {
 
 typedef struct LineWalkState {
     LineWalkConfig config;
-    StateKind kind;
+    enum StateKind kind;
     unsigned short int position;
     int reward;
 } LineWalkState;
@@ -47,6 +47,12 @@ float reward(enum LineWalkPlayer player, LineWalkState state);
 unsigned int get_available_actions (LineWalkState state, enum LineWalkAction *available_actions, unsigned int* num_actions);
 enum LineWalkAction linewalk_mctsenv_get_random_action(LineWalkState state);
 void print_state(LineWalkState state);
+
+#define ENVIRONMENT_PREFIX linewalk
+#define CONFIG_TYPE LineWalkConfig
+#define MURA_DECLS_ONLY
+#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions.inc>
+
 
 /* RL Interface */
 struct LineWalkObservation {
@@ -70,14 +76,8 @@ struct LineWalkStepReturn linewalk_step(struct LineWalkEnvironment* env, enum Li
 void linewalk_deinit(struct LineWalkEnvironment* env);
 void linewalk_close(struct LineWalkEnvironment* env);
 
-void linewalk_mctsenv_uniform_random_actions(const LineWalkConfig* config, unsigned int max_steps);
-
 
 enum LineWalkAction linewalk_get_random_action(struct LineWalkEnvironment* env);
 struct SimulationSummary linewalk_uniform_random_actions(struct LineWalkConfig config, Boolean verbose);
-
-/* TODO: Remove when ready 
-int main();
-*/
 
 #endif
