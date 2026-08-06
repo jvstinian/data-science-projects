@@ -169,6 +169,7 @@ int process_arguments(int argc, char *argv[], struct RunConfig *run_config) {
     return 0;
 }
 
+/* TODO: Look at int ataxx_example_main() */
 int main(int argc, char *argv[]) {
     struct RunConfig run_config = { ENV_UNKNOWN, ALG_UNKNOWN };
     if (process_arguments(argc, argv, &run_config) != 0) {
@@ -208,4 +209,3 @@ int main(int argc, char *argv[]) {
             return 1;
     }
 }
-

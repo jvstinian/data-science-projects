@@ -120,7 +120,7 @@ unsigned int cliffwalking_get_num_states(const struct CliffwalkingDPModel* model
 #define STEP_METHOD cliffwalking_step
 #define CLOSE_METHOD cliffwalking_close
 #define URA_DECLS_ONLY
-#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
+#include <reinforcementlearning/algorithms/uniform_random_actions.inc>
 
 /* Dynamic Programming Methods */
 enum CliffwalkingAction cliffwalking_get_random_action();
