@@ -269,6 +269,7 @@ struct TTTAction ttt_mctsenv_get_random_action(struct TTTState state) {
 #define STATE_TYPE struct TTTState
 #define ACTION_TYPE struct TTTAction
 #define PLAYER_TYPE enum TTTPlayer
+#define INITIAL_STATE_METHOD initial_state
 #define STEP_METHOD step
 #define GET_PLAYER_METHOD get_player
 #define RANDOM_ACTION_METHOD ttt_mctsenv_get_random_action

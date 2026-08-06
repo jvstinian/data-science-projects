@@ -9,13 +9,13 @@
 #include <reinforcementlearning/action_array_template.inc>
 */
 
-LineWalkState initial_state(LineWalkConfig config) {
+LineWalkState linewalk_initial_state(LineWalkConfig config) {
     unsigned short int pos = (config.N + 1) / 2; /* Start at the middle position */
     LineWalkState state = { config, ACTIVE, pos, 0 }; /* Start at the leftmost position */
     return state;
 }
 
-Boolean is_terminal (LineWalkState state) {
+Boolean linewalk_is_terminal(LineWalkState state) {
     if (state.kind == ACTIVE) {
         return FALSE;
     } else { 
@@ -23,14 +23,14 @@ Boolean is_terminal (LineWalkState state) {
     }
 }
 
-enum LineWalkPlayer get_player(LineWalkState state) {
+enum LineWalkPlayer linewalk_get_player(LineWalkState state) {
     /* Silence C89 unused parameter warnings */
     (void)state;
 
     return PLAYER1;
 }
 
-LineWalkState step(LineWalkState state, enum LineWalkAction action) {
+LineWalkState linewalk_act(LineWalkState state, enum LineWalkAction action) {
     LineWalkState new_state = state; /* Start with the current state */
     if (state.kind == ACTIVE) {
         switch (action) {
@@ -52,7 +52,7 @@ LineWalkState step(LineWalkState state, enum LineWalkAction action) {
     return new_state;
 }
 
-float reward(enum LineWalkPlayer player, LineWalkState state) {
+float linewalk_reward(enum LineWalkPlayer player, LineWalkState state) {
     /* Silence C89 unused parameter warnings */
     (void)player;
 
@@ -64,7 +64,7 @@ float reward(enum LineWalkPlayer player, LineWalkState state) {
 }
 
 /* TODO: Perhaps remove the num_actions output parameter and just return the count? */
-unsigned int get_available_actions (LineWalkState state, enum LineWalkAction *available_actions, unsigned int* num_actions) {
+unsigned int linewalk_get_available_actions (LineWalkState state, enum LineWalkAction *available_actions, unsigned int* num_actions) {
     unsigned int count = 0;
     if (state.kind == ACTIVE) {
         available_actions[count++] = MOVE_LEFT;
@@ -79,13 +79,26 @@ enum LineWalkAction linewalk_mctsenv_get_random_action(LineWalkState state) {
     return (enum LineWalkAction) rand() % 2;
 }
 
-void print_state(LineWalkState state) {
+void linewalk_print_state(LineWalkState state) {
     if (state.kind == ACTIVE) {
         printf("Current position: %u\n", state.position);
     } else {
         printf("Terminal state with reward: %d\n", state.reward);
     }
 }
+
+#define ENVIRONMENT_PREFIX linewalk
+#define CONFIG_TYPE LineWalkConfig
+#define STATE_TYPE LineWalkState
+#define ACTION_TYPE enum LineWalkAction
+#define INITIAL_STATE_METHOD linewalk_initial_state
+#define STEP_METHOD linewalk_act
+#define PLAYER_TYPE enum LineWalkPlayer
+#define GET_PLAYER_METHOD linewalk_get_player
+#define RANDOM_ACTION_METHOD linewalk_mctsenv_get_random_action
+#define IS_TERMINAL_METHOD linewalk_is_terminal
+#define REWARD_METHOD linewalk_reward
+#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions.inc>
 
 
 struct LineWalkEnvironment {
@@ -164,19 +177,6 @@ void linewalk_close(struct LineWalkEnvironment* env) {
     linewalk_deinit(env);
     free(env);
 }
-
-
-#define ENVIRONMENT_PREFIX linewalk
-#define CONFIG_TYPE LineWalkConfig
-#define STATE_TYPE LineWalkState
-#define ACTION_TYPE enum LineWalkAction
-#define STEP_METHOD step
-#define PLAYER_TYPE enum LineWalkPlayer
-#define GET_PLAYER_METHOD get_player
-#define RANDOM_ACTION_METHOD linewalk_mctsenv_get_random_action
-#define IS_TERMINAL_METHOD is_terminal
-#define REWARD_METHOD reward
-#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions.inc>
 
 
 enum LineWalkAction linewalk_get_random_action(struct LineWalkEnvironment* env) {

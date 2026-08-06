@@ -39,14 +39,14 @@ typedef struct LineWalkState {
 */
 
 /* MCTS Interface */
-LineWalkState initial_state(LineWalkConfig config);
-Boolean is_terminal (LineWalkState state);
-enum LineWalkPlayer get_player(LineWalkState state);
-LineWalkState step(LineWalkState state, enum LineWalkAction action);
-float reward(enum LineWalkPlayer player, LineWalkState state);
-unsigned int get_available_actions (LineWalkState state, enum LineWalkAction *available_actions, unsigned int* num_actions);
+LineWalkState linewalk_initial_state(LineWalkConfig config);
+Boolean linewalk_is_terminal (LineWalkState state);
+enum LineWalkPlayer linewalk_get_player(LineWalkState state);
+LineWalkState linewalk_act(LineWalkState state, enum LineWalkAction action);
+float linewalk_reward(enum LineWalkPlayer player, LineWalkState state);
+unsigned int linewalk_get_available_actions (LineWalkState state, enum LineWalkAction *available_actions, unsigned int* num_actions);
 enum LineWalkAction linewalk_mctsenv_get_random_action(LineWalkState state);
-void print_state(LineWalkState state);
+void linewalk_print_state(LineWalkState state);
 
 #define ENVIRONMENT_PREFIX linewalk
 #define CONFIG_TYPE LineWalkConfig
@@ -59,7 +59,7 @@ struct LineWalkObservation {
     unsigned short int position;
 };
 
-/* LineWalkEnvironment declaration */
+/* declaration */
 struct LineWalkEnvironment;
 
 struct LineWalkStepReturn {

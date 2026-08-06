@@ -620,6 +620,7 @@ struct AtaxxAction ataxx_mctsenv_get_random_action(struct AtaxxState state) {
 #define STATE_TYPE struct AtaxxState
 #define ACTION_TYPE struct AtaxxAction
 #define PLAYER_TYPE enum AtaxxPlayer
+#define INITIAL_STATE_METHOD initial_state
 #define STEP_METHOD step
 #define GET_PLAYER_METHOD get_player
 #define RANDOM_ACTION_METHOD ataxx_mctsenv_get_random_action
