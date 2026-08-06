@@ -67,6 +67,6 @@ struct TTTAction ttt_mctsenv_get_random_action(struct TTTState state);
 #define ENVIRONMENT_PREFIX ttt
 #define CONFIG_TYPE struct TTTConfig
 #define MURA_DECLS_ONLY
-#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions_c.inc>
+#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions.inc>
 
 #endif

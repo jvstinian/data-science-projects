@@ -65,7 +65,7 @@ struct TransitionProbabilityType {
 #define STEP_METHOD frozenlake_step
 #define CLOSE_METHOD frozenlake_close
 #define URA_DECLS_ONLY
-#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
+#include <reinforcementlearning/algorithms/uniform_random_actions.inc>
 
 struct FrozenlakeDPModel;
 

@@ -331,7 +331,7 @@ struct CarsAfterAction step_cars(struct CarsPerLot cars_count, struct CarrentalA
 #define RANDOM_ACTION_METHOD carrental_get_random_action
 #define STEP_METHOD carrental_step
 #define CLOSE_METHOD carrental_close
-#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
+#include <reinforcementlearning/algorithms/uniform_random_actions.inc>
 
 struct CarrentalDPModel* carrental_dpmodel_new(struct CarrentalConfig config) {
     struct CarrentalDPModel* model = malloc(sizeof(struct CarrentalDPModel));
