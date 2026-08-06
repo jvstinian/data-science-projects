@@ -144,7 +144,7 @@ void render_text(struct CarrentalEnvironment* env);
 #define STEP_METHOD carrental_step
 #define CLOSE_METHOD carrental_close
 #define URA_DECLS_ONLY
-#include <reinforcementlearning/algorithms/uniform_random_actions_c.inc>
+#include <reinforcementlearning/algorithms/uniform_random_actions.inc>
 
 /*
    type Discrete_State_Type is new Natural range 0 .. ((Lot_Size + 1) * (Lot_Size + 1) - 1);
@@ -223,7 +223,6 @@ struct TransitionArray calculate_transition_probabilities_from_state(
       struct CarrentalConfig config, unsigned int cars_moved, struct CarsPerLot prev_cars
 );
 
-int carrental_example_main();
 int carrental_dp_example();
 
 #endif

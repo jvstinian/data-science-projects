@@ -79,3 +79,5 @@ install(DIRECTORY include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
+# To auto-generate a "package" target
+include(CPack)

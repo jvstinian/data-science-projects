@@ -51,7 +51,7 @@ void print_state(LineWalkState state);
 #define ENVIRONMENT_PREFIX linewalk
 #define CONFIG_TYPE LineWalkConfig
 #define MURA_DECLS_ONLY
-#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions_c.inc>
+#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions.inc>
 
 
 /* RL Interface */
