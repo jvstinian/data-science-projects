@@ -357,7 +357,10 @@ int ttt_uct_example() {
     p = get_player(s);
     print_state(s);
     while (!is_terminal(s)) {
-        ttt_uct_search(10000, uctparams, tree, &a);
+        if (ttt_uct_search(10000, uctparams, tree, &a)) {
+            /* Encountered an error during search */
+            break;
+        }
         printf("Number of visits after search: %u\n", tree_visits(*tree));
         printf("Player %d Took action (%u, %u)\n", p, a.row, a.col);
         s = ttt_uct_get_state(tree);

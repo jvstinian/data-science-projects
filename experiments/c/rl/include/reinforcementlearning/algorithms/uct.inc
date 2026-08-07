@@ -304,7 +304,7 @@ static unsigned int best_child_index(struct UCTParams params, struct Node node) 
     return best_index;
 }
 
-static STATE_TYPE uct_update_with_reward(struct UCTParams params, struct Node* node) {
+static int uct_update_with_reward(struct UCTParams params, struct Node* node, STATE_TYPE* terminal_state_out) {
     unsigned int action_idx;
     ACTION_TYPE a;
     STATE_TYPE child_state, terminal_state;
@@ -321,27 +321,41 @@ static STATE_TYPE uct_update_with_reward(struct UCTParams params, struct Node* n
         player = GET_PLAYER_METHOD(node->node_state);
         inc_reward = REWARD_METHOD(player, terminal_state);
 
-        /* TODO: We need to handle errors in tree_init */
-        tree_init(&node->trees[action_idx], child_state);
+        if (tree_init(&node->trees[action_idx], child_state)) {
+            fprintf(stderr, "uct_update_with_reward: failed to initialize child tree\n");
+            /* We set the terminal state even though it likely can't be used by the caller */
+            *terminal_state_out = terminal_state;
+            return 1;
+        }
         node->ars[action_idx].reward = inc_reward;
         node->actions_tried++;
 
         node->num_visits++;
-        return terminal_state;
+        *terminal_state_out = terminal_state;
+        return 0;
     } else {
         action_idx = best_child_index(params, *node);
         a = node->ars[action_idx].action;
         switch (node->trees[action_idx].tag) {
             case Node:
                 /* Recursively call the function and obtain a terminal state */
+                /* TODO
                 terminal_state = uct_update_with_reward(params, &node->trees[action_idx].data.node);
+                */
+                if (uct_update_with_reward(params, &node->trees[action_idx].data.node, terminal_state_out)) {
+                    /* We don't print a message as the error has already been
+                     * printed by the recursive call */
+                    return 1;
+                }
+                terminal_state = *terminal_state_out; /* TODO: Probably not a good way to do things */
                 player = GET_PLAYER_METHOD(node->node_state);
                 inc_reward = REWARD_METHOD(player, terminal_state);
                 /* Increment reward */
                 node->ars[action_idx].reward += inc_reward;
                 /* Increment number of visits current node */
                 node->num_visits++;
-                return terminal_state;
+                /* TODO: terminal_state_out already set */
+                return 0;
             case Leaf:
                 terminal_state = node->trees[action_idx].data.leaf.terminal_state;
                 player = GET_PLAYER_METHOD(node->node_state);
@@ -352,9 +366,11 @@ static STATE_TYPE uct_update_with_reward(struct UCTParams params, struct Node* n
                 node->ars[action_idx].reward += inc_reward;
                 /* Increment number of visits current node */
                 node->num_visits++;
-                return terminal_state;
+                *terminal_state_out = terminal_state;
+                return 0;
             default:
-                return node->node_state; /* Unreachable */
+                fprintf(stderr, "uct_update_with_reward: unexpected tree tag\n");
+                return 1; /*node->node_state;*/ /* Unreachable */
         }
     }
 }
@@ -370,15 +386,16 @@ STATE_TYPE UCT_FUNC_NAME(uct_get_state) (const UCT_TREE_TYPE* tree) {
     }
 }
 
-static void uct_update(struct UCTParams params, UCT_TREE_TYPE* t) {
+static int uct_update(struct UCTParams params, UCT_TREE_TYPE* t) {
+    STATE_TYPE unused_terminal_state;
     switch (t->tag) {
         case Node:
-            uct_update_with_reward(params, &t->data.node);
-            break;
+            return uct_update_with_reward(params, &t->data.node, &unused_terminal_state);
         case Leaf:
         default:
             /* do nothing */
-            break;
+            fprintf(stderr, "uct_update: tree already at a terminal state\n");
+            return 1;
     }
 }
 
@@ -388,7 +405,10 @@ int UCT_FUNC_NAME(uct_search) (unsigned int n, struct UCTParams params, UCT_TREE
     UCT_TREE_TYPE tree_copy;
 
     while (n > 0) {
-        uct_update(params, tree);
+        if (uct_update(params, tree)) {
+            fprintf(stderr, "uct_search: failed to update tree\n");
+            return 1;
+        }
         n--;
     }
 
