@@ -111,14 +111,6 @@ void UCT_FUNC_NAME(mcts_tree_free) (UCT_TREE_TYPE* tree);
 #include <math.h> /* sqrt */
 #include <float.h> /* FLT_MAX */
 
-/* TODO: Possibly move to a uct_params.h header file 
-struct UCTParams get_selection_uct_params(struct UCTParams params) {
-    struct UCTParams ret = params;
-    ret.exploration_const = 0.0;
-    return ret;
-}
-*/
-
 enum TreeKind {
     Node,
     Leaf
@@ -307,7 +299,7 @@ static unsigned int best_child_index(struct UCTParams params, struct Node node) 
 static int uct_update_with_reward(struct UCTParams params, struct Node* node, STATE_TYPE* terminal_state_out) {
     unsigned int action_idx;
     ACTION_TYPE a;
-    STATE_TYPE child_state, terminal_state;
+    STATE_TYPE child_state;
     PLAYER_TYPE player;
     float inc_reward;
 
@@ -317,21 +309,19 @@ static int uct_update_with_reward(struct UCTParams params, struct Node* node, ST
         a = node->ars[action_idx].action;
 
         child_state = STEP_METHOD(node->node_state, a);
-        terminal_state = default_policy_terminal_state(child_state);
+        *terminal_state_out = default_policy_terminal_state(child_state);
         player = GET_PLAYER_METHOD(node->node_state);
-        inc_reward = REWARD_METHOD(player, terminal_state);
+        inc_reward = REWARD_METHOD(player, *terminal_state_out);
 
         if (tree_init(&node->trees[action_idx], child_state)) {
             fprintf(stderr, "uct_update_with_reward: failed to initialize child tree\n");
-            /* We set the terminal state even though it likely can't be used by the caller */
-            *terminal_state_out = terminal_state;
             return 1;
         }
         node->ars[action_idx].reward = inc_reward;
         node->actions_tried++;
 
         node->num_visits++;
-        *terminal_state_out = terminal_state;
+        /* terminal state set above */
         return 0;
     } else {
         action_idx = best_child_index(params, *node);
@@ -339,38 +329,35 @@ static int uct_update_with_reward(struct UCTParams params, struct Node* node, ST
         switch (node->trees[action_idx].tag) {
             case Node:
                 /* Recursively call the function and obtain a terminal state */
-                /* TODO
-                terminal_state = uct_update_with_reward(params, &node->trees[action_idx].data.node);
-                */
                 if (uct_update_with_reward(params, &node->trees[action_idx].data.node, terminal_state_out)) {
                     /* We don't print a message as the error has already been
                      * printed by the recursive call */
                     return 1;
                 }
-                terminal_state = *terminal_state_out; /* TODO: Probably not a good way to do things */
                 player = GET_PLAYER_METHOD(node->node_state);
-                inc_reward = REWARD_METHOD(player, terminal_state);
+                inc_reward = REWARD_METHOD(player, *terminal_state_out);
+                /* Note that child node visits is incremented in the recursive call */
                 /* Increment reward */
                 node->ars[action_idx].reward += inc_reward;
                 /* Increment number of visits current node */
                 node->num_visits++;
-                /* TODO: terminal_state_out already set */
                 return 0;
             case Leaf:
-                terminal_state = node->trees[action_idx].data.leaf.terminal_state;
+                *terminal_state_out = node->trees[action_idx].data.leaf.terminal_state;
                 player = GET_PLAYER_METHOD(node->node_state);
-                inc_reward = REWARD_METHOD(player, terminal_state);
+                inc_reward = REWARD_METHOD(player, *terminal_state_out);
                 /* Increment number of visits to terminal child */
                 node->trees[action_idx].data.leaf.num_visits++;
                 /* Increment reward */
                 node->ars[action_idx].reward += inc_reward;
                 /* Increment number of visits current node */
                 node->num_visits++;
-                *terminal_state_out = terminal_state;
+                /* terminal state set above */
                 return 0;
             default:
+                /* Unreachable */
                 fprintf(stderr, "uct_update_with_reward: unexpected tree tag\n");
-                return 1; /*node->node_state;*/ /* Unreachable */
+                return 1; 
         }
     }
 }
