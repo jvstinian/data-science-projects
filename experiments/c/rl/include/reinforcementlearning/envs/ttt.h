@@ -69,4 +69,33 @@ struct TTTAction ttt_mctsenv_get_random_action(struct TTTState state);
 #define MURA_DECLS_ONLY
 #include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions.inc>
 
+/* The following defines
+struct TTTActionList;
+struct TTTActionList* ttt_action_list_create (size_t cpty);
+int ttt_action_list_realloc (struct TTTActionList** lpp, size_t new_capacity);
+int ttt_action_list_push (struct TTTActionList** lpp, ACTION_TYPE val);
+size_t ttt_action_list_length (struct TTTActionList* lp);
+ACTION_TYPE ttt_action_list_get (struct TTTActionList* lp, size_t i);
+void ttt_action_list_shuffle (struct TTTActionList* lp);
+void ttt_action_list_destroy (struct TTTActionList* lp);
+*/
+#define ENVIRONMENT_PREFIX ttt
+#define ENVIRONMENT_STRUCT_PREFIX TTT
+#define ACTION_TYPE struct TTTAction
+#define AA_DECLS_ONLY
+#include <reinforcementlearning/action_array_template.inc>
+
+struct TTTActionList* ttt_experimental_get_valid_actions(struct TTTState s);
+
+#define ENVIRONMENT_PREFIX ttt
+#define ENVIRONMENT_STRUCT_PREFIX TTT
+#define CONFIG_TYPE struct TTTConfig
+#define STATE_TYPE struct TTTState
+#define ACTION_TYPE struct TTTAction
+#define UCT_DECLS_ONLY
+#include <reinforcementlearning/algorithms/uct.inc>
+
+/* TODO: Eventually remove or adapt the following */
+int ttt_uct_example();
+
 #endif

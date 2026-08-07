@@ -1,4 +1,8 @@
+#ifndef INC_RL_ALGS_MCTS_UNBOUNDED_H
+#define INC_RL_ALGS_MCTS_UNBOUNDED_H
+
 #include <reinforcementlearning/envs/linewalk.h>
+#include <reinforcementlearning/algorithms/uct_config.h>
 
 enum TreeKind {
     Node,
@@ -36,16 +40,13 @@ struct Tree {
     union TreeData data;
 };
     
-struct UCTParams {
-    float exploration_const;
-};
-
-struct UCTParams get_selection_uct_params(struct UCTParams params);
 void uct_update(struct UCTParams params, struct Tree* t);
 struct LineWalkState uct_get_state(const struct Tree* tree);
 int uct_search(unsigned int n, struct UCTParams params, struct Tree* tree, enum LineWalkAction* action_out);
 int uct_take_action(struct Tree* tree, enum LineWalkAction action);
-struct Tree* mcts_tree_new();
+struct Tree* mcts_tree_new(struct LineWalkConfig config);
 void mcts_tree_free(struct Tree* tree);
 
 int uct_main();
+
+#endif

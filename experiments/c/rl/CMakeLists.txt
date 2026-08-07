@@ -51,6 +51,13 @@ add_executable(rl_examples
 # Link executable
 target_link_libraries(rl_examples PRIVATE reinforcementlearning)
 
+# Executable
+add_executable(ttt_example
+    apps/ttt_example.c
+)
+# Link executable
+target_link_libraries(ttt_example PRIVATE reinforcementlearning)
+
 # Testing
 enable_testing()
 

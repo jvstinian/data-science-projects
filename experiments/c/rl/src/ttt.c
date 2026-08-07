@@ -10,7 +10,11 @@ struct TTTState initial_state() {
     };
     */
 
-    return (struct TTTState) { {{ No_Mark }}, X_Move };
+    return (struct TTTState) { {
+        { No_Mark, No_Mark, No_Mark },
+        { No_Mark, No_Mark, No_Mark },
+        { No_Mark, No_Mark, No_Mark }
+    }, X_Move };
 }
 
 Boolean is_terminal(struct TTTState s) {
@@ -276,4 +280,91 @@ struct TTTAction ttt_mctsenv_get_random_action(struct TTTState state) {
 #define IS_TERMINAL_METHOD is_terminal
 #define REWARD_METHOD reward
 #include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions.inc>
+
+/* The following defines
+struct TTTActionList;
+struct TTTActionList* ttt_action_list_create (size_t cpty);
+int ttt_action_list_realloc (struct TTTActionList** lpp, size_t new_capacity);
+int ttt_action_list_push (struct TTTActionList** lpp, struct TTTAction val);
+size_t ttt_action_list_length (struct TTTActionList* lp);
+ACTION_TYPE ttt_action_list_get (struct TTTActionList* lp, size_t i);
+void ttt_action_list_shuffle (struct TTTActionList* lp);
+void ttt_action_list_destroy (struct TTTActionList* lp);
+*/
+#define ENVIRONMENT_PREFIX ttt
+#define ENVIRONMENT_STRUCT_PREFIX TTT
+#define ACTION_TYPE struct TTTAction
+#include <reinforcementlearning/action_array_template.inc>
+
+struct TTTActionList* ttt_experimental_get_valid_actions(struct TTTState s) {
+    unsigned short r, c;
+
+    /* Initialize list with capacity equal to the maximum number of positions */
+    struct TTTActionList* ret = ttt_action_list_create(9u);
+    if (ret == NULL) {
+        fprintf(stderr, "ttt_experimental_get_valid_actions: failed to create action list\n");
+        return NULL;
+    }
+
+    for (r = 0; r < 3; r++) {
+        for (c = 0; c < 3; c++) {
+            if (s.board[r][c] == No_Mark) {
+                if (ttt_action_list_push(&ret, (struct TTTAction) {r, c})) {
+                    fprintf(stderr, "ttt_experimental_get_valid_actions: failed to push action to list\n");
+                    ttt_action_list_destroy(ret);
+                    return NULL;
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+static Boolean ttt_action_eq(struct TTTAction a1, struct TTTAction a2) {
+    return (a1.row == a2.row) && (a1.col == a2.col);
+}
+
+#define ENVIRONMENT_PREFIX ttt
+#define ENVIRONMENT_STRUCT_PREFIX TTT
+#define CONFIG_TYPE struct TTTConfig
+#define STATE_TYPE struct TTTState
+#define ACTION_TYPE struct TTTAction
+#define PLAYER_TYPE enum TTTPlayer
+#define INITIAL_STATE_METHOD initial_state
+#define STEP_METHOD step
+#define GET_PLAYER_METHOD get_player
+#define RANDOM_ACTION_METHOD ttt_mctsenv_get_random_action
+#define IS_TERMINAL_METHOD is_terminal
+#define REWARD_METHOD reward
+#define ACTION_LIST_TYPE struct TTTActionList
+#define GET_VALID_ACTIONS_METHOD ttt_experimental_get_valid_actions
+#define ACTION_LIST_GET_METHOD ttt_action_list_get
+#define ACTION_LIST_LENGTH_METHOD ttt_action_list_length
+#define ACTION_LIST_SHUFFLE_METHOD ttt_action_list_shuffle
+#define ACTION_LIST_DESTROY_METHOD ttt_action_list_destroy
+#define ACTION_EQ_METHOD ttt_action_eq
+#include <reinforcementlearning/algorithms/uct.inc>
+
+/* TODO: Eventually remove or adapt the following */
+int ttt_uct_example() {
+    struct UCTParams uctparams = { sqrt (2.0) };
+    struct TTTConfig config; /* No configuration needed for tic-tac-toe */
+    struct TTTAction a;
+    struct TTTState s;
+    enum TTTPlayer p;
+    struct TTTTree* tree = ttt_mcts_tree_new(config);
+    s = ttt_uct_get_state(tree);
+    p = get_player(s);
+    print_state(s);
+    while (!is_terminal(s)) {
+        ttt_uct_search(10000, uctparams, tree, &a);
+        printf("Number of visits after search: %u\n", tree_visits(*tree));
+        printf("Player %d Took action (%u, %u)\n", p, a.row, a.col);
+        s = ttt_uct_get_state(tree);
+        p = get_player(s);
+        print_state(s);
+    }
+    ttt_mcts_tree_free(tree);
+    return 0;
+};
 
