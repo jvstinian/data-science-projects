@@ -422,21 +422,13 @@ int UCT_FUNC_NAME(uct_take_action) (UCT_TREE_TYPE* tree, ACTION_TYPE action) {
                     break;
                 }
             }
-            /* TODO: Remove when ready
-            if (action_idx >= tree->data.node.actions_tried) {
-                fprintf(stderr, "uct_take_action: action has not been explored\n");
-                return 1;
-            }
-            node_deinit_preserve_action_idx(&tree->data.node, action_idx, &tree_copy);
-            memcpy(tree, &tree_copy, sizeof(UCT_TREE_TYPE));
-            */
             if (action_idx < tree->data.node.actions_tried) {
                 /* action has been explored, we can preserve the child tree */
                 node_deinit_preserve_action_idx(&tree->data.node, action_idx, &tree_copy);
                 memcpy(tree, &tree_copy, sizeof(UCT_TREE_TYPE));
             } else {
-                /* action has not been explored, we deinit the tree and reinitialize with
-                 * the new state */
+                /* action has not been explored, we de-initialize the tree
+                 * and reinitialize with the new state */
                 new_state = STEP_METHOD(tree->data.node.node_state, action);
                 mcts_tree_deinit(tree);
                 if (tree_init(tree, new_state, 0)) {
