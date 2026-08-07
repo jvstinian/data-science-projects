@@ -350,19 +350,30 @@ int ttt_uct_example() {
     struct UCTParams uctparams = { sqrt (2.0) };
     struct TTTConfig config; /* No configuration needed for tic-tac-toe */
     struct TTTAction a;
+    float reward_est;
     struct TTTState s;
     enum TTTPlayer p;
     struct TTTTree* tree = ttt_mcts_tree_new(config);
+
+    /* TODO: Taking a bad initial action 
+    if (ttt_uct_take_action(tree, (struct TTTAction) {1, 1})) {
+        fprintf(stderr, "ttt_uct_example: failed to take initial action\n");
+    }
+    if (ttt_uct_take_action(tree, (struct TTTAction) {1, 0})) {
+        fprintf(stderr, "ttt_uct_example: failed to take initial action\n");
+    }
+    */
+
     s = ttt_uct_get_state(tree);
     p = get_player(s);
     print_state(s);
     while (!is_terminal(s)) {
-        if (ttt_uct_search(10000, uctparams, tree, &a)) {
+        if (ttt_uct_search(10000, uctparams, tree, &a, &reward_est)) {
             /* Encountered an error during search */
             break;
         }
         printf("Number of visits after search: %u\n", tree_visits(*tree));
-        printf("Player %d Took action (%u, %u)\n", p, a.row, a.col);
+        printf("Player %d Took action (%u, %u) with reward estimate %f\n", p, a.row, a.col, reward_est);
         s = ttt_uct_get_state(tree);
         p = get_player(s);
         print_state(s);
