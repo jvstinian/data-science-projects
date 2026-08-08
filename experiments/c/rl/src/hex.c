@@ -1,7 +1,10 @@
 #include <reinforcementlearning/envs/hex.h>
 #include <stdio.h>
 #include <string.h> /* memset, memcpy */
+#include <stdlib.h> /* rand */
 #include <assert.h>
+
+static const char* player_names[2] = {"Player 1", "Player 2"};
 
 struct HexState hex_initial_state() {
     /* enum HexMark board[BOARD_WIDTH][BOARD_WIDTH] = {{No_Mark}}; */
@@ -54,10 +57,14 @@ static unsigned short get_number_of_stones(struct HexState s) {
 }
 
 static Boolean check_red_win(enum HexMark (*board)[BOARD_WIDTH]) {
-    Boolean reachable_prev[BOARD_WIDTH] = {FALSE};
-    Boolean reachable[BOARD_WIDTH] = {FALSE};
+    Boolean reachable_prev[BOARD_WIDTH] /*= {FALSE} TODO */;
+    Boolean reachable[BOARD_WIDTH] /* = {FALSE} TODO */;
     /* Initialize */
     unsigned short b, r;
+
+    /* Set reachable to FALSE */
+    memset(reachable_prev, 0, BOARD_WIDTH * sizeof(Boolean));
+    memset(reachable, 0, BOARD_WIDTH * sizeof(Boolean));
 
     for (r = 0; r < BOARD_WIDTH; r++) {
         if (board[0][r] == Red_Stone) {
@@ -100,10 +107,14 @@ static Boolean check_red_win(enum HexMark (*board)[BOARD_WIDTH]) {
 }
 
 static Boolean check_blue_win(enum HexMark (*board)[BOARD_WIDTH]) {
-    Boolean reachable_prev[BOARD_WIDTH] = {FALSE};
-    Boolean reachable[BOARD_WIDTH] = {FALSE};
+    Boolean reachable_prev[BOARD_WIDTH] /*= {FALSE} TODO */;
+    Boolean reachable[BOARD_WIDTH] /*= {FALSE} TODO*/;
     /* Initialize */
     unsigned short b, r;
+
+    /* Set reachable to FALSE */
+    memset(reachable_prev, 0, BOARD_WIDTH * sizeof(Boolean));
+    memset(reachable, 0, BOARD_WIDTH * sizeof(Boolean));
 
     for (b = 0; b < BOARD_WIDTH; b++) {
         if (board[b][0] == Blue_Stone) {
@@ -242,47 +253,15 @@ float hex_reward(enum HexPlayer player, struct HexState s) {
     }
 }
 
+/*
 static unsigned short get_number_of_available_moves(unsigned short number_of_stones) {
     if (number_of_stones <= 1) {
-        return BOARD_SIZE;  /* Allow for Player 2 to swap */
+        return BOARD_SIZE;  \/\* Allow for Player 2 to swap \*\/
     } else {
         return BOARD_SIZE - number_of_stones;
     }
 }
-
-struct HexValidActions hex_get_valid_actions(struct HexState s) {
-    unsigned short number_of_stones = get_number_of_stones(s);
-    unsigned short number_of_available_moves = get_number_of_available_moves(number_of_stones);
-    struct HexValidActions ret;
-
-    ret.num_actions = number_of_available_moves;
-    unsigned short next_index = 0;
-
-    unsigned short b, r;
-
-    for (b = 0; b < BOARD_WIDTH; b++) {
-        for (r = 0; r < BOARD_WIDTH; r++) {
-            switch (s.board[b][r]) {
-                case No_Mark:
-                    ret.actions[next_index++] = (struct HexAction) {b, r};
-                    break;
-                case Red_Stone:
-                    /* Only increment if there is exactly one stone on the board,
-                     * which we are now encountering at (I, J). */
-                    if (number_of_stones == 1) {
-                        /* Allow for Player 2 to swap */
-                        ret.actions[next_index++] = (struct HexAction) {b, r};
-                    }
-                    break;
-                case Blue_Stone:
-                    break;
-            }
-        }
-    }
-
-    assert(next_index == ret.num_actions);
-    return ret;
-}
+*/
 
 static void print_board(struct HexState s) {
     /*  The maximum line length below is
@@ -346,6 +325,135 @@ void hex_print_state (struct HexState s) {
     print_game_status(s);
 }
 
+struct HexAction hex_mctsenv_get_random_action(struct HexState state) {
+    unsigned short int num_actions = 0;
+    struct HexAction actions[BOARD_SIZE];
+
+    /*
+    unsigned short number_of_stones = get_number_of_stones(s);
+    unsigned short number_of_available_moves = get_number_of_available_moves(number_of_stones);
+    */
+    Boolean red_stone_found = FALSE;
+
+    /*
+    ret.num_actions = number_of_available_moves;
+    unsigned short next_index = 0;
+    */
+
+    unsigned short b, r;
+
+    for (b = 0; b < BOARD_WIDTH; b++) {
+        for (r = 0; r < BOARD_WIDTH; r++) {
+            switch (state.board[b][r]) {
+                case No_Mark:
+                    actions[num_actions++] = (struct HexAction) {b, r};
+                    break;
+                case Red_Stone:
+                    /* Allow for Player 2 to swap if there is exactly one
+                     * stone on the board. */
+                    red_stone_found = TRUE;
+                    actions[BOARD_SIZE - 1] = (struct HexAction) {b, r};
+                    /*
+                    if (number_of_stones == 1) {
+                        ret.actions[next_index++] = (struct HexAction) {b, r};
+                    }
+                    */
+                    break;
+                case Blue_Stone:
+                    break;
+            }
+        }
+    }
+
+    /* There's exactly one stone on the board and it is red,
+     * so allow for Player 2 to swap. */
+    if ((num_actions == (BOARD_SIZE - 1)) && red_stone_found) {
+        /* We've already set the position of the red stone as
+         * the last action in the array, so we just increment
+         * the length of the array (num_actions). */
+        num_actions++;
+    }
+    return actions[rand() % num_actions];
+}
+
+/* The following is the source for the methods for HexActionList */
+#define ENVIRONMENT_PREFIX hex
+#define ENVIRONMENT_STRUCT_PREFIX Hex
+#define ACTION_TYPE struct HexAction
+#include <reinforcementlearning/action_array_template.inc>
+
+struct HexActionList* hex_experimental_get_valid_actions(struct HexState state) {
+    unsigned short number_of_stones = get_number_of_stones(state);
+    size_t max_actions = (number_of_stones <= 1) ? BOARD_SIZE : (BOARD_SIZE - number_of_stones);
+    struct HexActionList* vas = hex_action_list_create(max_actions);
+
+    struct HexAction temp_action, take_over_action;
+    Boolean red_stone_found = FALSE;
+
+    unsigned short b, r;
+
+    for (b = 0; b < BOARD_WIDTH; b++) {
+        for (r = 0; r < BOARD_WIDTH; r++) {
+            switch (state.board[b][r]) {
+                case No_Mark:
+                    temp_action = (struct HexAction) {b, r};
+                    if(hex_action_list_push(&vas, temp_action)) {
+                        fprintf(stderr, "hex_experimental_get_valid_actions: could not push action to list, returning NULL");
+                        hex_action_list_destroy(vas);
+                        return NULL;
+                    }
+                    break;
+                case Red_Stone:
+                    /* Allow for Player 2 to swap if there is exactly one
+                     * stone on the board. */
+                    red_stone_found = TRUE;
+                    take_over_action = (struct HexAction) {b, r};
+                    break;
+                case Blue_Stone:
+                    break;
+            }
+        }
+    }
+
+    /* There's exactly one stone on the board and it is red,
+     * so allow for Player 2 to swap. */
+    if ((hex_action_list_length(vas) == (BOARD_SIZE - 1)) && red_stone_found) {
+        if (hex_action_list_push(&vas, take_over_action)) {
+            fprintf(stderr, "hex_experimental_get_valid_actions: could not push action to list, returning NULL");
+            hex_action_list_destroy(vas);
+            return NULL;
+        }
+    }
+    return vas;
+}
+
+static Boolean hex_action_eq(struct HexAction a1, struct HexAction a2) {
+    return (a1.row == a2.row) &&
+           (a1.col == a2.col);
+}
+
+#define ENVIRONMENT_PREFIX hex
+#define ENVIRONMENT_STRUCT_PREFIX Hex
+#define CONFIG_TYPE struct HexConfig
+#define STATE_TYPE struct HexState
+#define ACTION_TYPE struct HexAction
+#define PLAYER_TYPE enum HexPlayer
+#define INITIAL_STATE_METHOD hex_initial_state
+#define STEP_METHOD hex_act
+#define GET_PLAYER_METHOD hex_get_player
+#define RANDOM_ACTION_METHOD hex_mctsenv_get_random_action
+#define IS_TERMINAL_METHOD hex_is_terminal
+#define REWARD_METHOD hex_reward
+#define ACTION_LIST_TYPE struct HexActionList
+#define GET_VALID_ACTIONS_METHOD hex_experimental_get_valid_actions
+#define ACTION_LIST_GET_METHOD hex_action_list_get
+#define ACTION_LIST_LENGTH_METHOD hex_action_list_length
+#define ACTION_LIST_SHUFFLE_METHOD hex_action_list_shuffle
+#define ACTION_LIST_DESTROY_METHOD hex_action_list_destroy
+#define ACTION_EQ_METHOD hex_action_eq
+#include <reinforcementlearning/algorithms/uct.inc>
+
+
 Boolean neighboring_hexagons(unsigned short b1, unsigned short r1, unsigned short b2, unsigned short r2) {
     Boolean blue_is_succ = (b1 != (BOARD_WIDTH-1)) && (b2 == (b1+1));
     Boolean blue_is_prev = (b1 != 0) && (b2 == (b1-1));
@@ -369,3 +477,49 @@ int hex_example_main() {
     hex_print_state(s);
     return 0;
 }
+
+/* TODO: Eventually remove or adapt the following */
+int hex_uct_example() {
+    struct UCTParams uctparams = { sqrt (2.0) };
+    struct HexConfig config; /* No configuration needed for tic-tac-toe */
+    struct HexAction a;
+    float reward_est;
+    struct HexState s;
+    enum HexPlayer p;
+    struct HexTree* tree = hex_mcts_tree_new(config);
+
+    /*
+    if (hex_uct_take_action(tree, hex_mctsenv_get_random_action(hex_uct_get_state(tree)))) {
+        fprintf(stderr, "hex_uct_example: failed to take initial action\n");
+    }
+    */
+    /* TODO: Taking a bad initial action 
+    if (hex_uct_take_action(tree, (struct HexAction) {1, 1})) {
+        fprintf(stderr, "hex_uct_example: failed to take initial action\n");
+    }
+    if (hex_uct_take_action(tree, (struct HexAction) {1, 0})) {
+        fprintf(stderr, "hex_uct_example: failed to take initial action\n");
+    }
+    */
+    s = hex_uct_get_state(tree);
+    p = hex_get_player(s);
+    hex_print_state(s);
+    while (!hex_is_terminal(s)) {
+        if (hex_uct_search(10, uctparams, tree, &a, &reward_est)) {
+            /* Encountered an error during search */
+            break;
+        }
+        printf("Number of visits after search: %u\n", tree_visits(*tree));
+        printf("Player %d Took action (%u, %u) with reward estimate %f\n",
+                p,
+                a.row, a.col,
+                reward_est
+        );
+        s = hex_uct_get_state(tree);
+        p = hex_get_player(s);
+        hex_print_state(s);
+    }
+    hex_mcts_tree_free(tree);
+    return 0;
+};
+
