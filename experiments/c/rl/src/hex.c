@@ -3,7 +3,7 @@
 #include <string.h> /* memset, memcpy */
 #include <assert.h>
 
-struct HexState initial_state() {
+struct HexState hex_initial_state() {
     /* enum HexMark board[BOARD_WIDTH][BOARD_WIDTH] = {{No_Mark}}; */
     unsigned int b, r;
 
@@ -24,14 +24,14 @@ struct HexState initial_state() {
     return ret;
 }
 
-Boolean is_terminal(struct HexState s) {
+Boolean hex_is_terminal(struct HexState s) {
     if (s.status != Active) {
         return TRUE;  /* Game is already finished */
     }
     return FALSE;
 }
 
-enum HexPlayer get_player(struct HexState s) {
+enum HexPlayer hex_get_player(struct HexState s) {
     return s.current_player;
 }
 
@@ -157,7 +157,7 @@ static Boolean check_win(enum HexMark (*board)[BOARD_WIDTH], enum HexStoneColor 
     }
 }
 
-struct HexState step(struct HexState s, struct HexAction a) {
+struct HexState hex_act(struct HexState s, struct HexAction a) {
     /* Helper values */
     const unsigned short number_of_stones = get_number_of_stones(s);
     enum HexStoneColor player_color;  /* We could set here but instead set below */
@@ -212,7 +212,7 @@ struct HexState step(struct HexState s, struct HexAction a) {
     return res;
 }
 
-float reward(enum HexPlayer player, struct HexState s) {
+float hex_reward(enum HexPlayer player, struct HexState s) {
     switch (s.status) {
         case Player1_Wins:
             switch (player) {
@@ -250,7 +250,7 @@ static unsigned short get_number_of_available_moves(unsigned short number_of_sto
     }
 }
 
-struct HexValidActions get_valid_actions(struct HexState s) {
+struct HexValidActions hex_get_valid_actions(struct HexState s) {
     unsigned short number_of_stones = get_number_of_stones(s);
     unsigned short number_of_available_moves = get_number_of_available_moves(number_of_stones);
     struct HexValidActions ret;
@@ -341,7 +341,7 @@ static void print_game_status(struct HexState s) {
     }
 }
 
-void print_state (struct HexState s) {
+void hex_print_state (struct HexState s) {
     print_board(s);
     print_game_status(s);
 }
@@ -365,7 +365,7 @@ Boolean neighboring_hexagons(unsigned short b1, unsigned short r1, unsigned shor
 
 int hex_example_main() {
     printf("Hex example!\n");
-    struct HexState s = initial_state();
-    print_state(s);
+    struct HexState s = hex_initial_state();
+    hex_print_state(s);
     return 0;
 }

@@ -47,26 +47,14 @@ struct HexState {
     enum HexPlayer current_player;
 };
 
-/*
-   subtype Blue_Label is Integer range 1 .. Board_Width;
-   subtype Red_Label is Character range 'A' .. Character'Val(Character'Pos('A') + Board_Width - 1);
-*/
+struct HexState hex_initial_state();
+Boolean hex_is_terminal(struct HexState s);
+enum HexPlayer hex_get_player(struct HexState s);
+struct HexState hex_act(struct HexState s, struct HexAction a);
+float hex_reward(enum HexPlayer player, struct HexState s);
+struct HexValidActions hex_get_valid_actions(struct HexState s);
+void hex_print_state (struct HexState s);
 
-struct HexState initial_state();
-Boolean is_terminal(struct HexState s);
-enum HexPlayer get_player(struct HexState s);
-struct HexState step(struct HexState s, struct HexAction a);
-float reward(enum HexPlayer player, struct HexState s);
-struct HexValidActions get_valid_actions(struct HexState s);
-void print_state (struct HexState s);
-/*
-private
-   function Get_Number_Of_Stones (State : State_Type) return Natural;
-   function Check_Win (Board : Board_Type; Stone : Stone_Color_Type) return Boolean;
-   function Check_Blue_Win (Board : Board_Type) return Boolean;
-   function Check_Red_Win (Board : Board_Type) return Boolean;
-   
-*/
 /* NOTE: The following method was not needed after all */
 Boolean neighboring_hexagons(unsigned short b1, unsigned short r1, unsigned short b2, unsigned short r2);
 
