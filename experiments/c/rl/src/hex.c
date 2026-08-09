@@ -155,15 +155,16 @@ static Boolean check_blue_win(const enum HexMark (*board)[BOARD_WIDTH]) {
     return FALSE;
 }
 
+/*
 static Boolean check_red_win_v1(enum HexMark (*board)[BOARD_WIDTH]) {
     Boolean reachable_prev[BOARD_WIDTH];
     Boolean reachable[BOARD_WIDTH];
     Boolean segment_reachable;
-    /* Initialize */
+    \/\* Initialize \*\/
     unsigned short b, r;
-    unsigned short rlb, rub;  /* Red label lower bound and upper bound */
+    unsigned short rlb, rub;  \/\* Red label lower bound and upper bound \*\/
 
-    /* Set reachable to FALSE */
+    \/\* Set reachable to FALSE \*\/
     memset(reachable_prev, 0, BOARD_WIDTH * sizeof(Boolean));
     memset(reachable, 0, BOARD_WIDTH * sizeof(Boolean));
 
@@ -173,35 +174,35 @@ static Boolean check_red_win_v1(enum HexMark (*board)[BOARD_WIDTH]) {
         }
     }
 
-    /* For a hexagon (I1, J1), the neighboring hexagons with the blue
+    \/\* For a hexagon (I1, J1), the neighboring hexagons with the blue
      * label I2 where I2 is the successor of I1 are (I2, J1) and (I2, J2),
      * where J2 is the predecessor of J1 (if it exists).
      * Reversing this relationship, when iterating over the
      * red labels for the next blue label, we look back to the
      * at the connection value for the previous blue label and
-     * the same and successor red labels. */
+     * the same and successor red labels. \*\/
     for (b = 1; b < BOARD_WIDTH; b++) {
         memcpy(reachable_prev, reachable, sizeof(reachable));
         rub = 0;
         while (rub < BOARD_WIDTH) {
-            /* Reset the search for the next lower bound to the prior upper bound */
+            \/\* Reset the search for the next lower bound to the prior upper bound \*\/
             rlb = rub;
-            /* Find the next red stone */
+            \/\* Find the next red stone \*\/
             while ((rlb < BOARD_WIDTH) && (board[b][rlb] != Red_Stone)) {
                 rlb++;
             }
             if (rub < rlb) {
-                /* In this gap between the previous upper bound and the next
+                \/\* In this gap between the previous upper bound and the next
                  * lower bound, the cells do not have red stones, and
-                 * so are not regarded as reachable. */
+                 * so are not regarded as reachable. \*\/
                 for (r = rub; r < rlb; r++) {
                     reachable[r] = FALSE;
                 }
             }
             segment_reachable = FALSE;
-            /* Find the next cell that does not contain a red stone,
+            \/\* Find the next cell that does not contain a red stone,
              * tracking whether it is possible to reach the segment
-             * from the previous blue row */
+             * from the previous blue row \*\/
             rub = rlb;
             while ((rub < BOARD_WIDTH) && (board[b][rub] == Red_Stone)) {
                 if (reachable_prev[rub]) {
@@ -209,28 +210,28 @@ static Boolean check_red_win_v1(enum HexMark (*board)[BOARD_WIDTH]) {
                 }
                 rub++;
             }
-            /* Note that rub is one past the last red stone, so based on
+            \/\* Note that rub is one past the last red stone, so based on
              * the description above, the segment is still reachable if
              * in the previous blue row the hexagon with this successor red label
-             * was reachable. */
+             * was reachable. \*\/
             if (rub < BOARD_WIDTH) {
                 if (reachable_prev[rub]) {
                     segment_reachable = TRUE;
                 }
             }
 
-            /* If the is a reachable segment of red stones, we set the
-             * slice of the array to TRUE. */
+            \/\* If the is a reachable segment of red stones, we set the
+             * slice of the array to TRUE. \*\/
             if (rlb < rub) {
-                /* It follows that rlb < BOARD_WIDTH here */
-                /* It follows that board[b][r] == Red_Stone for r in [rlb, rub) */
+                \/\* It follows that rlb < BOARD_WIDTH here \*\/
+                \/\* It follows that board[b][r] == Red_Stone for r in [rlb, rub) \*\/
                 for (r = rlb; r < rub; r++) {
                     reachable[r] = segment_reachable;
                 }
             }
         }
 
-        /* TODO: Keeping the legacy approach, which does not properly handle
+        \/\* TODO: Keeping the legacy approach, which does not properly handle
          *       path connections for neighboring hexagons in the same blue row.
         for (r = 0; r < BOARD_WIDTH; r++) {
             if (board[b][r] == Red_Stone) {
@@ -245,10 +246,10 @@ static Boolean check_red_win_v1(enum HexMark (*board)[BOARD_WIDTH]) {
                 reachable[r] = FALSE;
             }
         }
-        */
+        \*\/
     }
 
-    /* If any  of the hexagons for the last blue label are reachable, then Red wins */
+    \/\* If any  of the hexagons for the last blue label are reachable, then Red wins \*\/
     for (r = 0; r < BOARD_WIDTH; r++) {
         if (reachable[r]) {
             return TRUE;
@@ -258,14 +259,14 @@ static Boolean check_red_win_v1(enum HexMark (*board)[BOARD_WIDTH]) {
 }
 
 static Boolean check_blue_win_v1(enum HexMark (*board)[BOARD_WIDTH]) {
-    Boolean reachable_prev[BOARD_WIDTH] /*= {FALSE} TODO */;
-    Boolean reachable[BOARD_WIDTH] /*= {FALSE} TODO*/;
+    Boolean reachable_prev[BOARD_WIDTH] \/\*= {FALSE} TODO \*\/;
+    Boolean reachable[BOARD_WIDTH] \/\*= {FALSE} TODO\*\/;
     Boolean segment_reachable;
-    /* Initialize */
+    \/\* Initialize \*\/
     unsigned short b, r;
-    unsigned short blb, bub;  /* Blue label lower bound and upper bound */
+    unsigned short blb, bub;  \/\* Blue label lower bound and upper bound \*\/
 
-    /* Set reachable to FALSE */
+    \/\* Set reachable to FALSE \*\/
     memset(reachable_prev, 0, BOARD_WIDTH * sizeof(Boolean));
     memset(reachable, 0, BOARD_WIDTH * sizeof(Boolean));
 
@@ -275,36 +276,36 @@ static Boolean check_blue_win_v1(enum HexMark (*board)[BOARD_WIDTH]) {
         }
     }
 
-    /* For a hexagon (I1, J1), the neighboring hexagons with the red
+    \/\* For a hexagon (I1, J1), the neighboring hexagons with the red
      * label J2 where J2 is the successor of J1 are (I1, J2) and (I2, J2),
      * where I2 is the predecessor of I1 (if it exists).
      * Reversing this relationship, when iterating over the
      * blue labels for the next red label, we look back to the
      * the connection value for the previous red label and
-     * the same and successor blue labels. */
+     * the same and successor blue labels. \*\/
     for (r = 1; r < BOARD_WIDTH; r++) {
-        /* Save previous state of reachability */
+        \/\* Save previous state of reachability \*\/
         memcpy(reachable_prev, reachable, sizeof(reachable));
         bub = 0;
         while (bub < BOARD_WIDTH) {
-            /* Reset the search for the next lower bound to the prior upper bound */
+            \/\* Reset the search for the next lower bound to the prior upper bound \*\/
             blb = bub;
-            /* Find the next blue stone */
+            \/\* Find the next blue stone \*\/
             while ((blb < BOARD_WIDTH) && (board[blb][r] != Blue_Stone)) {
                 blb++;
             }
             if (bub < blb) {
-                /* In this gap between the previous upper bound and the next
+                \/\* In this gap between the previous upper bound and the next
                  * lower bound, the cells do not have blue stones, and
-                 * so are not regarded as reachable. */
+                 * so are not regarded as reachable. \*\/
                 for (b = bub; b < blb; b++) {
                     reachable[b] = FALSE;
                 }
             }
             segment_reachable = FALSE;
-            /* Find the next cell that does not contain a blue stone,
+            \/\* Find the next cell that does not contain a blue stone,
              * tracking whether it is possible to reach the segment
-             * from the previous red column */
+             * from the previous red column \*\/
             bub = blb;
             while ((bub < BOARD_WIDTH) && (board[bub][r] == Blue_Stone)) {
                 if (reachable_prev[bub]) {
@@ -312,27 +313,27 @@ static Boolean check_blue_win_v1(enum HexMark (*board)[BOARD_WIDTH]) {
                 }
                 bub++;
             }
-            /* Note that bub is one past the last blue stone, so based on
+            \/\* Note that bub is one past the last blue stone, so based on
              * the description above, the segment is still reachable if
              * in the previous red column the hexagon with this successor blue label
-             * was reachable. */
+             * was reachable. \*\/
             if (bub < BOARD_WIDTH) {
                 if (reachable_prev[bub]) {
                     segment_reachable = TRUE;
                 }
             }
 
-            /* If the is a reachable segment of red stones, we set the
-             * slice of the array to TRUE. */
+            \/\* If the is a reachable segment of red stones, we set the
+             * slice of the array to TRUE. \*\/
             if (blb < bub) {
-                /* It follows that blb < BOARD_WIDTH here */
-                /* It follows that board[b][r] == Blue_Stone for b in [blb, bub) */
+                \/\* It follows that blb < BOARD_WIDTH here \*\/
+                \/\* It follows that board[b][r] == Blue_Stone for b in [blb, bub) \*\/
                 for (b = blb; b < bub; b++) {
                     reachable[b] = segment_reachable;
                 }
             }
         }
-        /* TODO: Keeping the legacy approach, which does not properly handle
+        \/\* TODO: Keeping the legacy approach, which does not properly handle
          *       path connections for neighboring hexagons in the same blue row.
         for (b = 0; b < BOARD_WIDTH; b++) {
             if (board[b][r] == Blue_Stone) {
@@ -347,11 +348,11 @@ static Boolean check_blue_win_v1(enum HexMark (*board)[BOARD_WIDTH]) {
                 reachable[b] = FALSE;
             }
         }
-        */
+        \*\/
 
     }
 
-    /* If any of the hexagons for the last red label are reachable, then Blue wins */
+    \/\* If any of the hexagons for the last red label are reachable, then Blue wins \*\/
     for (b = 0; b < BOARD_WIDTH; b++) {
         if (reachable[b]) {
             return TRUE;
@@ -359,6 +360,7 @@ static Boolean check_blue_win_v1(enum HexMark (*board)[BOARD_WIDTH]) {
     }
     return FALSE;
 }
+*/
 
 static Boolean check_win(enum HexMark (*board)[BOARD_WIDTH], enum HexStoneColor stone) {
     switch (stone) {
