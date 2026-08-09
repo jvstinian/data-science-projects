@@ -18,11 +18,6 @@ const char* player_names[MAX_PLAYER_COUNT] = {
 
 struct AtaxxState ataxx_initial_state(struct AtaxxConfig config) {
     struct AtaxxState ret;
-    /*
-    Boolean player_indicators[MAX_PLAYER_COUNT];
-    enum AtaxxMark board[BOARD_WIDTH][BOARD_WIDTH];
-    unsigned short int scores[MAX_PLAYER_COUNT];
-    */
     unsigned short r, c;
 
     memset(ret.player_indicators, 0, MAX_PLAYER_COUNT * sizeof(Boolean));
@@ -76,8 +71,7 @@ static Boolean board_full(enum AtaxxMark (*board)[BOARD_WIDTH]) {
     return TRUE;
 }
 
-/* TODO: Should the following be static? */
-Boolean available_move_from(enum AtaxxMark (*board)[BOARD_WIDTH], unsigned short int row, unsigned short int col) {
+static Boolean available_move_from(enum AtaxxMark (*board)[BOARD_WIDTH], unsigned short int row, unsigned short int col) {
     unsigned short int i0, i1, j0, j1;
     unsigned short int r, c;
     i0 = 0;
@@ -170,8 +164,7 @@ enum AtaxxPlayer ataxx_get_player(struct AtaxxState state) {
     return state.current_player;
 }
    
-/* TODO: Should the following be static? */
-enum AtaxxMark player_to_mark(enum AtaxxPlayer player) {
+static enum AtaxxMark player_to_mark(enum AtaxxPlayer player) {
     switch (player) {
         case Red: 
             return Mark_Red;
@@ -187,8 +180,7 @@ enum AtaxxMark player_to_mark(enum AtaxxPlayer player) {
     }
 }
 
-/* TODO: Should the following be static? */
-enum AtaxxPlayer mark_to_player(enum AtaxxMark mark) {
+static enum AtaxxPlayer mark_to_player(enum AtaxxMark mark) {
     switch (mark) {
         case Mark_Red: 
             return Red;
@@ -217,14 +209,6 @@ static enum AtaxxPlayer next_player_in_ring(struct AtaxxState state, enum AtaxxP
             break;
         }
     }
-    /* The following uses an approach similar to that used in Ada.
-    while (1) {
-        res = (enum AtaxxPlayer) ((((unsigned int) res) + 1) % MAX_PLAYER_COUNT);
-        if (state.player_indicators[res]) {
-            break;
-        }
-    }
-    */
     return res;
 }
 
@@ -324,140 +308,7 @@ float ataxx_reward(enum AtaxxPlayer player, struct AtaxxState state) {
     return (float) state.scores[player];
 }
 
-/*
-typedef struct AtaxxValidActionsList {
-	size_t capacity;
-	size_t length;
-	struct AtaxxAction list[1];
-} AtaxxValidActionsList;
-
-\/\* AtaxxAction Array List \*\/
-AtaxxValidActionsList* ataxx_actions_list_create(size_t cpty){
-    if (cpty < 1) {
-        cpty = 1;
-    }
-	AtaxxValidActionsList* ret = (AtaxxValidActionsList*) malloc(sizeof(AtaxxValidActionsList) + (cpty-1)*sizeof(struct AtaxxAction));
-	if (ret != NULL) {
-		ret->capacity = cpty;
-		ret->length = 0;
-	}
-	return ret;
-}
-
-int ataxx_actions_list_realloc(AtaxxValidActionsList** lpp, size_t new_capacity){
-    *lpp = realloc(*lpp, sizeof(AtaxxValidActionsList) + (new_capacity-1)*sizeof(struct AtaxxAction));
-    if (*lpp == NULL) {
-        return -1;
-    }
-    (*lpp)->capacity = new_capacity;
-	return 0;
-}
-
-int ataxx_actions_list_push(AtaxxValidActionsList** lpp, struct AtaxxAction val){
-	(*lpp)->list[(*lpp)->length] = val;
-	(*lpp)->length++;
-
-	if ((*lpp)->length >= (*lpp)->capacity) {
-		\/\* realloc \*\/
-		int newcap = 2 * (*lpp)->capacity;
-		*lpp = realloc(*lpp, sizeof(AtaxxValidActionsList) + (newcap-1)*sizeof(struct AtaxxAction));
-		if (*lpp == NULL) {
-			return -1;
-		}
-		(*lpp)->capacity = newcap;
-	}
-	return 0;
-}
-
-size_t ataxx_actions_list_length(AtaxxValidActionsList* lp) {
-    return lp->length;
-}
-
-struct AtaxxAction ataxx_actions_list_get(AtaxxValidActionsList* lp, size_t i) {
-    return lp->list[i];
-}
-
-void ataxx_actions_list_destroy(AtaxxValidActionsList* lp) {
-	free(lp);
-}
-
-TODO: The following was adapted to the template list below
-AtaxxValidActionsList* ataxx_get_valid_actions (struct AtaxxState state) {
-    enum AtaxxPlayer player = state.current_player;
-    \/\* We use player_to_mark in the following \*\/
-    \/\*
-    enum AtaxxMark player_mark = (enum AtaxxMark) ((int) player);
-    \*\/
-    enum AtaxxMark player_mark = player_to_mark(player);
-    const size_t max_actions = state.scores[player] * 24;
-    AtaxxValidActionsList* vas = ataxx_actions_list_create(max_actions);
-    int vas_status = 0;
-
-    \/\* Temp variables for loop below \*\/
-    struct AtaxxCellIndices source;
-    struct AtaxxAction temp_action;
-    unsigned short int i0, i1, j0, j1;
-    unsigned short int r, c;
-    unsigned short int r_target, c_target;
-
-    if (vas == NULL) {
-        return NULL;
-    }
-
-    for (r=0; r < BOARD_WIDTH; r++){
-        for (c=0; c < BOARD_WIDTH; c++){
-            if (state.board[r][c] == player_mark) {
-                source = (struct AtaxxCellIndices) { r, c };
-                \/\*  We just want
-                i0 = (unsigned short int) max_short(0, ((short int) r) - 2);
-                i1 = (unsigned short int) min_short(BOARD_WIDTH - 1, ((short int) r) + 2);
-                but below rather we set the extreme value and then adjust to the
-                range value if valid.  This way we avoid type casts but introduce
-                branches. \*\/
-                i0 = 0;
-                if (r >= 2) {
-                    i0 = r - 2;
-                }
-                i1 = BOARD_WIDTH - 1;
-                if (r < (BOARD_WIDTH - 2)) {
-                    i1 = r + 2;
-                }
-                j0 = 0;
-                if (c >= 2) {
-                    j0 = c - 2;
-                }
-                j1 = BOARD_WIDTH - 1;
-                if (c < (BOARD_WIDTH - 2)) {
-                    j1 = c + 2;
-                }
-                for (r_target = i0; r_target <= i1; r_target++) {
-                    for (c_target = j0; c_target <= j1; c_target++) {
-                        if (
-                            !((r_target == r) && (c_target == c))
-                            && (state.board[r_target][c_target] == No_Mark)
-                        ) {
-                            temp_action = (struct AtaxxAction) {
-                                source,
-                                (struct AtaxxCellIndices) { r_target, c_target }
-                             };
-                            vas_status = ataxx_actions_list_push(&vas, temp_action);
-                            if (vas_status) {
-                                fprintf(stderr, "get_valid_actions: could not push action to list, returning NULL");
-                                ataxx_actions_list_destroy(vas);
-                                return NULL;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return vas;
-}
-*/
-
-void print_board(struct AtaxxState state) {
-    /* char mark_char; */
+static void print_board(struct AtaxxState state) {
     unsigned short int r, c;
 
     printf(" ");
@@ -495,7 +346,7 @@ void print_board(struct AtaxxState state) {
     }
 }
 
-void get_winners(unsigned short int *scores, Boolean* winning_players, unsigned short int* num_winners) {
+static void get_winners(unsigned short int *scores, Boolean* winning_players, unsigned short int* num_winners) {
     unsigned short int i;
     unsigned short int max_score = 0;
 
@@ -519,7 +370,7 @@ void get_winners(unsigned short int *scores, Boolean* winning_players, unsigned 
     }
 }
 
-void print_game_status(struct AtaxxState state) {
+static void print_game_status(struct AtaxxState state) {
     enum AtaxxPlayer p;
     unsigned short int i, remaining_winners;
     Boolean winning_players[MAX_PLAYER_COUNT];
