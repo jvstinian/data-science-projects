@@ -156,8 +156,8 @@ static Boolean check_blue_win(const enum HexMark (*board)[BOARD_WIDTH]) {
 }
 
 static Boolean check_red_win_v1(enum HexMark (*board)[BOARD_WIDTH]) {
-    Boolean reachable_prev[BOARD_WIDTH] /*= {FALSE} TODO */;
-    Boolean reachable[BOARD_WIDTH] /* = {FALSE} TODO */;
+    Boolean reachable_prev[BOARD_WIDTH];
+    Boolean reachable[BOARD_WIDTH];
     Boolean segment_reachable;
     /* Initialize */
     unsigned short b, r;
@@ -181,7 +181,6 @@ static Boolean check_red_win_v1(enum HexMark (*board)[BOARD_WIDTH]) {
      * at the connection value for the previous blue label and
      * the same and successor red labels. */
     for (b = 1; b < BOARD_WIDTH; b++) {
-        /* Reachable_Prev := Reachable; */  /* Save previous state of reachability */ /* TODO: Remove */
         memcpy(reachable_prev, reachable, sizeof(reachable));
         rub = 0;
         while (rub < BOARD_WIDTH) {
@@ -672,6 +671,34 @@ static Boolean hex_action_eq(struct HexAction a1, struct HexAction a2) {
 #include <reinforcementlearning/algorithms/uct.inc>
 
 
+/* For a hexagon (b1, r1), the neighboring hexagons with the blue
+ * label b2 where b2 is the successor of b1 are (b2, r1) and (b2, r2),
+ * where r2 is the predecessor of r1 (if it exists).
+ * Reversing this relationship, when iterating over the
+ * red labels for the next blue label, we look at
+ * the hexagon value for the previous blue label and
+ * the same and successor red labels.
+ * 
+ * For a hexagon (b1, r1), the neighboring hexagons with the red
+ * label r2 where r2 is the successor of r1 are (b1, r2) and (b2, r2),
+ * where b2 is the predecessor of b1 (if it exists).
+ * Reversing this relationship, when iterating over the
+ * blue labels for the next red label, we look at
+ * the hexagon value for the previous red label and
+ * the same and successor blue labels.
+ * 
+ * A hexagon (b, r) will have at most six neighbors depending on where
+ * it sits in relation to the edge of the board.
+ * While the neighbors can be identified using the two paragraphs above,
+ * as an alternative specification, the six neighbors are
+ * (b, r-1), (b, r+1),
+ * (b-1, r), (b+1, r), and
+ * (b-1, r+1), (b+1, r-1),
+ * omitting from this list any hexagons not on the board.
+ * The first two are the neighbors to the left and right (same blue label),
+ * the next two are the neighbors above and below (same red label), and
+ * the last two are the neighbors above and below to the right and left,
+ * respectively. */
 Boolean neighboring_hexagons(unsigned short b1, unsigned short r1, unsigned short b2, unsigned short r2) {
     Boolean blue_is_succ = (b1 != (BOARD_WIDTH-1)) && (b2 == (b1+1));
     Boolean blue_is_prev = (b1 != 0) && (b2 == (b1-1));
