@@ -82,7 +82,10 @@ struct SimulationSummary URA_FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config, 
         total_reward += step_output.reward;
         i++;
         if (verbose) {
+            /* TODO: Remove when ready
             printf("Step %lu, Action %d, Reward: %5.2f\n", i, action, step_output.reward);
+            */
+            printf("Step %lu, Reward: %5.2f\n", i, step_output.reward);
         }
         if (step_output.terminated) {
             if (verbose) {

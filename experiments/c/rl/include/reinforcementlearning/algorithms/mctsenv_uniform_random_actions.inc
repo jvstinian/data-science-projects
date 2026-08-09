@@ -35,6 +35,10 @@ struct SimulationSummary MURA_FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config,
 #error "PLAYER_TYPE is not defined in mctsenv_uniform_random_actions_c.inc"
 #endif
 
+#ifndef INITIAL_STATE_METHOD
+#error "INITIAL_STATE_METHOD is not defined in mctsenv_uniform_random_actions_c.inc"
+#endif
+
 #ifndef STEP_METHOD
 #error "STEP_METHOD is not defined in mctsenv_uniform_random_actions_c.inc"
 #endif
@@ -57,7 +61,7 @@ struct SimulationSummary MURA_FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config,
 
 /* Template header approach */
 struct SimulationSummary MURA_FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config, unsigned int max_steps) {
-    STATE_TYPE state = initial_state(config);
+    STATE_TYPE state = INITIAL_STATE_METHOD(config);
     size_t i;
     ACTION_TYPE action;
     PLAYER_TYPE init_player;
@@ -87,7 +91,7 @@ struct SimulationSummary MURA_FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config,
     }
     printf("Reward: %f", reward(PLAYER1, state));
     */
-    return (struct SimulationSummary) { i, reward(init_player, state) };
+    return (struct SimulationSummary) { i, REWARD_METHOD(init_player, state) };
 }
 
 #undef REWARD_METHOD
@@ -95,6 +99,7 @@ struct SimulationSummary MURA_FUNC_NAME(ENVIRONMENT_PREFIX) (CONFIG_TYPE config,
 #undef RANDOM_ACTION_METHOD
 #undef GET_PLAYER_METHOD
 #undef STEP_METHOD
+#undef INITIAL_STATE_METHOD
 #undef ACTION_TYPE
 #undef PLAYER_TYPE
 #undef STATE_TYPE
