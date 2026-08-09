@@ -8,10 +8,10 @@
 #define MAX_PLAYER_COUNT 4
 
 enum AtaxxPlayer {
-    Red,
-    Blue,
-    White,
-    Black
+    Ataxx_Red,
+    Ataxx_Blue,
+    Ataxx_White,
+    Ataxx_Black
 };
 
 struct AtaxxCellIndices {
@@ -25,17 +25,17 @@ struct AtaxxAction {
 };
 
 enum AtaxxMark {
-    Mark_Red,
-    Mark_Blue,
-    Mark_White,
-    Mark_Black,
-    Mark_X,
-    No_Mark
+    Ataxx_Mark_Red,
+    Ataxx_Mark_Blue,
+    Ataxx_Mark_White,
+    Ataxx_Mark_Black,
+    Ataxx_Mark_X,
+    Ataxx_No_Mark
 };
 
 enum AtaxxGameStatus {
-    Active,
-    Finished
+    Ataxx_Active,
+    Ataxx_Finished
 };
 
 enum AtaxxPlayerCount {

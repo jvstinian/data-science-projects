@@ -11,9 +11,9 @@ struct TTTState initial_state() {
     */
 
     return (struct TTTState) { {
-        { No_Mark, No_Mark, No_Mark },
-        { No_Mark, No_Mark, No_Mark },
-        { No_Mark, No_Mark, No_Mark }
+        { TTT_No_Mark, TTT_No_Mark, TTT_No_Mark },
+        { TTT_No_Mark, TTT_No_Mark, TTT_No_Mark },
+        { TTT_No_Mark, TTT_No_Mark, TTT_No_Mark }
     }, X_Move };
 }
 
@@ -103,7 +103,7 @@ static Boolean all_moves_exhausted(struct TTTState s) {
     unsigned short r, c;
     for (r = 0; r < 3; r++) {
         for (c = 0; c < 3; c++) {
-            if (s.board[r][c] == No_Mark) {
+            if (s.board[r][c] == TTT_No_Mark) {
                 return FALSE;
             }
         }
@@ -124,7 +124,7 @@ static enum TTTGameStatus check_status_for_action(struct TTTState s, struct TTTA
         case O:
             w = O_Wins;
             break;
-        case No_Mark:
+        case TTT_No_Mark:
             /* Invalid state, just return */
             return result;
         default:
@@ -195,7 +195,7 @@ struct TTTValidActions get_valid_actions(struct TTTState s) {
     i = 0;
     for (r = 0; r < 3; r++) {
         for (c = 0; c < 3; c++) {
-            if (s.board[r][c] == No_Mark) {
+            if (s.board[r][c] == TTT_No_Mark) {
                 result.actions[i++] = (struct TTTAction) {r, c};
             }
         }
@@ -218,7 +218,7 @@ static void print_board(struct TTTState s) {
                 case O:
                     printf("O");
                     break;
-                case No_Mark:
+                case TTT_No_Mark:
                     printf(" ");
                     break;
             }
@@ -260,7 +260,7 @@ struct TTTAction ttt_mctsenv_get_random_action(struct TTTState state) {
     unsigned int r, c;
     for (r = 0; r < 3; r++) {
         for (c = 0; c < 3; c++) {
-            if (state.board[r][c] == No_Mark) {
+            if (state.board[r][c] == TTT_No_Mark) {
                 available_actions[num_actions++] = (struct TTTAction) {r, c};
             }
         }
@@ -308,7 +308,7 @@ struct TTTActionList* ttt_experimental_get_valid_actions(struct TTTState s) {
 
     for (r = 0; r < 3; r++) {
         for (c = 0; c < 3; c++) {
-            if (s.board[r][c] == No_Mark) {
+            if (s.board[r][c] == TTT_No_Mark) {
                 if (ttt_action_list_push(&ret, (struct TTTAction) {r, c})) {
                     fprintf(stderr, "ttt_experimental_get_valid_actions: failed to push action to list\n");
                     ttt_action_list_destroy(ret);

@@ -26,7 +26,7 @@ struct TTTAction {
 enum TTTMark {
     X,
     O,
-    No_Mark
+    TTT_No_Mark
 };
 
 enum TTTGameStatus {

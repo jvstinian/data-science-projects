@@ -33,9 +33,9 @@ enum HexMark {
 };
 
 enum HexGameStatus {
-    Active,
-    Player1_Wins,
-    Player2_Wins
+    Hex_Active,
+    Hex_Player1_Wins,
+    Hex_Player2_Wins
 };
 
 struct HexState {

@@ -21,14 +21,14 @@ struct HexState hex_initial_state() {
         }
     }
 
-    ret.status = Active;
+    ret.status = Hex_Active;
     ret.current_player = Player1;
 
     return ret;
 }
 
 Boolean hex_is_terminal(struct HexState s) {
-    if (s.status != Active) {
+    if (s.status != Hex_Active) {
         return TRUE;  /* Game is already finished */
     }
     return FALSE;
@@ -204,14 +204,14 @@ struct HexState hex_act(struct HexState s, struct HexAction a) {
         switch (res.current_player) {
             case Player1:
                 if (check_win(res.board, player_color)) {
-                    res.status = Player1_Wins;
+                    res.status = Hex_Player1_Wins;
                 } else {
                     res.current_player = Player2;  /* Switch player */
                 }
                 break;
             case Player2:
                 if (check_win(res.board, player_color)) {
-                    res.status = Player2_Wins;
+                    res.status = Hex_Player2_Wins;
                 } else {
                     res.current_player = Player1;  /* Switch player */
                 }
@@ -223,7 +223,7 @@ struct HexState hex_act(struct HexState s, struct HexAction a) {
 
 float hex_reward(enum HexPlayer player, struct HexState s) {
     switch (s.status) {
-        case Player1_Wins:
+        case Hex_Player1_Wins:
             switch (player) {
                 case Player1:
                     return 1.0;
@@ -234,7 +234,7 @@ float hex_reward(enum HexPlayer player, struct HexState s) {
                     return 0.0;
             }
             break;
-        case Player2_Wins:
+        case Hex_Player2_Wins:
             switch (player) {
                 case Player1:
                     return -1.0;
@@ -245,7 +245,7 @@ float hex_reward(enum HexPlayer player, struct HexState s) {
                     return 0.0;
             }
             break;
-        case Active:
+        case Hex_Active:
         default:
             return 0.0;  /* Game is still active, so no reward */
     }
@@ -296,16 +296,16 @@ static void print_board(struct HexState s) {
 
 static void print_game_status(struct HexState s) {
     switch (s.status) {
-        case Active:
+        case Hex_Active:
             printf("Next Player: %s (%s)\n",
                    player_names[s.current_player],
                    color_names[s.player_colors[s.current_player]]
             );
             break;
-        case Player1_Wins:
+        case Hex_Player1_Wins:
             printf("Player 1 (%s) won\n", color_names[s.player_colors[Player1]]);
             break;
-        case Player2_Wins: 
+        case Hex_Player2_Wins: 
             printf("Player 2 (%s) won\n", color_names[s.player_colors[Player2]]);
             break;
     }
