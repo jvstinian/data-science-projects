@@ -2,16 +2,19 @@
 #define INC_RL_ENVS_HEX_H
 
 #include <reinforcementlearning/bool.h>
+#include <stddef.h> /* size_t */
 
 #define BOARD_WIDTH 7
 #define BOARD_SIZE (BOARD_WIDTH * BOARD_WIDTH)
+
+struct HexConfig {
+    int unused;  /* Unused parameter required for struct definition */
+};
 
 enum HexPlayer {
     Player1,
     Player2
 };
-
-const char* player_names[2] = {"Player 1", "Player 2"};
 
 enum HexStoneColor {
     Red,
@@ -23,10 +26,12 @@ struct HexAction {
     unsigned short col;
 };
 
+/*
 struct HexValidActions {
     unsigned short int num_actions;
     struct HexAction actions[BOARD_SIZE];
 };
+*/
    
 enum HexMark {
     Red_Stone,
@@ -47,29 +52,50 @@ struct HexState {
     enum HexPlayer current_player;
 };
 
+struct HexState hex_initial_state();
+Boolean hex_is_terminal(struct HexState s);
+enum HexPlayer hex_get_player(struct HexState s);
+struct HexState hex_act(struct HexState s, struct HexAction a);
+float hex_reward(enum HexPlayer player, struct HexState s);
 /*
-   subtype Blue_Label is Integer range 1 .. Board_Width;
-   subtype Red_Label is Character range 'A' .. Character'Val(Character'Pos('A') + Board_Width - 1);
+struct HexValidActions hex_get_valid_actions(struct HexState s);
 */
+void hex_print_state (struct HexState s);
+struct HexAction hex_mctsenv_get_random_action(struct HexState state);
 
-struct HexState initial_state();
-Boolean is_terminal(struct HexState s);
-enum HexPlayer get_player(struct HexState s);
-struct HexState step(struct HexState s, struct HexAction a);
-float reward(enum HexPlayer player, struct HexState s);
-struct HexValidActions get_valid_actions(struct HexState s);
-void print_state (struct HexState s);
-/*
-private
-   function Get_Number_Of_Stones (State : State_Type) return Natural;
-   function Check_Win (Board : Board_Type; Stone : Stone_Color_Type) return Boolean;
-   function Check_Blue_Win (Board : Board_Type) return Boolean;
-   function Check_Red_Win (Board : Board_Type) return Boolean;
-   
+/* The following defines
+struct HexActionList;
+struct HexActionList* hex_action_list_create (size_t cpty);
+int hex_action_list_realloc (struct HexActionList** lpp, size_t new_capacity);
+int hex_action_list_push (struct HexActionList** lpp, struct HexAction val);
+size_t hex_action_list_length (struct HexActionList* lp);
+struct HexAction hex_action_list_get (struct HexActionList* lp, size_t i);
+void hex_action_list_shuffle (struct HexActionList* lp);
+void hex_action_list_destroy (struct HexActionList* lp);
 */
+#define ENVIRONMENT_PREFIX hex
+#define ENVIRONMENT_STRUCT_PREFIX Hex
+#define ACTION_TYPE struct HexAction
+#define AA_DECLS_ONLY
+#include <reinforcementlearning/action_array_template.inc>
+
+struct HexActionList* hex_experimental_get_valid_actions(struct HexState state);
+
+#define ENVIRONMENT_PREFIX hex
+#define ENVIRONMENT_STRUCT_PREFIX Hex
+#define CONFIG_TYPE struct HexConfig
+#define STATE_TYPE struct HexState
+#define ACTION_TYPE struct HexAction
+#define UCT_DECLS_ONLY
+#include <reinforcementlearning/algorithms/uct.inc>
+
+
 /* NOTE: The following method was not needed after all */
 Boolean neighboring_hexagons(unsigned short b1, unsigned short r1, unsigned short b2, unsigned short r2);
 
 int hex_example_main();
+
+/* TODO: Eventually remove or adapt the following */
+int hex_uct_example();
 
 #endif
