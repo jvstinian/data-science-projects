@@ -40,7 +40,7 @@ UCT_TREE_TYPE;
 
 UCT_TREE_TYPE* UCT_FUNC_NAME(mcts_tree_new) (CONFIG_TYPE config);
 STATE_TYPE UCT_FUNC_NAME(uct_get_state) (const UCT_TREE_TYPE* tree);
-int UCT_FUNC_NAME(uct_search) (unsigned int n, struct UCTParams params, UCT_TREE_TYPE* tree, ACTION_TYPE* action_out);
+int UCT_FUNC_NAME(uct_search) (unsigned int n, struct UCTParams params, UCT_TREE_TYPE* tree, ACTION_TYPE* action_out, float* reward_est_out);
 int UCT_FUNC_NAME(uct_take_action) (UCT_TREE_TYPE* tree, ACTION_TYPE action);
 void UCT_FUNC_NAME(mcts_tree_free) (UCT_TREE_TYPE* tree);
 
@@ -111,14 +111,6 @@ void UCT_FUNC_NAME(mcts_tree_free) (UCT_TREE_TYPE* tree);
 #include <math.h> /* sqrt */
 #include <float.h> /* FLT_MAX */
 
-/* TODO: Possibly move to a uct_params.h header file 
-struct UCTParams get_selection_uct_params(struct UCTParams params) {
-    struct UCTParams ret = params;
-    ret.exploration_const = 0.0;
-    return ret;
-}
-*/
-
 enum TreeKind {
     Node,
     Leaf
@@ -187,13 +179,13 @@ static int initialize_node(STATE_TYPE s, unsigned int num_visits, struct Node* n
     return 0;
 }
 
-static int tree_init(UCT_TREE_TYPE* tree, STATE_TYPE s) {
+static int tree_init(UCT_TREE_TYPE* tree, STATE_TYPE s, unsigned int init_num_visits) {
     if (IS_TERMINAL_METHOD(s)) {
         tree->tag = Leaf;
-        tree->data.leaf = (struct Leaf) { 1, s };
+        tree->data.leaf = (struct Leaf) { init_num_visits, s };
     } else {
         tree->tag = Node;
-        if (initialize_node(s, 1, &tree->data.node)) {
+        if (initialize_node(s, init_num_visits, &tree->data.node)) {
             fprintf(stderr, "tree_init: failed to initialize node\n");
             return 1;
         }
@@ -209,16 +201,10 @@ UCT_TREE_TYPE* UCT_FUNC_NAME(mcts_tree_new) (CONFIG_TYPE config) {
         fprintf(stderr, "mcts_tree_new: failed to allocate memory for tree\n");
         return NULL;
     }
-    if (IS_TERMINAL_METHOD(s)) {
-        t->tag = Leaf;
-        t->data.leaf = (struct Leaf) { 0, s };
-    } else {
-        t->tag = Node;
-        if (initialize_node(s, 0, &t->data.node)) {
-            fprintf(stderr, "mcts_tree_new: failed to initialize node\n");
-            free(t);
-            return NULL;
-        }
+    if (tree_init(t, s, 0)) {
+        fprintf(stderr, "mcts_tree_new: failed to initialize tree\n");
+        free(t);
+        return NULL;
     }
     return t;
 }
@@ -304,10 +290,10 @@ static unsigned int best_child_index(struct UCTParams params, struct Node node) 
     return best_index;
 }
 
-static STATE_TYPE uct_update_with_reward(struct UCTParams params, struct Node* node) {
+static int uct_update_with_reward(struct UCTParams params, struct Node* node, STATE_TYPE* terminal_state_out) {
     unsigned int action_idx;
     ACTION_TYPE a;
-    STATE_TYPE child_state, terminal_state;
+    STATE_TYPE child_state;
     PLAYER_TYPE player;
     float inc_reward;
 
@@ -317,44 +303,55 @@ static STATE_TYPE uct_update_with_reward(struct UCTParams params, struct Node* n
         a = node->ars[action_idx].action;
 
         child_state = STEP_METHOD(node->node_state, a);
-        terminal_state = default_policy_terminal_state(child_state);
+        *terminal_state_out = default_policy_terminal_state(child_state);
         player = GET_PLAYER_METHOD(node->node_state);
-        inc_reward = REWARD_METHOD(player, terminal_state);
+        inc_reward = REWARD_METHOD(player, *terminal_state_out);
 
-        /* TODO: We need to handle errors in tree_init */
-        tree_init(&node->trees[action_idx], child_state);
+        if (tree_init(&node->trees[action_idx], child_state, 1)) {
+            fprintf(stderr, "uct_update_with_reward: failed to initialize child tree\n");
+            return 1;
+        }
         node->ars[action_idx].reward = inc_reward;
         node->actions_tried++;
 
         node->num_visits++;
-        return terminal_state;
+        /* terminal state set above */
+        return 0;
     } else {
         action_idx = best_child_index(params, *node);
         a = node->ars[action_idx].action;
         switch (node->trees[action_idx].tag) {
             case Node:
                 /* Recursively call the function and obtain a terminal state */
-                terminal_state = uct_update_with_reward(params, &node->trees[action_idx].data.node);
+                if (uct_update_with_reward(params, &node->trees[action_idx].data.node, terminal_state_out)) {
+                    /* We don't print a message as the error has already been
+                     * printed by the recursive call */
+                    return 1;
+                }
                 player = GET_PLAYER_METHOD(node->node_state);
-                inc_reward = REWARD_METHOD(player, terminal_state);
+                inc_reward = REWARD_METHOD(player, *terminal_state_out);
+                /* Note that child node visits is incremented in the recursive call */
                 /* Increment reward */
                 node->ars[action_idx].reward += inc_reward;
                 /* Increment number of visits current node */
                 node->num_visits++;
-                return terminal_state;
+                return 0;
             case Leaf:
-                terminal_state = node->trees[action_idx].data.leaf.terminal_state;
+                *terminal_state_out = node->trees[action_idx].data.leaf.terminal_state;
                 player = GET_PLAYER_METHOD(node->node_state);
-                inc_reward = REWARD_METHOD(player, terminal_state);
+                inc_reward = REWARD_METHOD(player, *terminal_state_out);
                 /* Increment number of visits to terminal child */
                 node->trees[action_idx].data.leaf.num_visits++;
                 /* Increment reward */
                 node->ars[action_idx].reward += inc_reward;
                 /* Increment number of visits current node */
                 node->num_visits++;
-                return terminal_state;
+                /* terminal state set above */
+                return 0;
             default:
-                return node->node_state; /* Unreachable */
+                /* Unreachable */
+                fprintf(stderr, "uct_update_with_reward: unexpected tree tag\n");
+                return 1; 
         }
     }
 }
@@ -370,25 +367,29 @@ STATE_TYPE UCT_FUNC_NAME(uct_get_state) (const UCT_TREE_TYPE* tree) {
     }
 }
 
-static void uct_update(struct UCTParams params, UCT_TREE_TYPE* t) {
+static int uct_update(struct UCTParams params, UCT_TREE_TYPE* t) {
+    STATE_TYPE unused_terminal_state;
     switch (t->tag) {
         case Node:
-            uct_update_with_reward(params, &t->data.node);
-            break;
+            return uct_update_with_reward(params, &t->data.node, &unused_terminal_state);
         case Leaf:
         default:
             /* do nothing */
-            break;
+            fprintf(stderr, "uct_update: tree already at a terminal state\n");
+            return 1;
     }
 }
 
-int UCT_FUNC_NAME(uct_search) (unsigned int n, struct UCTParams params, UCT_TREE_TYPE* tree, ACTION_TYPE* action_out) {
+int UCT_FUNC_NAME(uct_search) (unsigned int n, struct UCTParams params, UCT_TREE_TYPE* tree, ACTION_TYPE* action_out, float* reward_est_out) {
     struct UCTParams exploit_params;
     unsigned int action_idx;
     UCT_TREE_TYPE tree_copy;
 
     while (n > 0) {
-        uct_update(params, tree);
+        if (uct_update(params, tree)) {
+            fprintf(stderr, "uct_search: failed to update tree\n");
+            return 1;
+        }
         n--;
     }
 
@@ -398,6 +399,7 @@ int UCT_FUNC_NAME(uct_search) (unsigned int n, struct UCTParams params, UCT_TREE
         case Node:
             action_idx = best_child_index(exploit_params, tree->data.node);
             *action_out = tree->data.node.ars[action_idx].action;
+            *reward_est_out = tree->data.node.ars[action_idx].reward / ((float) tree_visits(tree->data.node.trees[action_idx]));
             node_deinit_preserve_action_idx(&tree->data.node, action_idx, &tree_copy);
             memcpy(tree, &tree_copy, sizeof(UCT_TREE_TYPE));
             return 0;
@@ -411,6 +413,7 @@ int UCT_FUNC_NAME(uct_search) (unsigned int n, struct UCTParams params, UCT_TREE
 int UCT_FUNC_NAME(uct_take_action) (UCT_TREE_TYPE* tree, ACTION_TYPE action) {
     unsigned int action_idx;
     UCT_TREE_TYPE tree_copy;
+    STATE_TYPE new_state; /* Needed when the action is unexplored */
 
     switch (tree->tag) {
         case Node:
@@ -419,12 +422,20 @@ int UCT_FUNC_NAME(uct_take_action) (UCT_TREE_TYPE* tree, ACTION_TYPE action) {
                     break;
                 }
             }
-            if (action_idx >= tree->data.node.actions_tried) {
-                fprintf(stderr, "uct_take_action: action has not been explored\n");
-                return 1;
+            if (action_idx < tree->data.node.actions_tried) {
+                /* action has been explored, we can preserve the child tree */
+                node_deinit_preserve_action_idx(&tree->data.node, action_idx, &tree_copy);
+                memcpy(tree, &tree_copy, sizeof(UCT_TREE_TYPE));
+            } else {
+                /* action has not been explored, we de-initialize the tree
+                 * and reinitialize with the new state */
+                new_state = STEP_METHOD(tree->data.node.node_state, action);
+                mcts_tree_deinit(tree);
+                if (tree_init(tree, new_state, 0)) {
+                    fprintf(stderr, "uct_take_action: failed to initialize tree with new state\n");
+                    return 1;
+                }
             }
-            node_deinit_preserve_action_idx(&tree->data.node, action_idx, &tree_copy);
-            memcpy(tree, &tree_copy, sizeof(UCT_TREE_TYPE));
             return 0;
         case Leaf:
         default:

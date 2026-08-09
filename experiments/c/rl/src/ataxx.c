@@ -16,7 +16,7 @@ const char* player_names[MAX_PLAYER_COUNT] = {
     "Red", "Blue", "White", "Black"
 };
 
-struct AtaxxState initial_state(struct AtaxxConfig config) {
+struct AtaxxState ataxx_initial_state(struct AtaxxConfig config) {
     struct AtaxxState ret;
     /*
     Boolean player_indicators[MAX_PLAYER_COUNT];
@@ -76,6 +76,7 @@ static Boolean board_full(enum AtaxxMark (*board)[BOARD_WIDTH]) {
     return TRUE;
 }
 
+/* TODO: Should the following be static? */
 Boolean available_move_from(enum AtaxxMark (*board)[BOARD_WIDTH], unsigned short int row, unsigned short int col) {
     unsigned short int i0, i1, j0, j1;
     unsigned short int r, c;
@@ -111,7 +112,7 @@ static void can_move(enum AtaxxMark (*board)[BOARD_WIDTH], Boolean *players_can_
     unsigned short int r, c;
 
     /* Set to FALSE */
-    memset(players_can_move, 0, BOARD_WIDTH * sizeof(Boolean));
+    memset(players_can_move, 0, MAX_PLAYER_COUNT * sizeof(Boolean));
 
     for(r = 0; r < BOARD_WIDTH; r++) {
         for(c = 0; c < BOARD_WIDTH; c++) {
@@ -145,8 +146,8 @@ static void can_move(enum AtaxxMark (*board)[BOARD_WIDTH], Boolean *players_can_
     }
 }
 
-Boolean is_terminal(struct AtaxxState state) {
-    Boolean players_can_move[BOARD_WIDTH];
+Boolean ataxx_is_terminal(struct AtaxxState state) {
+    Boolean players_can_move[MAX_PLAYER_COUNT];
     can_move(state.board, players_can_move);
     enum AtaxxPlayer p;
     /* NOTE: The Board_Full check might not be necessary, as
@@ -165,10 +166,11 @@ Boolean is_terminal(struct AtaxxState state) {
     return TRUE;  /* No active players can move, so terminal */
 }
 
-enum AtaxxPlayer get_player(struct AtaxxState state) {
+enum AtaxxPlayer ataxx_get_player(struct AtaxxState state) {
     return state.current_player;
 }
    
+/* TODO: Should the following be static? */
 enum AtaxxMark player_to_mark(enum AtaxxPlayer player) {
     switch (player) {
         case Red: 
@@ -185,6 +187,7 @@ enum AtaxxMark player_to_mark(enum AtaxxPlayer player) {
     }
 }
 
+/* TODO: Should the following be static? */
 enum AtaxxPlayer mark_to_player(enum AtaxxMark mark) {
     switch (mark) {
         case Mark_Red: 
@@ -232,7 +235,7 @@ static unsigned short int distance(struct AtaxxCellIndices from, struct AtaxxCel
     );
 }
     
-struct AtaxxState step(struct AtaxxState state, struct AtaxxAction action) {
+struct AtaxxState ataxx_act(struct AtaxxState state, struct AtaxxAction action) {
     /* Helper functions */
     struct AtaxxCellIndices source = action.source;
     struct AtaxxCellIndices target = action.target;
@@ -246,8 +249,8 @@ struct AtaxxState step(struct AtaxxState state, struct AtaxxAction action) {
     enum AtaxxPlayer overwritten_player;
     enum AtaxxPlayer next_player;
     enum AtaxxPlayer stop_player;
-    Boolean players_can_move[BOARD_WIDTH];
-    memset(players_can_move, 0, BOARD_WIDTH * sizeof(Boolean));
+    Boolean players_can_move[MAX_PLAYER_COUNT];
+    memset(players_can_move, 0, MAX_PLAYER_COUNT * sizeof(Boolean));
 
     /* Return value */
     struct AtaxxState res = state;  /* Start with a copy of the current state to modify */
@@ -281,7 +284,7 @@ struct AtaxxState step(struct AtaxxState state, struct AtaxxAction action) {
         for (r = i0; r <= i1; r++){
             for (c = j0; c <= j1; c++) {
                 if (
-                        !((r == target.row) && (c = target.col))
+                        !((r == target.row) && (c == target.col))
                         && (res.board[r][c] != p_mark)
                         && (res.board[r][c] != Mark_X)
                         && (res.board[r][c] != No_Mark)
@@ -315,19 +318,20 @@ struct AtaxxState step(struct AtaxxState state, struct AtaxxAction action) {
     return res;
 }
 
-float reward(enum AtaxxPlayer player, struct AtaxxState state) {
+float ataxx_reward(enum AtaxxPlayer player, struct AtaxxState state) {
     /* We return the number of occupied cells regardless of whether the
      * game is finished. */
     return (float) state.scores[player];
 }
 
+/*
 typedef struct AtaxxValidActionsList {
 	size_t capacity;
 	size_t length;
 	struct AtaxxAction list[1];
 } AtaxxValidActionsList;
 
-/* AtaxxAction Array List */
+\/\* AtaxxAction Array List \*\/
 AtaxxValidActionsList* ataxx_actions_list_create(size_t cpty){
     if (cpty < 1) {
         cpty = 1;
@@ -354,7 +358,7 @@ int ataxx_actions_list_push(AtaxxValidActionsList** lpp, struct AtaxxAction val)
 	(*lpp)->length++;
 
 	if ((*lpp)->length >= (*lpp)->capacity) {
-		/* realloc */
+		\/\* realloc \*\/
 		int newcap = 2 * (*lpp)->capacity;
 		*lpp = realloc(*lpp, sizeof(AtaxxValidActionsList) + (newcap-1)*sizeof(struct AtaxxAction));
 		if (*lpp == NULL) {
@@ -377,18 +381,19 @@ void ataxx_actions_list_destroy(AtaxxValidActionsList* lp) {
 	free(lp);
 }
 
-AtaxxValidActionsList* get_valid_actions (struct AtaxxState state) {
+TODO: The following was adapted to the template list below
+AtaxxValidActionsList* ataxx_get_valid_actions (struct AtaxxState state) {
     enum AtaxxPlayer player = state.current_player;
-    /* We use player_to_mark in the following */
-    /*
+    \/\* We use player_to_mark in the following \*\/
+    \/\*
     enum AtaxxMark player_mark = (enum AtaxxMark) ((int) player);
-    */
+    \*\/
     enum AtaxxMark player_mark = player_to_mark(player);
     const size_t max_actions = state.scores[player] * 24;
     AtaxxValidActionsList* vas = ataxx_actions_list_create(max_actions);
     int vas_status = 0;
 
-    /* Temp variables for loop below */
+    \/\* Temp variables for loop below \*\/
     struct AtaxxCellIndices source;
     struct AtaxxAction temp_action;
     unsigned short int i0, i1, j0, j1;
@@ -403,12 +408,12 @@ AtaxxValidActionsList* get_valid_actions (struct AtaxxState state) {
         for (c=0; c < BOARD_WIDTH; c++){
             if (state.board[r][c] == player_mark) {
                 source = (struct AtaxxCellIndices) { r, c };
-                /*  We just want
+                \/\*  We just want
                 i0 = (unsigned short int) max_short(0, ((short int) r) - 2);
                 i1 = (unsigned short int) min_short(BOARD_WIDTH - 1, ((short int) r) + 2);
                 but below rather we set the extreme value and then adjust to the
                 range value if valid.  This way we avoid type casts but introduce
-                branches. */
+                branches. \*\/
                 i0 = 0;
                 if (r >= 2) {
                     i0 = r - 2;
@@ -449,6 +454,7 @@ AtaxxValidActionsList* get_valid_actions (struct AtaxxState state) {
     }
     return vas;
 }
+*/
 
 void print_board(struct AtaxxState state) {
     /* char mark_char; */
@@ -520,7 +526,7 @@ void print_game_status(struct AtaxxState state) {
 
     switch (state.status) {
         case Active:
-            printf("Next Player: %s", player_names[get_player(state)]);
+            printf("Next Player: %s", player_names[ataxx_get_player(state)]);
             break;
         case Finished:
             get_winners(state.scores, winning_players, &remaining_winners);
@@ -549,7 +555,7 @@ void print_game_status(struct AtaxxState state) {
     }
 }
 
-void print_state(struct AtaxxState state) {
+void ataxx_print_state(struct AtaxxState state) {
     print_board(state);
     print_game_status(state);
 }
@@ -620,31 +626,134 @@ struct AtaxxAction ataxx_mctsenv_get_random_action(struct AtaxxState state) {
 #define STATE_TYPE struct AtaxxState
 #define ACTION_TYPE struct AtaxxAction
 #define PLAYER_TYPE enum AtaxxPlayer
-#define INITIAL_STATE_METHOD initial_state
-#define STEP_METHOD step
-#define GET_PLAYER_METHOD get_player
+#define INITIAL_STATE_METHOD ataxx_initial_state
+#define STEP_METHOD ataxx_act
+#define GET_PLAYER_METHOD ataxx_get_player
 #define RANDOM_ACTION_METHOD ataxx_mctsenv_get_random_action
-#define IS_TERMINAL_METHOD is_terminal
-#define REWARD_METHOD reward
+#define IS_TERMINAL_METHOD ataxx_is_terminal
+#define REWARD_METHOD ataxx_reward
 #include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions.inc>
     
+/* The following is the source for the methods for AtaxxActionList */
+#define ENVIRONMENT_PREFIX ataxx
+#define ENVIRONMENT_STRUCT_PREFIX Ataxx
+#define ACTION_TYPE struct AtaxxAction
+#include <reinforcementlearning/action_array_template.inc>
+
+static Boolean ataxx_action_eq(struct AtaxxAction a1, struct AtaxxAction a2) {
+    return (a1.source.row == a2.source.row) &&
+           (a1.source.col == a2.source.col) &&
+           (a1.target.row == a2.target.row) &&
+           (a1.target.col == a2.target.col);
+}
+
+struct AtaxxActionList* ataxx_experimental_get_valid_actions (struct AtaxxState state) {
+    enum AtaxxPlayer player = state.current_player;
+    enum AtaxxMark player_mark = player_to_mark(player);
+    const size_t max_actions = state.scores[player] * 24;
+    struct AtaxxActionList* vas = ataxx_action_list_create(max_actions);
+    int vas_status = 0;
+
+    /* Temp variables for loop below */
+    struct AtaxxCellIndices source;
+    struct AtaxxAction temp_action;
+    unsigned short int i0, i1, j0, j1;
+    unsigned short int r, c;
+    unsigned short int r_target, c_target;
+
+    if (vas == NULL) {
+        return NULL;
+    }
+
+    for (r=0; r < BOARD_WIDTH; r++){
+        for (c=0; c < BOARD_WIDTH; c++){
+            if (state.board[r][c] == player_mark) {
+                source = (struct AtaxxCellIndices) { r, c };
+                /*  We just want
+                i0 = (unsigned short int) max_short(0, ((short int) r) - 2);
+                i1 = (unsigned short int) min_short(BOARD_WIDTH - 1, ((short int) r) + 2);
+                but below rather we set the extreme value and then adjust to the
+                range value if valid.  This way we avoid type casts but introduce
+                branches. */
+                i0 = 0;
+                if (r >= 2) {
+                    i0 = r - 2;
+                }
+                i1 = BOARD_WIDTH - 1;
+                if (r < (BOARD_WIDTH - 2)) {
+                    i1 = r + 2;
+                }
+                j0 = 0;
+                if (c >= 2) {
+                    j0 = c - 2;
+                }
+                j1 = BOARD_WIDTH - 1;
+                if (c < (BOARD_WIDTH - 2)) {
+                    j1 = c + 2;
+                }
+                for (r_target = i0; r_target <= i1; r_target++) {
+                    for (c_target = j0; c_target <= j1; c_target++) {
+                        if (
+                            !((r_target == r) && (c_target == c))
+                            && (state.board[r_target][c_target] == No_Mark)
+                        ) {
+                            temp_action = (struct AtaxxAction) {
+                                source,
+                                (struct AtaxxCellIndices) { r_target, c_target }
+                             };
+                            vas_status = ataxx_action_list_push(&vas, temp_action);
+                            if (vas_status) {
+                                fprintf(stderr, "get_valid_actions: could not push action to list, returning NULL");
+                                ataxx_action_list_destroy(vas);
+                                return NULL;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return vas;
+}
+
+#define ENVIRONMENT_PREFIX ataxx
+#define ENVIRONMENT_STRUCT_PREFIX Ataxx
+#define CONFIG_TYPE struct AtaxxConfig
+#define STATE_TYPE struct AtaxxState
+#define ACTION_TYPE struct AtaxxAction
+#define PLAYER_TYPE enum AtaxxPlayer
+#define INITIAL_STATE_METHOD ataxx_initial_state
+#define STEP_METHOD ataxx_act
+#define GET_PLAYER_METHOD ataxx_get_player
+#define RANDOM_ACTION_METHOD ataxx_mctsenv_get_random_action
+#define IS_TERMINAL_METHOD ataxx_is_terminal
+#define REWARD_METHOD ataxx_reward
+#define ACTION_LIST_TYPE struct AtaxxActionList
+#define GET_VALID_ACTIONS_METHOD ataxx_experimental_get_valid_actions
+#define ACTION_LIST_GET_METHOD ataxx_action_list_get
+#define ACTION_LIST_LENGTH_METHOD ataxx_action_list_length
+#define ACTION_LIST_SHUFFLE_METHOD ataxx_action_list_shuffle
+#define ACTION_LIST_DESTROY_METHOD ataxx_action_list_destroy
+#define ACTION_EQ_METHOD ataxx_action_eq
+#include <reinforcementlearning/algorithms/uct.inc>
+
 int ataxx_example_main() {
     printf("Ataxx prototype under construction.\n");
     struct AtaxxConfig conf = { Two_Player };
-    struct AtaxxState state = initial_state(conf);
+    struct AtaxxState state = ataxx_initial_state(conf);
 
-    print_state(state);
+    ataxx_print_state(state);
 
     size_t i;
-    AtaxxValidActionsList* vas;
+    struct AtaxxActionList* vas;
     struct AtaxxAction a;
-    vas = get_valid_actions(state);
+    vas = ataxx_experimental_get_valid_actions(state);
     if (vas == NULL) {
         fprintf(stderr, "main: error in get_valid_actions, exiting.");
         return 1;
     }
-    for(i=0; i < ataxx_actions_list_length(vas); i++) {
-        a = ataxx_actions_list_get(vas, i);
+    for(i=0; i < ataxx_action_list_length(vas); i++) {
+        a = ataxx_action_list_get(vas, i);
         printf("Action %lu: (%u, %u) -> (%u, %u)\n",
                 i,
                 a.source.row,
@@ -655,4 +764,57 @@ int ataxx_example_main() {
     }
     return 0;
 }
+
+/* TODO: Eventually remove or adapt the following */
+int ataxx_uct_example() {
+    struct UCTParams uctparams = { sqrt (2.0) };
+    struct AtaxxConfig config; /* No configuration needed for tic-tac-toe */
+    struct AtaxxAction a;
+    float reward_est;
+    struct AtaxxState s;
+    enum AtaxxPlayer p;
+    struct AtaxxTree* tree = ataxx_mcts_tree_new(config);
+
+    /*
+    a = ataxx_mctsenv_get_random_action(ataxx_uct_get_state(tree));
+    printf("Random action (%u, %u) -> (%u, %u)\n", 
+                a.source.row, a.source.col,
+                a.target.row, a.target.col);
+    ataxx_act(ataxx_uct_get_state(tree), a);
+    */
+    /*
+    if (ataxx_uct_take_action(tree, ataxx_mctsenv_get_random_action(ataxx_uct_get_state(tree)))) {
+        fprintf(stderr, "ataxx_uct_example: failed to take initial action\n");
+    }
+    */
+    /* TODO: Taking a bad initial action 
+    if (ataxx_uct_take_action(tree, (struct AtaxxAction) {1, 1})) {
+        fprintf(stderr, "ataxx_uct_example: failed to take initial action\n");
+    }
+    if (ataxx_uct_take_action(tree, (struct AtaxxAction) {1, 0})) {
+        fprintf(stderr, "ataxx_uct_example: failed to take initial action\n");
+    }
+    */
+    s = ataxx_uct_get_state(tree);
+    p = ataxx_get_player(s);
+    ataxx_print_state(s);
+    while (!ataxx_is_terminal(s)) {
+        if (ataxx_uct_search(50000, uctparams, tree, &a, &reward_est)) {
+            /* Encountered an error during search */
+            break;
+        }
+        printf("Number of visits after search: %u\n", tree_visits(*tree));
+        printf("Player %d Took action (%u, %u) -> (%u, %u) with reward estimate %f\n",
+                p,
+                a.source.row, a.source.col,
+                a.target.row, a.target.col,
+                reward_est
+        );
+        s = ataxx_uct_get_state(tree);
+        p = ataxx_get_player(s);
+        ataxx_print_state(s);
+    }
+    ataxx_mcts_tree_free(tree);
+    return 0;
+};
 
