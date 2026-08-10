@@ -3,13 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* TODO: LineWalk action list
-#define ENVIRONMENT_PREFIX linewalk
-#define ENVIRONMENT_STRUCT_PREFIX LineWalk
-#define ACTION_TYPE enum LineWalkAction
-#include <reinforcementlearning/action_array_template.inc>
-*/
-
 struct LineWalkActionList {
     enum LineWalkAction actions[2];
 };
@@ -102,17 +95,6 @@ float linewalk_reward(enum LineWalkPlayer player, LineWalkState state) {
     } else {
         return 0.0f;
     }
-}
-
-/* TODO: Perhaps remove the num_actions output parameter and just return the count? */
-unsigned int linewalk_get_available_actions (LineWalkState state, enum LineWalkAction *available_actions, unsigned int* num_actions) {
-    unsigned int count = 0;
-    if (state.kind == ACTIVE) {
-        available_actions[count++] = MOVE_LEFT;
-        available_actions[count++] = MOVE_RIGHT;
-    }
-    *num_actions = count;
-    return count;
 }
 
 struct LineWalkActionList* linewalk_experimental_get_valid_actions(struct LineWalkState s) {
@@ -249,7 +231,6 @@ void linewalk_close(struct LineWalkEnvironment* env) {
     linewalk_deinit(env);
     free(env);
 }
-
 
 enum LineWalkAction linewalk_get_random_action(struct LineWalkEnvironment* env) {
     (void)env;

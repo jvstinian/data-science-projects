@@ -30,29 +30,19 @@ typedef struct LineWalkState {
     int reward;
 } LineWalkState;
 
-/* TODO: LineWalk action list
-#define ENVIRONMENT_PREFIX linewalk
-#define ENVIRONMENT_STRUCT_PREFIX LineWalk
-#define ACTION_TYPE enum LineWalkAction
-#define AA_DECLS_ONLY
-#include <reinforcementlearning/action_array_template.inc>
-*/
-
 /* We use a custom action list for LineWalk, since the number of actions is always 2. */
 struct LineWalkActionList;
-size_t linewalk_action_list_length (struct LineWalkActionList* lp);
-enum LineWalkAction linewalk_action_list_get (struct LineWalkActionList* lp, size_t i);
-void linewalk_action_list_shuffle (struct LineWalkActionList* lp);
-void linewalk_action_list_destroy (struct LineWalkActionList* lp);
+size_t linewalk_action_list_length(struct LineWalkActionList* lp);
+enum LineWalkAction linewalk_action_list_get(struct LineWalkActionList* lp, size_t i);
+void linewalk_action_list_shuffle(struct LineWalkActionList* lp);
+void linewalk_action_list_destroy(struct LineWalkActionList* lp);
 
 /* MCTS Interface */
 LineWalkState linewalk_initial_state(LineWalkConfig config);
-Boolean linewalk_is_terminal (LineWalkState state);
+Boolean linewalk_is_terminal(LineWalkState state);
 enum LineWalkPlayer linewalk_get_player(LineWalkState state);
 LineWalkState linewalk_act(LineWalkState state, enum LineWalkAction action);
 float linewalk_reward(enum LineWalkPlayer player, LineWalkState state);
-/* TODO: Remove the following */
-unsigned int linewalk_get_available_actions (LineWalkState state, enum LineWalkAction *available_actions, unsigned int* num_actions);
 struct LineWalkActionList* linewalk_experimental_get_valid_actions(struct LineWalkState s);
 enum LineWalkAction linewalk_mctsenv_get_random_action(LineWalkState state);
 void linewalk_print_state(LineWalkState state);
@@ -95,6 +85,13 @@ void linewalk_close(struct LineWalkEnvironment* env);
 
 
 enum LineWalkAction linewalk_get_random_action(struct LineWalkEnvironment* env);
+
+/* TODO: After improvements are made to the template header, switch to the following
+#define ENVIRONMENT_PREFIX linewalk
+#define CONFIG_TYPE struct LineWalkConfig
+#define MURA_DECLS_ONLY
+#include <reinforcementlearning/algorithms/uniform_random_actions.inc>
+*/
 struct SimulationSummary linewalk_uniform_random_actions(struct LineWalkConfig config, Boolean verbose);
 
 #endif
