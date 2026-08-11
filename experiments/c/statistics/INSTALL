@@ -1,0 +1,6 @@
+Basic Installation
+==================
+
+Configuration, building, and installation of this project
+can be performed using the commands
+'./configure', 'make', and 'make install'.
