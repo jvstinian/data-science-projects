@@ -85,7 +85,4 @@ Boolean neighboring_hexagons(unsigned short b1, unsigned short r1, unsigned shor
 
 int hex_example_main();
 
-/* TODO: Eventually remove or adapt the following */
-int hex_uct_example();
-
 #endif
