@@ -1,13 +1,47 @@
-#include "reinforcementlearning/envs/linewalk.h"
+#include <reinforcementlearning/envs/linewalk.h>
+#include <reinforcementlearning/random.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-/* TODO: LineWalk action list
-#define ENVIRONMENT_PREFIX linewalk
-#define ENVIRONMENT_STRUCT_PREFIX LineWalk
-#define ACTION_TYPE enum LineWalkAction
-#include <reinforcementlearning/action_array_template.inc>
-*/
+struct LineWalkActionList {
+    enum LineWalkAction actions[2];
+};
+
+/* Note there's no capacity provided to the following function,
+ * since the action list is always of size 2.
+ * Also, this function is static, and is not available
+ * for use outside this file. */
+static struct LineWalkActionList* linewalk_action_list_create() {
+    struct LineWalkActionList* ret = malloc(sizeof(struct LineWalkActionList));
+    if (ret == NULL) {
+        fprintf(stderr, "linewalk_action_list_create: failed to allocate memory for action list\n");
+        return NULL;
+    }
+    ret->actions[0] = MOVE_LEFT;
+    ret->actions[1] = MOVE_RIGHT;
+    return ret;
+}
+
+size_t linewalk_action_list_length (struct LineWalkActionList* lp) {
+    (void) lp; /* unused parameter */
+    return 2;
+}
+
+enum LineWalkAction linewalk_action_list_get (struct LineWalkActionList* lp, size_t i) {
+    return lp->actions[i];
+}
+
+void linewalk_action_list_shuffle (struct LineWalkActionList* lp) {
+    /* Simple shuffle for 2 elements */
+    if (rand_float() < 0.5) {
+        enum LineWalkAction temp = lp->actions[0];
+        lp->actions[0] = lp->actions[1];
+        lp->actions[1] = temp;
+    }
+}
+void linewalk_action_list_destroy (struct LineWalkActionList* lp) {
+    free(lp);
+}
 
 LineWalkState linewalk_initial_state(LineWalkConfig config) {
     unsigned short int pos = (config.N + 1) / 2; /* Start at the middle position */
@@ -63,15 +97,9 @@ float linewalk_reward(enum LineWalkPlayer player, LineWalkState state) {
     }
 }
 
-/* TODO: Perhaps remove the num_actions output parameter and just return the count? */
-unsigned int linewalk_get_available_actions (LineWalkState state, enum LineWalkAction *available_actions, unsigned int* num_actions) {
-    unsigned int count = 0;
-    if (state.kind == ACTIVE) {
-        available_actions[count++] = MOVE_LEFT;
-        available_actions[count++] = MOVE_RIGHT;
-    }
-    *num_actions = count;
-    return count;
+struct LineWalkActionList* linewalk_experimental_get_valid_actions(struct LineWalkState s) {
+    (void) s; /* Silence C89 unused parameter warnings */
+    return linewalk_action_list_create();
 }
 
 enum LineWalkAction linewalk_mctsenv_get_random_action(LineWalkState state) {
@@ -99,6 +127,32 @@ void linewalk_print_state(LineWalkState state) {
 #define IS_TERMINAL_METHOD linewalk_is_terminal
 #define REWARD_METHOD linewalk_reward
 #include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions.inc>
+
+static Boolean linewalk_action_eq(enum LineWalkAction a1, enum LineWalkAction a2) {
+    return (a1 == a2);
+}
+
+
+#define ENVIRONMENT_PREFIX linewalk
+#define ENVIRONMENT_STRUCT_PREFIX LineWalk
+#define CONFIG_TYPE struct LineWalkConfig
+#define STATE_TYPE struct LineWalkState
+#define ACTION_TYPE enum LineWalkAction
+#define PLAYER_TYPE enum LineWalkPlayer
+#define INITIAL_STATE_METHOD linewalk_initial_state
+#define STEP_METHOD linewalk_act
+#define GET_PLAYER_METHOD linewalk_get_player
+#define RANDOM_ACTION_METHOD linewalk_mctsenv_get_random_action
+#define IS_TERMINAL_METHOD linewalk_is_terminal
+#define REWARD_METHOD linewalk_reward
+#define ACTION_LIST_TYPE struct LineWalkActionList
+#define GET_VALID_ACTIONS_METHOD linewalk_experimental_get_valid_actions
+#define ACTION_LIST_GET_METHOD linewalk_action_list_get
+#define ACTION_LIST_LENGTH_METHOD linewalk_action_list_length
+#define ACTION_LIST_SHUFFLE_METHOD linewalk_action_list_shuffle
+#define ACTION_LIST_DESTROY_METHOD linewalk_action_list_destroy
+#define ACTION_EQ_METHOD linewalk_action_eq
+#include <reinforcementlearning/algorithms/uct.inc>
 
 
 struct LineWalkEnvironment {
@@ -177,7 +231,6 @@ void linewalk_close(struct LineWalkEnvironment* env) {
     linewalk_deinit(env);
     free(env);
 }
-
 
 enum LineWalkAction linewalk_get_random_action(struct LineWalkEnvironment* env) {
     (void)env;

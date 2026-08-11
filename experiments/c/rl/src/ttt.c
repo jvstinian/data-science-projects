@@ -3,17 +3,10 @@
 #include <stdlib.h>
 
 struct TTTState initial_state() {
-    /* unsigned short int r, c; */
-    /* enum TTTMark board[3][3] = { { No_Mark } }; */
-    /*struct Board board = {
-        { { No_Mark } }
-    };
-    */
-
     return (struct TTTState) { {
-        { No_Mark, No_Mark, No_Mark },
-        { No_Mark, No_Mark, No_Mark },
-        { No_Mark, No_Mark, No_Mark }
+        { TTT_No_Mark, TTT_No_Mark, TTT_No_Mark },
+        { TTT_No_Mark, TTT_No_Mark, TTT_No_Mark },
+        { TTT_No_Mark, TTT_No_Mark, TTT_No_Mark }
     }, X_Move };
 }
 
@@ -103,7 +96,7 @@ static Boolean all_moves_exhausted(struct TTTState s) {
     unsigned short r, c;
     for (r = 0; r < 3; r++) {
         for (c = 0; c < 3; c++) {
-            if (s.board[r][c] == No_Mark) {
+            if (s.board[r][c] == TTT_No_Mark) {
                 return FALSE;
             }
         }
@@ -124,7 +117,7 @@ static enum TTTGameStatus check_status_for_action(struct TTTState s, struct TTTA
         case O:
             w = O_Wins;
             break;
-        case No_Mark:
+        case TTT_No_Mark:
             /* Invalid state, just return */
             return result;
         default:
@@ -195,7 +188,7 @@ struct TTTValidActions get_valid_actions(struct TTTState s) {
     i = 0;
     for (r = 0; r < 3; r++) {
         for (c = 0; c < 3; c++) {
-            if (s.board[r][c] == No_Mark) {
+            if (s.board[r][c] == TTT_No_Mark) {
                 result.actions[i++] = (struct TTTAction) {r, c};
             }
         }
@@ -218,7 +211,7 @@ static void print_board(struct TTTState s) {
                 case O:
                     printf("O");
                     break;
-                case No_Mark:
+                case TTT_No_Mark:
                     printf(" ");
                     break;
             }
@@ -260,7 +253,7 @@ struct TTTAction ttt_mctsenv_get_random_action(struct TTTState state) {
     unsigned int r, c;
     for (r = 0; r < 3; r++) {
         for (c = 0; c < 3; c++) {
-            if (state.board[r][c] == No_Mark) {
+            if (state.board[r][c] == TTT_No_Mark) {
                 available_actions[num_actions++] = (struct TTTAction) {r, c};
             }
         }
@@ -287,7 +280,7 @@ struct TTTActionList* ttt_action_list_create (size_t cpty);
 int ttt_action_list_realloc (struct TTTActionList** lpp, size_t new_capacity);
 int ttt_action_list_push (struct TTTActionList** lpp, struct TTTAction val);
 size_t ttt_action_list_length (struct TTTActionList* lp);
-ACTION_TYPE ttt_action_list_get (struct TTTActionList* lp, size_t i);
+struct TTTAction ttt_action_list_get (struct TTTActionList* lp, size_t i);
 void ttt_action_list_shuffle (struct TTTActionList* lp);
 void ttt_action_list_destroy (struct TTTActionList* lp);
 */
@@ -308,7 +301,7 @@ struct TTTActionList* ttt_experimental_get_valid_actions(struct TTTState s) {
 
     for (r = 0; r < 3; r++) {
         for (c = 0; c < 3; c++) {
-            if (s.board[r][c] == No_Mark) {
+            if (s.board[r][c] == TTT_No_Mark) {
                 if (ttt_action_list_push(&ret, (struct TTTAction) {r, c})) {
                     fprintf(stderr, "ttt_experimental_get_valid_actions: failed to push action to list\n");
                     ttt_action_list_destroy(ret);
@@ -344,41 +337,3 @@ static Boolean ttt_action_eq(struct TTTAction a1, struct TTTAction a2) {
 #define ACTION_LIST_DESTROY_METHOD ttt_action_list_destroy
 #define ACTION_EQ_METHOD ttt_action_eq
 #include <reinforcementlearning/algorithms/uct.inc>
-
-/* TODO: Eventually remove or adapt the following */
-int ttt_uct_example() {
-    struct UCTParams uctparams = { sqrt (2.0) };
-    struct TTTConfig config; /* No configuration needed for tic-tac-toe */
-    struct TTTAction a;
-    float reward_est;
-    struct TTTState s;
-    enum TTTPlayer p;
-    struct TTTTree* tree = ttt_mcts_tree_new(config);
-
-    /* TODO: Taking a bad initial action 
-    if (ttt_uct_take_action(tree, (struct TTTAction) {1, 1})) {
-        fprintf(stderr, "ttt_uct_example: failed to take initial action\n");
-    }
-    if (ttt_uct_take_action(tree, (struct TTTAction) {1, 0})) {
-        fprintf(stderr, "ttt_uct_example: failed to take initial action\n");
-    }
-    */
-
-    s = ttt_uct_get_state(tree);
-    p = get_player(s);
-    print_state(s);
-    while (!is_terminal(s)) {
-        if (ttt_uct_search(10000, uctparams, tree, &a, &reward_est)) {
-            /* Encountered an error during search */
-            break;
-        }
-        printf("Number of visits after search: %u\n", tree_visits(*tree));
-        printf("Player %d Took action (%u, %u) with reward estimate %f\n", p, a.row, a.col, reward_est);
-        s = ttt_uct_get_state(tree);
-        p = get_player(s);
-        print_state(s);
-    }
-    ttt_mcts_tree_free(tree);
-    return 0;
-};
-

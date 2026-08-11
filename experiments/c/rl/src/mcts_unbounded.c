@@ -16,20 +16,19 @@ static struct Node initialize_node(struct LineWalkState s, unsigned int num_visi
     struct Node ret;
     ret.num_visits = num_visits;
     ret.node_state = s;
-    enum LineWalkAction* action_list = malloc(2 * sizeof(enum LineWalkAction));
+    struct LineWalkActionList* action_list = linewalk_experimental_get_valid_actions(s);
     /* TODO: In general we will need to handle errors */
-    linewalk_get_available_actions(s, action_list, &ret.num_actions);
-    /* TODO: We need to shuffle the action list so that action expansion occurs
-     *       in random order */
+    ret.num_actions = linewalk_action_list_length(action_list);
+    linewalk_action_list_shuffle(action_list);
     ret.ars = malloc(ret.num_actions * sizeof(struct ActionReward));
     for (a = 0; a < ret.num_actions; a++) {
-        ret.ars[a].action = action_list[a];
+        ret.ars[a].action = linewalk_action_list_get(action_list, (size_t) a);
         ret.ars[a].reward = 0.0;
     }
     /* We allocate for the trees but do not initialize */
     ret.trees = malloc(ret.num_actions * sizeof(struct Tree));
     ret.actions_tried = 0;
-    free(action_list);
+    linewalk_action_list_destroy(action_list);
     return ret;
 }
 

@@ -8,15 +8,12 @@
 #define MAX_PLAYER_COUNT 4
 
 enum AtaxxPlayer {
-    Red,
-    Blue,
-    White,
-    Black
+    Ataxx_Red,
+    Ataxx_Blue,
+    Ataxx_White,
+    Ataxx_Black
 };
 
-/*
-    subtype Axis_Label is Integer range 1 .. Board_Width;
-*/
 struct AtaxxCellIndices {
     unsigned short row;
     unsigned short col;
@@ -27,46 +24,24 @@ struct AtaxxAction {
     struct AtaxxCellIndices target;
 };
 
-/*
-struct AtaxxValidActions;
-    type Valid_Actions_Type is array (Natural range <>) of Action_Type;
-*/
-/*
-struct AtaxxValidActionsList;
-typedef struct AtaxxValidActionsList AtaxxValidActionsList;
-AtaxxValidActionsList* ataxx_actions_list_create(size_t cpty);
-int ataxx_actions_list_realloc(AtaxxValidActionsList** lpp, size_t new_capacity);
-int ataxx_actions_list_push(AtaxxValidActionsList** lpp, struct AtaxxAction val);
-size_t ataxx_actions_list_length(AtaxxValidActionsList* lp);
-struct AtaxxAction ataxx_actions_list_get(AtaxxValidActionsList* lp, size_t i);
-void ataxx_actions_list_destroy(AtaxxValidActionsList* lp);
-*/
-
 enum AtaxxMark {
-    Mark_Red,
-    Mark_Blue,
-    Mark_White,
-    Mark_Black,
-    Mark_X,
-    No_Mark
+    Ataxx_Mark_Red,
+    Ataxx_Mark_Blue,
+    Ataxx_Mark_White,
+    Ataxx_Mark_Black,
+    Ataxx_Mark_X,
+    Ataxx_No_Mark
 };
 
 enum AtaxxGameStatus {
-    Active,
-    Finished
+    Ataxx_Active,
+    Ataxx_Finished
 };
-/*
-    type Game_Score_Type is array (Player_Type) of Reward_Type;
-    type Board_Type is array (Axis_Label, Axis_Label) of Mark;
-*/
 
 enum AtaxxPlayerCount {
     Two_Player,
     Four_Player
 };
-/*
-    type Player_Indicator_Type is array (Player_Type) of Boolean;
-*/
 
 struct AtaxxConfig {
     enum AtaxxPlayerCount player_count;
@@ -85,9 +60,6 @@ Boolean ataxx_is_terminal (struct AtaxxState state);
 enum AtaxxPlayer ataxx_get_player(struct AtaxxState state);
 struct AtaxxState ataxx_act(struct AtaxxState state, struct AtaxxAction action);
 float ataxx_reward(enum AtaxxPlayer player, struct AtaxxState state);
-/* TODO
-AtaxxValidActionsList* ataxx_get_valid_actions (struct AtaxxState state);
-*/
 
 void ataxx_print_state(struct AtaxxState state);
 struct AtaxxAction ataxx_mctsenv_get_random_action(struct AtaxxState state);
@@ -124,7 +96,5 @@ struct AtaxxActionList* ataxx_experimental_get_valid_actions(struct AtaxxState s
 #include <reinforcementlearning/algorithms/uct.inc>
 
 int ataxx_example_main();
-/* TODO: Eventually remove or adapt the following */
-int ataxx_uct_example();
 
 #endif
