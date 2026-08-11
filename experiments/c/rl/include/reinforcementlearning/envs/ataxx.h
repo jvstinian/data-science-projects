@@ -96,7 +96,5 @@ struct AtaxxActionList* ataxx_experimental_get_valid_actions(struct AtaxxState s
 #include <reinforcementlearning/algorithms/uct.inc>
 
 int ataxx_example_main();
-/* TODO: Eventually remove or adapt the following */
-int ataxx_uct_example();
 
 #endif

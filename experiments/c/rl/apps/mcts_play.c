@@ -1,12 +1,14 @@
 #define _GNU_SOURCE /* getopt */
+#include <reinforcementlearning/envs/ttt.h>
+#include <reinforcementlearning/envs/ataxx.h>
+#include <reinforcementlearning/envs/hex.h>
 #include <stdio.h>
 #include <stdlib.h> /* exit */
 #include <unistd.h>
 #include <string.h> /* strncpy */
 #include <ctype.h> /* tolower */
-#include <reinforcementlearning/envs/ttt.h>
-#include <reinforcementlearning/envs/ataxx.h>
-#include <reinforcementlearning/envs/hex.h>
+#include <limits.h> /* UINT_MAX */
+#include <math.h> /* sqrt */
 
 enum Environment {
     ENV_TTT,
@@ -23,14 +25,17 @@ const char *env_names[3] = {
 
 struct TTTRunConfig {
     enum TTTPlayer player;
+    unsigned int uct_search_size;
 };
 
 struct AtaxxRunConfig {
     enum AtaxxPlayer player;
+    unsigned int uct_search_size;
 };
 
 struct HexRunConfig {
     enum HexPlayer player;
+    unsigned int uct_search_size;
 };
 
 void print_help() {
@@ -40,6 +45,41 @@ void print_help() {
     printf("\n");
     printf("ENVIRONMENT must be one of ttt, ataxx, hex\n");
     printf("ENVIRONMENT_ARGS depend on the value of ENVIRONMENT\n");
+}
+
+void print_ttt_help() {
+    printf("Usage: mcts-play ttt [-h] [ENVIRONMENT_ARGS]\n");
+    printf("Options:\n");
+    printf("  -h               Show this help message\n");
+    printf("  -p               The player to play as, valid values\n");
+    printf("                     are x and o\n");
+    printf("  -s               Number of UCT search iterations to perform\n");
+    printf("                     per move\n");
+    printf("\n");
+}
+
+void print_ataxx_help() {
+    printf("Usage: mcts-play ataxx [-h] [ENVIRONMENT_ARGS]\n");
+    printf("Options:\n");
+    printf("  -h               Show this help message\n");
+    printf("  -p               The player to play as, valid values\n");
+    printf("                     are red and blue for a 2 player game,\n");
+    printf("                     and additionally white and black for a\n");
+    printf("                     a 4 player game\n");
+    printf("  -s               Number of UCT search iterations to perform\n");
+    printf("                     per move\n");
+    printf("\n");
+}
+
+void print_hex_help() {
+    printf("Usage: mcts-play hex [-h] [ENVIRONMENT_ARGS]\n");
+    printf("Options:\n");
+    printf("  -h               Show this help message\n");
+    printf("  -p               The player to play as, valid values\n");
+    printf("                     are 1 and 2\n");
+    printf("  -s               Number of UCT search iterations to perform\n");
+    printf("                     per move\n");
+    printf("\n");
 }
 
 int process_environment_value(const char *argv, enum Environment* env) {
@@ -65,6 +105,17 @@ int process_environment_value(const char *argv, enum Environment* env) {
     return 0;
 }
 
+int process_uct_search_size(const char *argv, unsigned int* n) {
+    unsigned long val = strtoul(argv, NULL, 10);
+
+    if (val > UINT_MAX) {
+        fprintf(stderr, "process_uct_search_size: value %lu exceeds maximum unsigned int\n", val);
+        return 1;
+    }
+    *n = (unsigned int) val;
+    return 0;
+}
+
 int process_ttt_player_value(const char *argv, enum TTTPlayer* player) {
     if (((char) tolower((int) argv[0])) == 'x') {
         *player = PlayerX;
@@ -72,7 +123,6 @@ int process_ttt_player_value(const char *argv, enum TTTPlayer* player) {
         *player = PlayerO;
     } else {
         fprintf(stderr, "Error: invalid tic tac toe player %s\n", argv);
-        /* TODO print_help(); */
         return 1;
     }
     return 0;
@@ -80,25 +130,23 @@ int process_ttt_player_value(const char *argv, enum TTTPlayer* player) {
 
 int process_ttt_arguments(int argc, char *argv[], struct TTTRunConfig* run_config) {
     int opt;
-    /* int i; */
-    /* (void)run_config; Suppress unused variable warning */
     
-    while ((opt = getopt(argc, argv, "hp:")) != -1) {
+    while ((opt = getopt(argc, argv, "hp:s:")) != -1) {
         switch (opt) {
             case 'h':
-                print_help();
+                print_ttt_help();
                 exit(0);
             case 'p':
-                process_ttt_player_value(optarg, &run_config->player);
-                /*
-                fprintf(stderr, "player specified: %s\n", optarg);
-                */
-                /* Error processing environment value */
-                /*
-                if (process_environment_value(optarg, run_config)) {
-                    return 1; 
+                if (process_ttt_player_value(optarg, &run_config->player)) {
+                    print_ttt_help();
+                    exit(1);
                 }
-                */
+                break;
+            case 's':
+                if (process_uct_search_size(optarg, &run_config->uct_search_size)) {
+                    print_ttt_help();
+                    exit(1);
+                }
                 break;
             case '?': /* Unknown option or missing required argument */
                 fprintf(stderr, "Unknown option or missing argument: -%c\n", optopt);
@@ -106,19 +154,10 @@ int process_ttt_arguments(int argc, char *argv[], struct TTTRunConfig* run_confi
         }
     }
 
-    /*
-    if (optind < argc) {
-        fprintf(stderr, "Non-option arguments:\n");
-        for (i = optind; i < argc; i++) {
-            printf("  %s\n", argv[i]);
-        }
-        return 1;
-    }
-    */
     return 0;
 }
 
-int process_ataxx_player_value(char *argv, enum AtaxxPlayer* player) {
+int process_ataxx_player_value(const char *argv, enum AtaxxPlayer* player) {
     char player_value[6];
     size_t i;
     strncpy(player_value, argv, sizeof(player_value) - 1);
@@ -147,11 +186,18 @@ int process_ataxx_arguments(int argc, char *argv[], struct AtaxxRunConfig* run_c
     while ((opt = getopt(argc, argv, "hp:")) != -1) {
         switch (opt) {
             case 'h':
-                print_help();
+                print_ataxx_help();
                 exit(0);
             case 'p':
                 if (process_ataxx_player_value(optarg, &run_config->player)) {
+                    print_ataxx_help();
                     return 1; 
+                }
+                break;
+            case 's':
+                if (process_uct_search_size(optarg, &run_config->uct_search_size)) {
+                    print_ttt_help();
+                    exit(1);
                 }
                 break;
             case '?': /* Unknown option or missing required argument */
@@ -181,11 +227,18 @@ int process_hex_arguments(int argc, char *argv[], struct HexRunConfig* run_confi
     while ((opt = getopt(argc, argv, "hp:")) != -1) {
         switch (opt) {
             case 'h':
-                print_help();
+                print_hex_help();
                 exit(0);
             case 'p':
                 if (process_hex_player_value(optarg, &run_config->player)) {
+                    print_hex_help();
                     return 1; 
+                }
+                break;
+            case 's':
+                if (process_uct_search_size(optarg, &run_config->uct_search_size)) {
+                    print_ttt_help();
+                    exit(1);
                 }
                 break;
             case '?': /* Unknown option or missing required argument */
@@ -197,10 +250,7 @@ int process_hex_arguments(int argc, char *argv[], struct HexRunConfig* run_confi
     return 0;
 }
 
-
-
-#include <math.h>
-int ttt_uct_example2(struct TTTRunConfig run_config) {
+int ttt_uct_example(struct TTTRunConfig run_config) {
     struct UCTParams uctparams = { sqrt (2.0) };
     struct TTTConfig config; /* No configuration needed for tic-tac-toe */
     struct TTTAction a;
@@ -209,15 +259,6 @@ int ttt_uct_example2(struct TTTRunConfig run_config) {
     enum TTTPlayer p;
     struct TTTTree* tree = ttt_mcts_tree_new(config);
     unsigned int p_row, p_col;
-
-    /* TODO: Taking a bad initial action 
-    if (ttt_uct_take_action(tree, (struct TTTAction) {1, 1})) {
-        fprintf(stderr, "ttt_uct_example: failed to take initial action\n");
-    }
-    if (ttt_uct_take_action(tree, (struct TTTAction) {1, 0})) {
-        fprintf(stderr, "ttt_uct_example: failed to take initial action\n");
-    }
-    */
 
     s = ttt_uct_get_state(tree);
     p = get_player(s);
@@ -240,7 +281,7 @@ int ttt_uct_example2(struct TTTRunConfig run_config) {
             }
             ttt_uct_take_action(tree, a);
         } else {
-            if (ttt_uct_search(10000, uctparams, tree, &a, &reward_est)) {
+            if (ttt_uct_search(run_config.uct_search_size, uctparams, tree, &a, &reward_est)) {
                 /* Encountered an error during search */
                 break;
             }
@@ -257,10 +298,9 @@ int ttt_uct_example2(struct TTTRunConfig run_config) {
     return 0;
 };
 
-
-int ataxx_uct_example2(struct AtaxxRunConfig run_config) {
+int ataxx_uct_example(struct AtaxxRunConfig run_config) {
     struct UCTParams uctparams = { sqrt (2.0) };
-    struct AtaxxConfig config = { Two_Player }; /* No configuration needed for tic-tac-toe */
+    struct AtaxxConfig config = { Two_Player };
     struct AtaxxAction a;
     float reward_est;
     struct AtaxxState s;
@@ -268,26 +308,6 @@ int ataxx_uct_example2(struct AtaxxRunConfig run_config) {
     unsigned int p_srow, p_scol, p_drow, p_dcol;
     struct AtaxxTree* tree = ataxx_mcts_tree_new(config);
 
-    /*
-    a = ataxx_mctsenv_get_random_action(ataxx_uct_get_state(tree));
-    printf("Random action (%u, %u) -> (%u, %u)\n", 
-                a.source.row, a.source.col,
-                a.target.row, a.target.col);
-    ataxx_act(ataxx_uct_get_state(tree), a);
-    */
-    /*
-    if (ataxx_uct_take_action(tree, ataxx_mctsenv_get_random_action(ataxx_uct_get_state(tree)))) {
-        fprintf(stderr, "ataxx_uct_example: failed to take initial action\n");
-    }
-    */
-    /* TODO: Taking a bad initial action 
-    if (ataxx_uct_take_action(tree, (struct AtaxxAction) {1, 1})) {
-        fprintf(stderr, "ataxx_uct_example: failed to take initial action\n");
-    }
-    if (ataxx_uct_take_action(tree, (struct AtaxxAction) {1, 0})) {
-        fprintf(stderr, "ataxx_uct_example: failed to take initial action\n");
-    }
-    */
     s = ataxx_uct_get_state(tree);
     p = ataxx_get_player(s);
     ataxx_print_state(s);
@@ -312,7 +332,7 @@ int ataxx_uct_example2(struct AtaxxRunConfig run_config) {
             }
             ataxx_uct_take_action(tree, a);
         } else {
-            if (ataxx_uct_search(10, uctparams, tree, &a, &reward_est)) {
+            if (ataxx_uct_search(run_config.uct_search_size, uctparams, tree, &a, &reward_est)) {
                 /* Encountered an error during search */
                 break;
             }
@@ -334,9 +354,9 @@ int ataxx_uct_example2(struct AtaxxRunConfig run_config) {
     return 0;
 };
 
-int hex_uct_example2(struct HexRunConfig run_config) {
+int hex_uct_example(struct HexRunConfig run_config) {
     struct UCTParams uctparams = { sqrt (2.0) };
-    struct HexConfig config; /* No configuration needed for tic-tac-toe */
+    struct HexConfig config;
     struct HexAction a;
     float reward_est;
     struct HexState s;
@@ -365,14 +385,14 @@ int hex_uct_example2(struct HexRunConfig run_config) {
             }
             hex_uct_take_action(tree, a);
         } else {
-            if (hex_uct_search(10000, uctparams, tree, &a, &reward_est)) {
+            if (hex_uct_search(run_config.uct_search_size, uctparams, tree, &a, &reward_est)) {
                 /* Encountered an error during search */
                 break;
             }
             /* TODO
             printf("Number of visits after search: %u\n", tree_visits(*tree));
             */
-            printf("Player %d Took action (%u, %u) with reward estimate %f\n",
+            printf("Player %d took action (%u, %u) with reward estimate %f\n",
                     p,
                     a.row, a.col,
                     reward_est
@@ -398,17 +418,17 @@ int main(int argc, char *argv[]) {
     }
     switch (env) {
         case ENV_TTT:
-            struct TTTRunConfig ttt_config;
+            struct TTTRunConfig ttt_config = { PlayerX, 1000 }; /* Default values */
             process_ttt_arguments(argc, argv, &ttt_config);
-            return ttt_uct_example2(ttt_config);
+            return ttt_uct_example(ttt_config);
         case ENV_ATAXX:
-            struct AtaxxRunConfig ataxx_config;
+            struct AtaxxRunConfig ataxx_config = { Ataxx_Red, 10000 }; /* Default values */
             process_ataxx_arguments(argc, argv, &ataxx_config);
-            return ataxx_uct_example2(ataxx_config);
+            return ataxx_uct_example(ataxx_config);
         case ENV_HEX:
-            struct HexRunConfig hex_config;
+            struct HexRunConfig hex_config = { Player1, 10000 }; /* Default values */
             process_hex_arguments(argc, argv, &hex_config);
-            return hex_uct_example2(hex_config);
+            return hex_uct_example(hex_config);
         case ENV_UNKNOWN:
         default:
             /* Should be unreachable */
