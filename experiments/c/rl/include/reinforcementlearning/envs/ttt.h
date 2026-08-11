@@ -12,12 +12,6 @@ enum TTTPlayer {
     PlayerO
 };
 
-/*
-   type Row_Label is new Integer range 0 .. 2;
-   -- We use a custom discrete type for column labels
-   type Col_Label is (A, B, C);
-*/
-
 struct TTTAction {
     unsigned short row;
     unsigned short col;
@@ -26,7 +20,7 @@ struct TTTAction {
 enum TTTMark {
     X,
     O,
-    No_Mark
+    TTT_No_Mark
 };
 
 enum TTTGameStatus {
@@ -37,14 +31,7 @@ enum TTTGameStatus {
     O_Wins
 };
 
-/*
-struct Board {
-    enum TTTMark position[3][3];
-};
-*/
-
 struct TTTState {
-    /*struct Board board; */
     enum TTTMark board[3][3];
     enum TTTGameStatus status;
 };
@@ -75,7 +62,7 @@ struct TTTActionList* ttt_action_list_create (size_t cpty);
 int ttt_action_list_realloc (struct TTTActionList** lpp, size_t new_capacity);
 int ttt_action_list_push (struct TTTActionList** lpp, ACTION_TYPE val);
 size_t ttt_action_list_length (struct TTTActionList* lp);
-ACTION_TYPE ttt_action_list_get (struct TTTActionList* lp, size_t i);
+struct TTTAction ttt_action_list_get (struct TTTActionList* lp, size_t i);
 void ttt_action_list_shuffle (struct TTTActionList* lp);
 void ttt_action_list_destroy (struct TTTActionList* lp);
 */
@@ -94,8 +81,5 @@ struct TTTActionList* ttt_experimental_get_valid_actions(struct TTTState s);
 #define ACTION_TYPE struct TTTAction
 #define UCT_DECLS_ONLY
 #include <reinforcementlearning/algorithms/uct.inc>
-
-/* TODO: Eventually remove or adapt the following */
-int ttt_uct_example();
 
 #endif

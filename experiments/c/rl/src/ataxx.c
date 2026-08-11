@@ -18,49 +18,44 @@ const char* player_names[MAX_PLAYER_COUNT] = {
 
 struct AtaxxState ataxx_initial_state(struct AtaxxConfig config) {
     struct AtaxxState ret;
-    /*
-    Boolean player_indicators[MAX_PLAYER_COUNT];
-    enum AtaxxMark board[BOARD_WIDTH][BOARD_WIDTH];
-    unsigned short int scores[MAX_PLAYER_COUNT];
-    */
     unsigned short r, c;
 
     memset(ret.player_indicators, 0, MAX_PLAYER_COUNT * sizeof(Boolean));
     memset(ret.scores, 0, MAX_PLAYER_COUNT * sizeof(unsigned short int));
     for(r=0; r < BOARD_WIDTH; r++){
         for(c=0; c < BOARD_WIDTH; c++){
-            ret.board[r][c] = No_Mark;
+            ret.board[r][c] = Ataxx_No_Mark;
         }
     }
 
     switch (config.player_count) {
         case Two_Player:
-            ret.player_indicators[Red] = TRUE;
-            ret.player_indicators[Blue] = TRUE;
-            ret.board[0][0] = Mark_Red;
-            ret.board[BOARD_WIDTH-1][BOARD_WIDTH-1] = Mark_Red;
-            ret.board[0][BOARD_WIDTH-1] = Mark_Blue;
-            ret.board[BOARD_WIDTH-1][0] = Mark_Blue;
-            ret.scores[Red] = 2;
-            ret.scores[Blue] = 2;
+            ret.player_indicators[Ataxx_Red] = TRUE;
+            ret.player_indicators[Ataxx_Blue] = TRUE;
+            ret.board[0][0] = Ataxx_Mark_Red;
+            ret.board[BOARD_WIDTH-1][BOARD_WIDTH-1] = Ataxx_Mark_Red;
+            ret.board[0][BOARD_WIDTH-1] = Ataxx_Mark_Blue;
+            ret.board[BOARD_WIDTH-1][0] = Ataxx_Mark_Blue;
+            ret.scores[Ataxx_Red] = 2;
+            ret.scores[Ataxx_Blue] = 2;
             break;
         case Four_Player:
-            ret.player_indicators[Red] = TRUE;
-            ret.player_indicators[Blue] = TRUE;
-            ret.player_indicators[White] = TRUE;
-            ret.player_indicators[Black] = TRUE;
-            ret.board[0][0] = Mark_Red;
-            ret.board[BOARD_WIDTH-1][0] = Mark_Blue;
-            ret.board[BOARD_WIDTH][BOARD_WIDTH-1] = Mark_White;
-            ret.board[0][BOARD_WIDTH-1] = Mark_Black;
-            ret.scores[Red] = 1;
-            ret.scores[Blue] = 1;
-            ret.scores[White] = 1;
-            ret.scores[Black] = 1;
+            ret.player_indicators[Ataxx_Red] = TRUE;
+            ret.player_indicators[Ataxx_Blue] = TRUE;
+            ret.player_indicators[Ataxx_White] = TRUE;
+            ret.player_indicators[Ataxx_Black] = TRUE;
+            ret.board[0][0] = Ataxx_Mark_Red;
+            ret.board[BOARD_WIDTH-1][0] = Ataxx_Mark_Blue;
+            ret.board[BOARD_WIDTH-1][BOARD_WIDTH-1] = Ataxx_Mark_White;
+            ret.board[0][BOARD_WIDTH-1] = Ataxx_Mark_Black;
+            ret.scores[Ataxx_Red] = 1;
+            ret.scores[Ataxx_Blue] = 1;
+            ret.scores[Ataxx_White] = 1;
+            ret.scores[Ataxx_Black] = 1;
             break;
     }
-    ret.status = Active;
-    ret.current_player = Red;
+    ret.status = Ataxx_Active;
+    ret.current_player = Ataxx_Red;
     return ret;
 }
     
@@ -68,7 +63,7 @@ static Boolean board_full(enum AtaxxMark (*board)[BOARD_WIDTH]) {
     unsigned short int r, c;
     for (r = 0; r < BOARD_WIDTH; r++){
         for (c = 0; c < BOARD_WIDTH; c++){
-            if(board[r][c] == No_Mark) {
+            if(board[r][c] == Ataxx_No_Mark) {
                 return FALSE;
             }
         }
@@ -76,8 +71,7 @@ static Boolean board_full(enum AtaxxMark (*board)[BOARD_WIDTH]) {
     return TRUE;
 }
 
-/* TODO: Should the following be static? */
-Boolean available_move_from(enum AtaxxMark (*board)[BOARD_WIDTH], unsigned short int row, unsigned short int col) {
+static Boolean available_move_from(enum AtaxxMark (*board)[BOARD_WIDTH], unsigned short int row, unsigned short int col) {
     unsigned short int i0, i1, j0, j1;
     unsigned short int r, c;
     i0 = 0;
@@ -99,7 +93,7 @@ Boolean available_move_from(enum AtaxxMark (*board)[BOARD_WIDTH], unsigned short
 
     for (r = i0; r <= i1; r++){
         for (c = j0; c <= j1; c++) {
-            if (!((r == row) && (c == col)) && (board[r][c] == No_Mark)) {
+            if (!((r == row) && (c == col)) && (board[r][c] == Ataxx_No_Mark)) {
                 return TRUE;
             }
         }
@@ -119,25 +113,25 @@ static void can_move(enum AtaxxMark (*board)[BOARD_WIDTH], Boolean *players_can_
             temp_mark = board[r][c];
             if (
                 (
-                    (temp_mark == Mark_Red) || (temp_mark == Mark_Blue)
-                    || (temp_mark == Mark_White) || (temp_mark == Mark_Black)
+                    (temp_mark == Ataxx_Mark_Red) || (temp_mark == Ataxx_Mark_Blue)
+                    || (temp_mark == Ataxx_Mark_White) || (temp_mark == Ataxx_Mark_Black)
                 ) && available_move_from(board, r, c)
             ) {
                 switch (temp_mark) {
-                    case Mark_Red:
-                        players_can_move[Red] = TRUE;
+                    case Ataxx_Mark_Red:
+                        players_can_move[Ataxx_Red] = TRUE;
                         break;
-                    case Mark_Blue:
-                        players_can_move[Blue] = TRUE;
+                    case Ataxx_Mark_Blue:
+                        players_can_move[Ataxx_Blue] = TRUE;
                         break;
-                    case Mark_White:
-                        players_can_move[White] = TRUE;
+                    case Ataxx_Mark_White:
+                        players_can_move[Ataxx_White] = TRUE;
                         break;
-                    case Mark_Black:
-                        players_can_move[Black] = TRUE;
+                    case Ataxx_Mark_Black:
+                        players_can_move[Ataxx_Black] = TRUE;
                         break;
-                    case Mark_X:  /* Cannot happen, here for compiler */
-                    case No_Mark: /* Cannot happen, here for compiler */
+                    case Ataxx_Mark_X:  /* Cannot happen, here for compiler */
+                    case Ataxx_No_Mark: /* Cannot happen, here for compiler */
                     default:
                         break;
                 }
@@ -157,7 +151,7 @@ Boolean ataxx_is_terminal(struct AtaxxState state) {
         return TRUE;
     }
 
-    for (p = Red; p <= Black; p++) {
+    for (p = Ataxx_Red; p <= Ataxx_Black; p++) {
         if(state.player_indicators[p] && players_can_move[p]) {
             /* At least one active player can move, so not terminal */
             return FALSE;
@@ -170,40 +164,38 @@ enum AtaxxPlayer ataxx_get_player(struct AtaxxState state) {
     return state.current_player;
 }
    
-/* TODO: Should the following be static? */
-enum AtaxxMark player_to_mark(enum AtaxxPlayer player) {
+static enum AtaxxMark player_to_mark(enum AtaxxPlayer player) {
     switch (player) {
-        case Red: 
-            return Mark_Red;
-        case Blue: 
-            return Mark_Blue;
-        case White: 
-            return Mark_White;
-        case Black: 
-            return Mark_Black;
+        case Ataxx_Red: 
+            return Ataxx_Mark_Red;
+        case Ataxx_Blue: 
+            return Ataxx_Mark_Blue;
+        case Ataxx_White: 
+            return Ataxx_Mark_White;
+        case Ataxx_Black: 
+            return Ataxx_Mark_Black;
         default:
             /* Should be unreachable */
-            return Mark_Red;
+            return Ataxx_Mark_Red;
     }
 }
 
-/* TODO: Should the following be static? */
-enum AtaxxPlayer mark_to_player(enum AtaxxMark mark) {
+static enum AtaxxPlayer mark_to_player(enum AtaxxMark mark) {
     switch (mark) {
-        case Mark_Red: 
-            return Red;
-        case Mark_Blue: 
-            return Blue;
-        case Mark_White: 
-            return White;
-        case Mark_Black: 
-            return Black;
-        case Mark_X:  /* Cannot happen, here for compiler */
-        case No_Mark: /* Cannot happen, here for compiler */
+        case Ataxx_Mark_Red: 
+            return Ataxx_Red;
+        case Ataxx_Mark_Blue: 
+            return Ataxx_Blue;
+        case Ataxx_Mark_White: 
+            return Ataxx_White;
+        case Ataxx_Mark_Black: 
+            return Ataxx_Black;
+        case Ataxx_Mark_X:  /* Cannot happen, here for compiler */
+        case Ataxx_No_Mark: /* Cannot happen, here for compiler */
         default:
             /* Should not happen in practice */
             fprintf(stderr, "Attempting conversion from non-player mark to player");
-            return Red;
+            return Ataxx_Red;
     }
 }
 
@@ -217,14 +209,6 @@ static enum AtaxxPlayer next_player_in_ring(struct AtaxxState state, enum AtaxxP
             break;
         }
     }
-    /* The following uses an approach similar to that used in Ada.
-    while (1) {
-        res = (enum AtaxxPlayer) ((((unsigned int) res) + 1) % MAX_PLAYER_COUNT);
-        if (state.player_indicators[res]) {
-            break;
-        }
-    }
-    */
     return res;
 }
 
@@ -255,12 +239,12 @@ struct AtaxxState ataxx_act(struct AtaxxState state, struct AtaxxAction action) 
     /* Return value */
     struct AtaxxState res = state;  /* Start with a copy of the current state to modify */
 
-    if ((res.board[source.row][source.col] == p_mark) && (res.board[target.row][target.col] == No_Mark)) {
+    if ((res.board[source.row][source.col] == p_mark) && (res.board[target.row][target.col] == Ataxx_No_Mark)) {
         res.board[target.row][target.col] = p_mark;
         res.scores[res.current_player] += 1;
 
         if (dist == 2) {
-            res.board[source.row][source.col] = No_Mark;  /* Remove piece if it's a jump */
+            res.board[source.row][source.col] = Ataxx_No_Mark;  /* Remove piece if it's a jump */
             res.scores[res.current_player] -= 1;
         }
 
@@ -286,8 +270,8 @@ struct AtaxxState ataxx_act(struct AtaxxState state, struct AtaxxAction action) 
                 if (
                         !((r == target.row) && (c == target.col))
                         && (res.board[r][c] != p_mark)
-                        && (res.board[r][c] != Mark_X)
-                        && (res.board[r][c] != No_Mark)
+                        && (res.board[r][c] != Ataxx_Mark_X)
+                        && (res.board[r][c] != Ataxx_No_Mark)
                 ) {
                     /* The mark must belong to a player other than p_mark (current player) */
                     overwritten_player = mark_to_player(res.board[r][c]);
@@ -312,7 +296,7 @@ struct AtaxxState ataxx_act(struct AtaxxState state, struct AtaxxAction action) 
     }
     res.current_player = next_player; /* Set next player */
     if (!players_can_move[next_player]) {
-        res.status = Finished;  /* No players can move, so game is finished */
+        res.status = Ataxx_Finished;  /* No players can move, so game is finished */
     }
 
     return res;
@@ -324,140 +308,7 @@ float ataxx_reward(enum AtaxxPlayer player, struct AtaxxState state) {
     return (float) state.scores[player];
 }
 
-/*
-typedef struct AtaxxValidActionsList {
-	size_t capacity;
-	size_t length;
-	struct AtaxxAction list[1];
-} AtaxxValidActionsList;
-
-\/\* AtaxxAction Array List \*\/
-AtaxxValidActionsList* ataxx_actions_list_create(size_t cpty){
-    if (cpty < 1) {
-        cpty = 1;
-    }
-	AtaxxValidActionsList* ret = (AtaxxValidActionsList*) malloc(sizeof(AtaxxValidActionsList) + (cpty-1)*sizeof(struct AtaxxAction));
-	if (ret != NULL) {
-		ret->capacity = cpty;
-		ret->length = 0;
-	}
-	return ret;
-}
-
-int ataxx_actions_list_realloc(AtaxxValidActionsList** lpp, size_t new_capacity){
-    *lpp = realloc(*lpp, sizeof(AtaxxValidActionsList) + (new_capacity-1)*sizeof(struct AtaxxAction));
-    if (*lpp == NULL) {
-        return -1;
-    }
-    (*lpp)->capacity = new_capacity;
-	return 0;
-}
-
-int ataxx_actions_list_push(AtaxxValidActionsList** lpp, struct AtaxxAction val){
-	(*lpp)->list[(*lpp)->length] = val;
-	(*lpp)->length++;
-
-	if ((*lpp)->length >= (*lpp)->capacity) {
-		\/\* realloc \*\/
-		int newcap = 2 * (*lpp)->capacity;
-		*lpp = realloc(*lpp, sizeof(AtaxxValidActionsList) + (newcap-1)*sizeof(struct AtaxxAction));
-		if (*lpp == NULL) {
-			return -1;
-		}
-		(*lpp)->capacity = newcap;
-	}
-	return 0;
-}
-
-size_t ataxx_actions_list_length(AtaxxValidActionsList* lp) {
-    return lp->length;
-}
-
-struct AtaxxAction ataxx_actions_list_get(AtaxxValidActionsList* lp, size_t i) {
-    return lp->list[i];
-}
-
-void ataxx_actions_list_destroy(AtaxxValidActionsList* lp) {
-	free(lp);
-}
-
-TODO: The following was adapted to the template list below
-AtaxxValidActionsList* ataxx_get_valid_actions (struct AtaxxState state) {
-    enum AtaxxPlayer player = state.current_player;
-    \/\* We use player_to_mark in the following \*\/
-    \/\*
-    enum AtaxxMark player_mark = (enum AtaxxMark) ((int) player);
-    \*\/
-    enum AtaxxMark player_mark = player_to_mark(player);
-    const size_t max_actions = state.scores[player] * 24;
-    AtaxxValidActionsList* vas = ataxx_actions_list_create(max_actions);
-    int vas_status = 0;
-
-    \/\* Temp variables for loop below \*\/
-    struct AtaxxCellIndices source;
-    struct AtaxxAction temp_action;
-    unsigned short int i0, i1, j0, j1;
-    unsigned short int r, c;
-    unsigned short int r_target, c_target;
-
-    if (vas == NULL) {
-        return NULL;
-    }
-
-    for (r=0; r < BOARD_WIDTH; r++){
-        for (c=0; c < BOARD_WIDTH; c++){
-            if (state.board[r][c] == player_mark) {
-                source = (struct AtaxxCellIndices) { r, c };
-                \/\*  We just want
-                i0 = (unsigned short int) max_short(0, ((short int) r) - 2);
-                i1 = (unsigned short int) min_short(BOARD_WIDTH - 1, ((short int) r) + 2);
-                but below rather we set the extreme value and then adjust to the
-                range value if valid.  This way we avoid type casts but introduce
-                branches. \*\/
-                i0 = 0;
-                if (r >= 2) {
-                    i0 = r - 2;
-                }
-                i1 = BOARD_WIDTH - 1;
-                if (r < (BOARD_WIDTH - 2)) {
-                    i1 = r + 2;
-                }
-                j0 = 0;
-                if (c >= 2) {
-                    j0 = c - 2;
-                }
-                j1 = BOARD_WIDTH - 1;
-                if (c < (BOARD_WIDTH - 2)) {
-                    j1 = c + 2;
-                }
-                for (r_target = i0; r_target <= i1; r_target++) {
-                    for (c_target = j0; c_target <= j1; c_target++) {
-                        if (
-                            !((r_target == r) && (c_target == c))
-                            && (state.board[r_target][c_target] == No_Mark)
-                        ) {
-                            temp_action = (struct AtaxxAction) {
-                                source,
-                                (struct AtaxxCellIndices) { r_target, c_target }
-                             };
-                            vas_status = ataxx_actions_list_push(&vas, temp_action);
-                            if (vas_status) {
-                                fprintf(stderr, "get_valid_actions: could not push action to list, returning NULL");
-                                ataxx_actions_list_destroy(vas);
-                                return NULL;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return vas;
-}
-*/
-
-void print_board(struct AtaxxState state) {
-    /* char mark_char; */
+static void print_board(struct AtaxxState state) {
     unsigned short int r, c;
 
     printf(" ");
@@ -470,22 +321,22 @@ void print_board(struct AtaxxState state) {
         printf("%u", r); /* Print row label as integer */
         for (c=0; c<BOARD_WIDTH; c++) {
             switch (state.board[r][c]) {
-                case Mark_Red: 
+                case Ataxx_Mark_Red: 
                     printf("R");
                     break;
-                case Mark_Blue: 
+                case Ataxx_Mark_Blue: 
                     printf("B");
                     break;
-                case Mark_White: 
+                case Ataxx_Mark_White: 
                     printf("W");
                     break;
-                case Mark_Black: 
+                case Ataxx_Mark_Black: 
                     printf("K");
                     break;
-                case Mark_X: 
+                case Ataxx_Mark_X: 
                     printf("X");
                     break;
-                case No_Mark:  /* Here for compiler warning */
+                case Ataxx_No_Mark:  /* Here for compiler warning */
                 default:
                     printf(" ");
                     break;
@@ -495,7 +346,7 @@ void print_board(struct AtaxxState state) {
     }
 }
 
-void get_winners(unsigned short int *scores, Boolean* winning_players, unsigned short int* num_winners) {
+static void get_winners(unsigned short int *scores, Boolean* winning_players, unsigned short int* num_winners) {
     unsigned short int i;
     unsigned short int max_score = 0;
 
@@ -519,16 +370,16 @@ void get_winners(unsigned short int *scores, Boolean* winning_players, unsigned 
     }
 }
 
-void print_game_status(struct AtaxxState state) {
+static void print_game_status(struct AtaxxState state) {
     enum AtaxxPlayer p;
     unsigned short int i, remaining_winners;
     Boolean winning_players[MAX_PLAYER_COUNT];
 
     switch (state.status) {
-        case Active:
+        case Ataxx_Active:
             printf("Next Player: %s", player_names[ataxx_get_player(state)]);
             break;
-        case Finished:
+        case Ataxx_Finished:
             get_winners(state.scores, winning_players, &remaining_winners);
             printf("Game Over: ");
             for (i = 0; i < MAX_PLAYER_COUNT; i++) {
@@ -548,7 +399,7 @@ void print_game_status(struct AtaxxState state) {
     printf("\n");
 
     printf("Scores: \n");
-    for (p = Red; p <= Black; p++) {
+    for (p = Ataxx_Red; p <= Ataxx_Black; p++) {
         if (state.player_indicators[p]) {
             printf("   %5s: %d\n", player_names[p], state.scores[p]);
         }
@@ -605,7 +456,7 @@ struct AtaxxAction ataxx_mctsenv_get_random_action(struct AtaxxState state) {
                     for (c_target = j0; c_target <= j1; c_target++) {
                         if (
                             !((r_target == r) && (c_target == c))
-                            && (state.board[r_target][c_target] == No_Mark)
+                            && (state.board[r_target][c_target] == Ataxx_No_Mark)
                         ) {
                             temp_action = (struct AtaxxAction) {
                                 source,
@@ -695,7 +546,7 @@ struct AtaxxActionList* ataxx_experimental_get_valid_actions (struct AtaxxState 
                     for (c_target = j0; c_target <= j1; c_target++) {
                         if (
                             !((r_target == r) && (c_target == c))
-                            && (state.board[r_target][c_target] == No_Mark)
+                            && (state.board[r_target][c_target] == Ataxx_No_Mark)
                         ) {
                             temp_action = (struct AtaxxAction) {
                                 source,
@@ -764,57 +615,3 @@ int ataxx_example_main() {
     }
     return 0;
 }
-
-/* TODO: Eventually remove or adapt the following */
-int ataxx_uct_example() {
-    struct UCTParams uctparams = { sqrt (2.0) };
-    struct AtaxxConfig config; /* No configuration needed for tic-tac-toe */
-    struct AtaxxAction a;
-    float reward_est;
-    struct AtaxxState s;
-    enum AtaxxPlayer p;
-    struct AtaxxTree* tree = ataxx_mcts_tree_new(config);
-
-    /*
-    a = ataxx_mctsenv_get_random_action(ataxx_uct_get_state(tree));
-    printf("Random action (%u, %u) -> (%u, %u)\n", 
-                a.source.row, a.source.col,
-                a.target.row, a.target.col);
-    ataxx_act(ataxx_uct_get_state(tree), a);
-    */
-    /*
-    if (ataxx_uct_take_action(tree, ataxx_mctsenv_get_random_action(ataxx_uct_get_state(tree)))) {
-        fprintf(stderr, "ataxx_uct_example: failed to take initial action\n");
-    }
-    */
-    /* TODO: Taking a bad initial action 
-    if (ataxx_uct_take_action(tree, (struct AtaxxAction) {1, 1})) {
-        fprintf(stderr, "ataxx_uct_example: failed to take initial action\n");
-    }
-    if (ataxx_uct_take_action(tree, (struct AtaxxAction) {1, 0})) {
-        fprintf(stderr, "ataxx_uct_example: failed to take initial action\n");
-    }
-    */
-    s = ataxx_uct_get_state(tree);
-    p = ataxx_get_player(s);
-    ataxx_print_state(s);
-    while (!ataxx_is_terminal(s)) {
-        if (ataxx_uct_search(50000, uctparams, tree, &a, &reward_est)) {
-            /* Encountered an error during search */
-            break;
-        }
-        printf("Number of visits after search: %u\n", tree_visits(*tree));
-        printf("Player %d Took action (%u, %u) -> (%u, %u) with reward estimate %f\n",
-                p,
-                a.source.row, a.source.col,
-                a.target.row, a.target.col,
-                reward_est
-        );
-        s = ataxx_uct_get_state(tree);
-        p = ataxx_get_player(s);
-        ataxx_print_state(s);
-    }
-    ataxx_mcts_tree_free(tree);
-    return 0;
-};
-

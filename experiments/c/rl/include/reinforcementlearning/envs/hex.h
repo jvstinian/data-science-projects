@@ -26,13 +26,6 @@ struct HexAction {
     unsigned short col;
 };
 
-/*
-struct HexValidActions {
-    unsigned short int num_actions;
-    struct HexAction actions[BOARD_SIZE];
-};
-*/
-   
 enum HexMark {
     Red_Stone,
     Blue_Stone,
@@ -40,9 +33,9 @@ enum HexMark {
 };
 
 enum HexGameStatus {
-    Active,
-    Player1_Wins,
-    Player2_Wins
+    Hex_Active,
+    Hex_Player1_Wins,
+    Hex_Player2_Wins
 };
 
 struct HexState {
@@ -57,9 +50,6 @@ Boolean hex_is_terminal(struct HexState s);
 enum HexPlayer hex_get_player(struct HexState s);
 struct HexState hex_act(struct HexState s, struct HexAction a);
 float hex_reward(enum HexPlayer player, struct HexState s);
-/*
-struct HexValidActions hex_get_valid_actions(struct HexState s);
-*/
 void hex_print_state (struct HexState s);
 struct HexAction hex_mctsenv_get_random_action(struct HexState state);
 
@@ -94,8 +84,5 @@ struct HexActionList* hex_experimental_get_valid_actions(struct HexState state);
 Boolean neighboring_hexagons(unsigned short b1, unsigned short r1, unsigned short b2, unsigned short r2);
 
 int hex_example_main();
-
-/* TODO: Eventually remove or adapt the following */
-int hex_uct_example();
 
 #endif

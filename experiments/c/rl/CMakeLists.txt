@@ -52,11 +52,11 @@ add_executable(rl_examples
 target_link_libraries(rl_examples PRIVATE reinforcementlearning)
 
 # Executable
-add_executable(ttt_example
-    apps/ttt_example.c
+add_executable(mcts-play
+    apps/mcts_play.c
 )
 # Link executable
-target_link_libraries(ttt_example PRIVATE reinforcementlearning)
+target_link_libraries(mcts-play PRIVATE reinforcementlearning)
 
 # Testing
 enable_testing()
