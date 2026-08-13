@@ -17,6 +17,7 @@ AC_PROG_INSTALL
 AC_CHECK_LIB([m], [cos])
 # AC_CHECK_LIB([pthread], [pthread_create])
 # AC_CHECK_LIB([rt], [clock_gettime])
+AC_CHECK_LIB([lapack], [main])
 
 # Checks for header files.
 AC_CHECK_HEADERS([limits.h stdint.h stdlib.h string.h unistd.h])
@@ -41,8 +42,8 @@ AC_FUNC_MALLOC
 # PKG_CHECK_MODULES([CHECK], [check])
 # AC_SUBST([CHECK_CFLAGS])
 # AC_SUBST([CHECK_LIBS])
-# 
-# PKG_CHECK_MODULES([CJSON], [libcjson])
+
+PKG_CHECK_MODULES([LAPACK], [lapack])
 # 
 # PKG_CHECK_MODULES([MYSQL], [mysqlclient])
 

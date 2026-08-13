@@ -38,6 +38,7 @@
       devShell = pkgs.mkShell {
         buildInputs = with pkgs; [
           pkg-config
+          lapack
           automake autoconf libtool check
           clang-tools
           ctags cscope
