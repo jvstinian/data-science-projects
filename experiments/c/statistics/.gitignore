@@ -18,6 +18,11 @@ m4/
 missing
 .deps
 *.a
+*.lo
+*.la
+
+# Executables
+src/statistics
 
 # Other
 orig.COPYING

@@ -1,7 +1,8 @@
 ACLOCAL_AMFLAGS = -I m4 
 AUTOMAKE_OPTIONS = subdir-objects
 
-AM_CFLAGS = -std=c99 -I$(top_srcdir)/vendor
+# We're not using the LAPACK CFLAGS at this point
+AM_CFLAGS = -std=c99 -I$(top_srcdir)/vendor @LAPACK_CFLAGS@
 
 bin_PROGRAMS = statistics
 lib_LIBRARIES = libstatistics.a
@@ -12,6 +13,7 @@ include_HEADERS = statistics.h
 
 libstatistics_a_SOURCES = statistics.c
 # libstatistics_a_CFLAGS = -std=c89
+# libstatistics_LDFLAGS = @LAPACK_LDFLAGS@
 
 statistics_SOURCES = statistics.c
 # statistics_CFLAGS  = -std=c99
