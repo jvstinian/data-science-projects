@@ -2,13 +2,14 @@
 #include <mtwister/mtwister.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h> /* memcpy */
 
 /* DGESVD prototype */
 extern void dgesvd_( char* jobu, char* jobvt, int* m, int* n, double* a,
                 int* lda, double* s, double* u, int* ldu, double* vt, int* ldvt,
                 double* work, int* lwork, int* info );
 
-double mean(double* data, size_t size) {
+double mean(size_t size, double data[size]) {
     size_t i;
     double ret;
     for (i = 0; i < size; i++) {
@@ -137,6 +138,18 @@ int thin_svd(size_t rows, size_t cols, double f_arr[cols][rows], double* f_u_out
     return 0;
 }
 
+/*
+pinvExtended :: Matrix Double -> Double -> (Matrix Double, Vector Double)
+pinvExtended m rcond = (v <> diagRect 0 srecip rrow rcol <> tr u, s)
+    where (u, s, v) = thinSVD $ conj x0
+          rcol = cols u
+          rrow = cols v
+          urow = rows u
+          vrow = rows v
+          cutoff = rcond * maxElement s
+          srecip = cmap (\x -> if x > cutoff then 1.0 / x else 0.0) (subVector 0 (min urow vrow) s)
+*/
+
 void pinv_extended(size_t rows, size_t cols, double f_arr[cols][rows], double rcond, double f_arr_inv_out[rows][cols], double * s_out) {
     size_t minrc = (rows < cols) ? rows : cols;
     double f_u_out[minrc][rows];
@@ -188,9 +201,261 @@ void pinv_extended(size_t rows, size_t cols, double f_arr[cols][rows], double rc
      */
 }
 
+enum covariance_kind {
+    NON_ROBUST_COVARIANCE
+};
+
+typedef enum Boolean {
+    FALSE,
+    TRUE
+} Boolean;
+
+struct ols_results {
+    size_t rows;
+    size_t cols;
+    double* exog_mat;
+    double* endog;
+    double* beta;
+    double* normalized_cov_params_mat;
+    enum covariance_kind cov_kind;
+    Boolean use_t;
+};
+
+struct ols_results* fit_ols(size_t rows, size_t cols, double f_exog_mat[cols][rows], double endog[rows]) {
+    size_t r, c, c2;
+    struct ols_results* res = malloc(sizeof(struct ols_results));
+    if (res == NULL) {
+        fprintf(stderr, "fit_ols: could not allocate ols results");
+        return NULL;
+    }
+    res->rows = rows;
+    res->cols = cols;
+    res->exog_mat = malloc(rows * cols * sizeof(double));
+    if (res->exog_mat == NULL) {
+        fprintf(stderr, "fit_ols: could not allocate exogenous matrix");
+        free(res);
+        return NULL;
+    }
+    res->endog = malloc(rows * sizeof(double));
+    if (res->endog == NULL) {
+        fprintf(stderr, "fit_ols: could not allocate endogenous vector");
+        free(res->exog_mat);
+        free(res);
+        return NULL;
+    }
+    res->beta = malloc(rows * sizeof(double));
+    if (res->beta == NULL) {
+        fprintf(stderr, "fit_ols: could not allocate beta");
+        free(res->endog);
+        free(res->exog_mat);
+        free(res);
+        return NULL;
+    }
+    res->normalized_cov_params_mat = malloc(rows * rows * sizeof(double));
+    if (res->normalized_cov_params_mat == NULL) {
+        fprintf(stderr, "fit_ols: could not allocate beta");
+        free(res->beta);
+        free(res->endog);
+        free(res->exog_mat);
+        free(res);
+        return NULL;
+    }
+    res->cov_kind = NON_ROBUST_COVARIANCE;
+    res->use_t = FALSE;
+
+    for (r = 0; r < rows; r++) {
+        for (c = 0; c < cols; c++) {
+            res->exog_mat[r * cols + c] = f_exog_mat[c][r];
+        }
+    }
+    memcpy(res->endog, endog, rows * sizeof(double));
+    double (*f_pinv)[cols] = malloc(rows * sizeof(double[cols]));
+    double* sv = malloc(cols * sizeof(double));
+    /* Try 1.0e-15 for rcond in the following */
+    pinv_extended(rows, cols, f_exog_mat, 1.0e-8, f_pinv, sv);
+    for (c = 0; c < cols; c++) {
+        res->beta[c] = 0.0;
+        for (r = 0; r < rows; r++) {
+            res->beta[c] += f_pinv[r][c] * endog[r];
+        }
+    }
+    /* normalized_cov_params is pinv * transpose(pinv) = transpose(f_pinv) * f_pinv */
+    for (c = 0; c < cols; c++) {
+        for (c2 = 0; c2 < cols; c2++) {
+            res->normalized_cov_params_mat[c * cols + c2] = 0.0;
+            for (r = 0; r < rows; r++) {
+                res->normalized_cov_params_mat[c * cols + c2] += f_pinv[r][c] * f_pinv[r][c2];
+            }
+        }
+    }
+
+    size_t rank = 0;
+    /* TODO: sv actually has dimension min(rows, cols) */
+    for (c = 0; c < cols; c++) {
+        if (sv[c] != 0.0) {
+            rank++;
+        }
+    }
+    printf("Rank: %lu", rank);
+    /*
+    wexog = x
+    wendog = y
+    (pinvWexog, singularValues) = pinvExtended wexog 1e-15
+    normalized_cov_params = pinvWexog <> tr pinvWexog -- TODO: Should this be tr'?
+    -- Cache these singular values for use later.
+    wexogSingularValues = singularValues
+    dataRank = rank $ diag singularValues -- following statsmodels, but is this just the number of non-zero singular values, possibly with a cutoff
+    beta = pinvWexog `app` wendog
+    in OLSResults beta normalized_cov_params NonRobustCovariance True (wexog, wendog)
+    */
+}
+
+double lm_predict(struct ols_results* fit, double x[fit->cols]) {
+    double predict_out;
+    size_t c;
+
+    predict_out = 0.0;
+    for(c = 0; c < fit->cols; c++) {
+        predict_out += x[c] * fit->beta[c];
+    }
+    return predict_out;
+}
+
+void lm_predict_batch(const struct ols_results* fit, size_t batch_obs, double x[batch_obs][fit->cols], double predict_out[batch_obs]) {
+    size_t r, c;
+
+    for(r = 0; r < batch_obs; r++) {
+        predict_out[r] = 0.0;
+        for(c = 0; c < fit->cols; c++) {
+            predict_out[r] += x[r][c] * fit->beta[c];
+        }
+    }
+}
+
+size_t lm_nobs(const struct ols_results* fit) {
+    return fit->rows;
+}
+
+void lm_predict_fittedvalues(const struct ols_results* fit, double fittedvalues[fit->rows]) {
+    /* TODO: Does the cast in the following work? */
+    lm_predict_batch(fit, fit->rows, (double (*)[fit->cols]) fit->exog_mat, fittedvalues);
+}
+
+int lm_resid(const struct ols_results* fit, double resid[fit->rows]) {
+    double* fvs = malloc(fit->rows * sizeof(double));
+    if (fvs == NULL) {
+        fprintf(stderr, "lm_predict_resid: could not allocate fitted values");
+        return 1;
+    }
+    size_t r;
+
+    lm_predict_fittedvalues(fit, fvs);
+    for(r = 0; r < fit->rows; r++) {
+        resid[r] = fit->endog[r] - fvs[r];
+    }
+    free(fvs);
+    return 0;
+}
+
+inline double norm_2_sq(size_t len, double x[len]) {
+    size_t r;
+    double ret = 0.0;
+
+    for(r = 0; r < len; r++) {
+        ret += x[r] * x[r];
+    }
+    return ret;
+}
+
+static inline double shifted_norm_2_sq(size_t len, double x[len], double shift) {
+    size_t r;
+    double ret = 0.0;
+
+    for(r = 0; r < len; r++) {
+        ret += (x[r] - shift) * (x[r] - shift);
+    }
+    return ret;
+}
+
+int lm_ssr(const struct ols_results* fit, double* ssr) {
+    double* fvs = malloc(fit->rows * sizeof(double));
+    if (fvs == NULL) {
+        fprintf(stderr, "lm_predict_resid: could not allocate fitted values");
+        return 1;
+    }
+    
+    lm_resid(fit, fvs);
+    *ssr = norm_2_sq(fit->rows, fvs);
+
+    free(fvs);
+    return 0;
+}
+
+double lm_centered_tss(const struct ols_results* fit) {
+    double m = mean(fit->rows, fit->endog);
+    return shifted_norm_2_sq(fit->rows, fit->endog, m);
+}
+
+double lm_uncentered_tss(const struct ols_results* fit) {
+    return norm_2_sq(fit->rows, fit->endog);
+}
+
+int lm_rsquared(const struct ols_results* fit, Boolean hasconst, double* rsquared_out) {
+    double ssr;
+    if (lm_ssr(fit, &ssr)) {
+        fprintf(stderr, "lm_rsquared: error in lm_ssr");
+        return 1;
+    }
+
+    if (hasconst) {
+        *rsquared_out = 1.0 - ssr / lm_centered_tss(fit);
+    } else {
+        *rsquared_out = 1.0 - ssr / lm_uncentered_tss(fit);
+    }
+    return 0;
+}
+
+/* The explained sum of squares. 
+ * If a constant is present, the centered total sum of squares minus the 
+ * sum of squared residuals. If there is no constant, the uncentered total 
+ * sum of squares is used. */
+int lm_ess(const struct ols_results* fit, Boolean hasconst, double* ess) {
+    double ssr;
+    if (lm_ssr(fit, &ssr)) {
+        fprintf(stderr, "lm_ess: error in lm_ssr");
+        return 1;
+    }
+
+    if (hasconst) {
+        return lm_centered_tss(fit) - ssr;
+    } else {
+        return lm_uncentered_tss(fit) - ssr;
+    }
+    return 0;
+}
+
+/*
+-- TODO: Some additional work is needed here.
+-- Adjusted R-squared.
+-- This is defined here as 1 - (`nobs`-1)/`df_resid` * (1-`rsquared`)
+-- if a constant is included and 1 - `nobs`/`df_resid` * (1-`rsquared`) if
+-- no constant is included.
+-- rsquared_adj :: OLSResults -> Bool -> Double
+-- rsquared_adj ols hasconst = 1 - adj * (1 - rsquared ols hasconst)
+--     where k_constant = if hasconst then 1 else 0
+--           adj = (fromIntegral (nobs ols - k_constant) / fromIntegral df_resid)
+--           dataRank = rank $ diag singularValues -- TODO
+--           df_resid = nobs ols - dataRank
+
+-- let k_constant = 1 -- based on the way we defined x0
+--     nobs = rows wexog
+--     df_model = dataRank - k_constant
+--     df_resid = nobs - dataRank
+*/
+
 int main() {
     double data[] = {1.0, 2.0, 3.0, 4.0, 5.0};
-    double res = mean(data, 5);
+    double res = mean(5, data);
     printf("Mean: %f\n", res);
  
     size_t i;
@@ -203,8 +468,8 @@ int main() {
         */
         data2[i] = urand;
     }
-    printf("Mean of uniformly randomly sampled data: %f\n", mean(data2, 10000));
-        
+    printf("Mean of uniformly randomly sampled data: %f\n", mean(10000, data2));
+ 
     double a[6*5] = {
          4.81,  1.21,  5.95, -6.98,  9.82, -5.04,
          9.23, -7.93, -7.02, -2.55, -6.41,  3.83,
