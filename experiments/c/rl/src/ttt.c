@@ -1,0 +1,339 @@
+#include <reinforcementlearning/envs/ttt.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+struct TTTState initial_state() {
+    return (struct TTTState) { {
+        { TTT_No_Mark, TTT_No_Mark, TTT_No_Mark },
+        { TTT_No_Mark, TTT_No_Mark, TTT_No_Mark },
+        { TTT_No_Mark, TTT_No_Mark, TTT_No_Mark }
+    }, X_Move };
+}
+
+Boolean is_terminal(struct TTTState s) {
+    switch (s.status) {
+        case X_Move:
+        case O_Move:
+            return FALSE;
+        case Draw:
+        case X_Wins:
+        case O_Wins:
+            return TRUE;
+        /* Should not be reachable, but needed to avoid compiler warning */
+        default:  
+            return FALSE;
+    }
+}
+
+enum TTTPlayer get_player(struct TTTState s) {
+    /* Returns PlayerX for a draw.  This is an arbitrary choice, and
+     * should not be used in terminal state */
+    switch (s.status) {
+        case X_Move:
+        case X_Wins:
+            return PlayerX;
+        case O_Move:
+        case O_Wins:
+            return PlayerO;
+        case Draw:
+        default:
+            return PlayerX;
+    }
+}
+
+static Boolean check_row_for_win(struct TTTState s, enum TTTMark m, unsigned short r) {
+    unsigned short c;
+    for (c = 0; c < 3; c++){
+        if (s.board[r][c] != m) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+      
+static Boolean check_col_for_win(struct TTTState s, enum TTTMark m, unsigned short c) {
+    unsigned short r;
+    for (r = 0; r < 3; r++) {
+        if (s.board[r][c] != m) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+      
+static Boolean is_move_on_diag1(struct TTTAction a) {
+    return a.row == a.col;
+}
+
+static Boolean is_move_on_diag2(struct TTTAction a) {
+    short r = (short) a.row;
+    short c = (short) a.col;
+    return (r + c) == 2;
+}
+
+static Boolean check_diag1_for_win(struct TTTState s, enum TTTMark m) {
+    unsigned short rc;
+    for (rc = 0; rc < 3; rc++) {
+        if (s.board[rc][rc] != m) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+static Boolean check_diag2_for_win(struct TTTState s, enum TTTMark m) {
+    unsigned short r, c;
+    for (r = 0; r < 3; r++) {
+        c = 2 - r;
+        if (s.board[r][c] != m) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+      
+static Boolean all_moves_exhausted(struct TTTState s) {
+    unsigned short r, c;
+    for (r = 0; r < 3; r++) {
+        for (c = 0; c < 3; c++) {
+            if (s.board[r][c] == TTT_No_Mark) {
+                return FALSE;
+            }
+        }
+    }
+    return TRUE;
+}
+
+static enum TTTGameStatus check_status_for_action(struct TTTState s, struct TTTAction a) {
+    /* Helper functions */
+    enum TTTGameStatus result = s.status;  /* Default to current status */
+    enum TTTMark m = s.board[a.row][a.col];
+    enum TTTGameStatus w;
+
+    switch (m) {
+        case X:
+            w = X_Wins;
+            break;
+        case O:
+            w = O_Wins;
+            break;
+        case TTT_No_Mark:
+            /* Invalid state, just return */
+            return result;
+        default:
+            /* Unreachable state
+             * Including this case to define w to avoid compiler warning */
+            w = Draw;
+            break;
+    };
+
+    /* M is either X or O */
+    if (check_row_for_win(s, m, a.row)) {
+        return w;
+    } else if (check_col_for_win(s, m, a.col)) {
+        return w;
+    } else if (is_move_on_diag1(a) && check_diag1_for_win(s, m)) {
+        return w;
+    } else if (is_move_on_diag2(a) && check_diag2_for_win(s, m)) {
+        return w;
+    } else if (all_moves_exhausted(s)) {
+        return Draw; /* No more moves and no winner, it's a draw */
+    } else {
+        return result; /* No win, return current status */
+    }
+}
+
+struct TTTState step(struct TTTState s, struct TTTAction a) {
+    struct TTTState result = s;  /* Start with the current state and modify it */
+    if (result.status == X_Move) {
+        result.board[a.row][a.col] = X;
+        result.status = O_Move;  /* Next player's turn */
+    } else if (result.status == O_Move) {
+        result.board[a.row][a.col] = O;
+        result.status = X_Move;  /* Next player's turn */
+    }
+
+    /* Check if the new move results in a win */
+    result.status = check_status_for_action(result, a); 
+    return result;
+}
+
+float reward(enum TTTPlayer p, struct TTTState s) {
+    switch (s.status) {
+        case X_Wins:
+            if (p == PlayerX) {
+                return 1.0;
+            } else {
+                return -1.0;
+            }
+        case O_Wins:
+            if (p == PlayerO) {
+                return 1.0;
+            } else {
+                return -1.0;
+            }
+        case X_Move:
+        case O_Move:
+        case Draw:
+        default:
+            return 0.0; /* Non-terminal state or a draw */
+    }
+}
+
+struct TTTValidActions get_valid_actions(struct TTTState s) {
+    /* Initialize with dummy values, will be overwritten */
+    struct TTTValidActions result;
+    unsigned short i, r, c;
+
+    i = 0;
+    for (r = 0; r < 3; r++) {
+        for (c = 0; c < 3; c++) {
+            if (s.board[r][c] == TTT_No_Mark) {
+                result.actions[i++] = (struct TTTAction) {r, c};
+            }
+        }
+    }
+    result.num_actions = i;
+    return result;
+}
+      
+static void print_board(struct TTTState s) {
+    unsigned int r, c;
+
+    printf(" ABC\n");
+    for (r = 0; r < 3; r++) {
+        printf("%u", r);
+        for (c = 0; c < 3; c++) {
+            switch (s.board[r][c]) {
+                case X:
+                    printf("X");
+                    break;
+                case O:
+                    printf("O");
+                    break;
+                case TTT_No_Mark:
+                    printf(" ");
+                    break;
+            }
+        }
+        printf("\n");
+    }
+}
+      
+static void print_game_status(struct TTTState s) {
+    printf("Status: ");
+    switch (s.status) {
+        case X_Move:
+            printf("X's move");
+            break;
+        case O_Move:
+            printf("O's move");
+            break;
+        case Draw:
+            printf("Game is a draw");
+            break;
+        case X_Wins:
+            printf("Player X wins");
+            break;
+        case O_Wins:
+            printf("Player O wins");
+            break;
+    }
+    printf("\n");
+}
+
+void print_state(struct TTTState s) {
+    print_board(s);
+    print_game_status(s);
+}
+
+struct TTTAction ttt_mctsenv_get_random_action(struct TTTState state) {
+    struct TTTAction available_actions[9];
+    unsigned int num_actions = 0;
+    unsigned int r, c;
+    for (r = 0; r < 3; r++) {
+        for (c = 0; c < 3; c++) {
+            if (state.board[r][c] == TTT_No_Mark) {
+                available_actions[num_actions++] = (struct TTTAction) {r, c};
+            }
+        }
+    }
+    return available_actions[rand() % num_actions];
+}
+
+#define ENVIRONMENT_PREFIX ttt
+#define CONFIG_TYPE struct TTTConfig
+#define STATE_TYPE struct TTTState
+#define ACTION_TYPE struct TTTAction
+#define PLAYER_TYPE enum TTTPlayer
+#define INITIAL_STATE_METHOD initial_state
+#define STEP_METHOD step
+#define GET_PLAYER_METHOD get_player
+#define RANDOM_ACTION_METHOD ttt_mctsenv_get_random_action
+#define IS_TERMINAL_METHOD is_terminal
+#define REWARD_METHOD reward
+#include <reinforcementlearning/algorithms/mctsenv_uniform_random_actions.inc>
+
+/* The following defines
+struct TTTActionList;
+struct TTTActionList* ttt_action_list_create (size_t cpty);
+int ttt_action_list_realloc (struct TTTActionList** lpp, size_t new_capacity);
+int ttt_action_list_push (struct TTTActionList** lpp, struct TTTAction val);
+size_t ttt_action_list_length (struct TTTActionList* lp);
+struct TTTAction ttt_action_list_get (struct TTTActionList* lp, size_t i);
+void ttt_action_list_shuffle (struct TTTActionList* lp);
+void ttt_action_list_destroy (struct TTTActionList* lp);
+*/
+#define ENVIRONMENT_PREFIX ttt
+#define ENVIRONMENT_STRUCT_PREFIX TTT
+#define ACTION_TYPE struct TTTAction
+#include <reinforcementlearning/action_array_template.inc>
+
+struct TTTActionList* ttt_experimental_get_valid_actions(struct TTTState s) {
+    unsigned short r, c;
+
+    /* Initialize list with capacity equal to the maximum number of positions */
+    struct TTTActionList* ret = ttt_action_list_create(9u);
+    if (ret == NULL) {
+        fprintf(stderr, "ttt_experimental_get_valid_actions: failed to create action list\n");
+        return NULL;
+    }
+
+    for (r = 0; r < 3; r++) {
+        for (c = 0; c < 3; c++) {
+            if (s.board[r][c] == TTT_No_Mark) {
+                if (ttt_action_list_push(&ret, (struct TTTAction) {r, c})) {
+                    fprintf(stderr, "ttt_experimental_get_valid_actions: failed to push action to list\n");
+                    ttt_action_list_destroy(ret);
+                    return NULL;
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+static Boolean ttt_action_eq(struct TTTAction a1, struct TTTAction a2) {
+    return (a1.row == a2.row) && (a1.col == a2.col);
+}
+
+#define ENVIRONMENT_PREFIX ttt
+#define ENVIRONMENT_STRUCT_PREFIX TTT
+#define CONFIG_TYPE struct TTTConfig
+#define STATE_TYPE struct TTTState
+#define ACTION_TYPE struct TTTAction
+#define PLAYER_TYPE enum TTTPlayer
+#define INITIAL_STATE_METHOD initial_state
+#define STEP_METHOD step
+#define GET_PLAYER_METHOD get_player
+#define RANDOM_ACTION_METHOD ttt_mctsenv_get_random_action
+#define IS_TERMINAL_METHOD is_terminal
+#define REWARD_METHOD reward
+#define ACTION_LIST_TYPE struct TTTActionList
+#define GET_VALID_ACTIONS_METHOD ttt_experimental_get_valid_actions
+#define ACTION_LIST_GET_METHOD ttt_action_list_get
+#define ACTION_LIST_LENGTH_METHOD ttt_action_list_length
+#define ACTION_LIST_SHUFFLE_METHOD ttt_action_list_shuffle
+#define ACTION_LIST_DESTROY_METHOD ttt_action_list_destroy
+#define ACTION_EQ_METHOD ttt_action_eq
+#include <reinforcementlearning/algorithms/uct.inc>

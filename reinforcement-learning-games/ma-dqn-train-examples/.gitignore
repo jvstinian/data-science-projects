@@ -1,0 +1,8 @@
+log_madqn
+*.mp4
+
+# The following might be useful in the future
+checkpoint_save_examples.py
+model_save_examples.py
+pettingzoo_like_example.py
+

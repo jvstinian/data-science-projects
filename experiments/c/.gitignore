@@ -1,2 +1,19 @@
 # Executables
 main
+cartpole
+hexmain
+ataxxmain
+
+# Assembly
+**/*.asm
+
+# Projects
+autotools_linewalk
+deriv
+enum-example
+gnuplot_example
+ncurses
+preprocessor-example
+
+# The following might be useful in the future
+stats
