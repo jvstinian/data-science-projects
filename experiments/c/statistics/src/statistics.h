@@ -1,5 +1,5 @@
 #include <stddef.h>
 
-double mean(double* data, size_t size);
+double mean(size_t size, double data[size]);
 
 int main();

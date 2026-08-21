@@ -26,7 +26,6 @@
       };
       notebooks = map notebook [
         "NGFS"
-        "statistics"
       ];
     in {
       packages = builtins.listToAttrs (map (n: {name = n.name; value = n.path;}) notebooks);
