@@ -11,7 +11,7 @@ include_HEADERS = statistics.h
 # libhcdg_la_SOURCES = hcdg.c
 # libhcdg_la_CFLAGS = -std=c89
 
-libstatistics_a_SOURCES = statistics.c
+libstatistics_a_SOURCES = statistics.c pareto.c
 # libstatistics_a_CFLAGS = -std=c89
 # libstatistics_LDFLAGS = @LAPACK_LDFLAGS@
 
