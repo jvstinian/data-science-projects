@@ -54,7 +54,7 @@
               gymnasium # pulls in tensorflow-gpu which is not compatible with python-3.12
               jvstinian-zombsole
               zombpyg
-	      prlp-demo
+              prlp-demo
               torch
               torchvision
               jupyter
@@ -82,7 +82,7 @@
           #   cudaPackages.cudatoolkit cudaPackages.cudnn
           # ];
           shellHook = ''
-            export PS1='\[\e[1;34m\]pytorch-dqn-example > \[\e[0m\]'
+            export PS1='\[\e[1;34m\]rl-notebooks > \[\e[0m\]'
             export XLA_FLAGS="--xla_gpu_cuda_data_dir=${pkgs.cudatoolkit}/"
             # jupyter-notebook --ip=10.0.0.100 --port 8888 --no-browser
           '';
@@ -91,15 +91,15 @@
         #   dqn-train = python-train-app;
         # };
         # apps = {
-	#   dqn-train = {
-	#     type = "app";
+        #   dqn-train = {
+        #     type = "app";
         #     program = "${python-train-app}/bin/train_dqn.py";
         #   };
-	#   dqn-eval = {
-	#     type = "app";
+        #   dqn-eval = {
+        #     type = "app";
         #     program = "${python-train-app}/bin/eval_dqn.py";
         #   };
-	# };
+        # };
       }
     );
 }
