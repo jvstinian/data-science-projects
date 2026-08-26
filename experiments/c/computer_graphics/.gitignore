@@ -1,0 +1,5 @@
+# Executable
+cg
+
+# flake which we're not using right now
+flake.nix
