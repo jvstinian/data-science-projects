@@ -2,6 +2,8 @@
 
 ## Arcade Learning Environment
 
+This library provides C bindings for some of the methods in
+the Arcade Learning Environment.
 ```
 ===========================================================================
                   License Information and Copyright Notice
