@@ -1,6 +1,6 @@
 # Environment
 
-We use SDL2, pkg-config, and gnatmake.
+We use SDL2, pkg-config, and gcc.
 A suitable environment in Nix can be acquired using
 ```
 nix-shell -p gcc gdb SDL2 pkg-config
