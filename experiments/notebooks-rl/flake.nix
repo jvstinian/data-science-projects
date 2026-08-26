@@ -12,17 +12,15 @@
 
   inputs = {
     nixpkgs = {
-      # url = "github:nixos/nixpkgs/0c0bf9c057382d5f6f63d54fd61f1abd5e1c2f63";
-      # url = "github:nixos/nixpkgs/nixos-25.05";
       url = "github:nixos/nixpkgs/4792576cb003c994bd7cc1edada3129def20b27d";
     };
     libzombsole = {
-      url = "github:jvstinian/libzombsole"; # /nixos-25.05";
+      url = "github:jvstinian/libzombsole";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
     libzombpyg = {
-      url = "github:jvstinian/zombpyg"; # "/nixos-25.05";
+      url = "github:jvstinian/zombpyg";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
@@ -54,12 +52,12 @@
               gymnasium # pulls in tensorflow-gpu which is not compatible with python-3.12
               jvstinian-zombsole
               zombpyg
-	      prlp-demo
+              prlp-demo
               torch
               torchvision
               jupyter
               ipython
-              pandas # TODO: Is this package and the following needed?
+              pandas
               statsmodels
               matplotlib
           ];
@@ -74,15 +72,9 @@
           # };
       in rec {
         devShell = pkgs.mkShell {
-          # buildInputs = with pkgs; [
-          #   dev-python # cudaPackages.cudatoolkit cudaPackages.cudnn
-          # ];
           packages = [ dev-python ];
-          # inputsFrom = with pkgs; [
-          #   cudaPackages.cudatoolkit cudaPackages.cudnn
-          # ];
           shellHook = ''
-            export PS1='\[\e[1;34m\]pytorch-dqn-example > \[\e[0m\]'
+            export PS1='\[\e[1;34m\]rl-notebooks > \[\e[0m\]'
             export XLA_FLAGS="--xla_gpu_cuda_data_dir=${pkgs.cudatoolkit}/"
             # jupyter-notebook --ip=10.0.0.100 --port 8888 --no-browser
           '';
@@ -91,15 +83,15 @@
         #   dqn-train = python-train-app;
         # };
         # apps = {
-	#   dqn-train = {
-	#     type = "app";
+        #   dqn-train = {
+        #     type = "app";
         #     program = "${python-train-app}/bin/train_dqn.py";
         #   };
-	#   dqn-eval = {
-	#     type = "app";
+        #   dqn-eval = {
+        #     type = "app";
         #     program = "${python-train-app}/bin/eval_dqn.py";
         #   };
-	# };
+        # };
       }
     );
 }
