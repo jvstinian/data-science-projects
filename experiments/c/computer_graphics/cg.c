@@ -6,7 +6,6 @@ static void sleep_ms(double seconds) {
     struct timespec ts;
     ts.tv_sec = (time_t) seconds;
     ts.tv_nsec = (long) (seconds * 1.0e9);
-    // printf("Sleeping for %lu.%09lu\n", ts.tv_sec, ts.tv_nsec);
     nanosleep(&ts, NULL);
 }
 
@@ -123,7 +122,7 @@ int main() {
             }
         }
 
-        // --- Rendering ---
+        // Rendering
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // Set draw color to black (RGBA)
         SDL_RenderClear(renderer);                      // Clear the renderer with the current color
 
