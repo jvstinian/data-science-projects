@@ -127,13 +127,11 @@ size_t ale_get_available_modes_length(ALEInterface* aleptr) {
     return aleptr->getAvailableModes().size();
 }
 
-/* TODO: Return the length of the game modes vector, i.e. the 
- *       length of the output if n had been sufficiently large. */
 size_t ale_get_available_modes(ALEInterface* aleptr, game_mode_t* modes_out, size_t n) {
     std::vector<game_mode_t> game_modes(aleptr->getAvailableModes());
     size_t len = game_modes.size();
-    len = (len < n) ? len : n;
-    std::copy(game_modes.begin(), game_modes.begin() + len, modes_out);
+    size_t outlen = (len < n) ? len : n;
+    std::copy(game_modes.begin(), game_modes.begin() + outlen, modes_out);
     return len;
 }
 
@@ -149,13 +147,11 @@ size_t ale_get_available_difficulties_length(ALEInterface* aleptr) {
     return aleptr->getAvailableDifficulties().size();
 }
 
-/* TODO: Return the length of the game modes vector, i.e. the 
- *       length of the output if n had been sufficiently large. */
 size_t ale_get_available_difficulties(ALEInterface* aleptr, unsigned int* difficulties_out, size_t n) {
     std::vector<unsigned int> game_difficulties(aleptr->getAvailableDifficulties());
     size_t len = game_difficulties.size();
-    len = (len < n) ? len : n;
-    std::copy(game_difficulties.begin(), game_difficulties.begin() + len, difficulties_out);
+    size_t outlen = (len < n) ? len : n;
+    std::copy(game_difficulties.begin(), game_difficulties.begin() + outlen, difficulties_out);
     return len;
 }
 
@@ -171,13 +167,11 @@ size_t ale_get_legal_action_set_length(ALEInterface* aleptr) {
     return aleptr->getLegalActionSet().size();
 }
 
-/* TODO: Return the length of the game modes vector, i.e. the 
- *       length of the output if n had been sufficiently large. */
 size_t ale_get_legal_action_set(ALEInterface* aleptr, Action* actions_out, size_t n) {
     std::vector<Action> actions(aleptr->getLegalActionSet());
     size_t len = actions.size();
-    len = (len < n) ? len : n;
-    std::copy(actions.begin(), actions.begin() + len, actions_out);
+    size_t outlen = (len < n) ? len : n;
+    std::copy(actions.begin(), actions.begin() + outlen, actions_out);
     return len;
 }
 
@@ -185,8 +179,6 @@ size_t ale_get_minimal_action_set_length(ALEInterface* aleptr) {
     return aleptr->getMinimalActionSet().size();
 }
 
-/* TODO: Return the length of the game modes vector, i.e. the 
- *       length of the output if n had been sufficiently large. */
 size_t ale_get_minimal_action_set(ALEInterface* aleptr, Action* actions_out, size_t n) {
     std::vector<Action> actions(aleptr->getMinimalActionSet());
     size_t len = actions.size();
@@ -210,6 +202,11 @@ int ale_get_max_num_frames(ALEInterface* aleptr) {
 void ale_save_screen_png(ALEInterface* aleptr, const char* filename) {
     std::string file(filename);
     aleptr->saveScreenPNG(file);
+}
+
+void ale_get_screen_dims(ALEInterface* aleptr, size_t* heightp, size_t* widthp) {
+    *heightp = aleptr->getScreen().height();
+    *widthp = aleptr->getScreen().width();
 }
 
 void ale_get_screen_size(ALEInterface* aleptr, struct Screen* screen) {

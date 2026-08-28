@@ -161,41 +161,40 @@ int main(int argc, char *argv[]) {
     std::cout << "Welcome message: " << std::endl;
     std::cout << welcome_message << std::endl << std::flush;
 
+    /*
     size_t rom_file_buf_size = strlen(run_config.rom_dir) + strlen(run_config.rom_name) + 5 + 1;
     char rom_file_buf[rom_file_buf_size];
 
     ALEInterface* aleptr = ale_interface_new();
-    /* TODO: I'm getting an error if I pass -r tetris.bin (which of course is not correct) */
-    printf("Running get_rom_path\n");
-    std::cout << std::flush;
     get_rom_path(run_config.rom_dir, run_config.rom_name, rom_file_buf_size, rom_file_buf);
-    /*
-    struct Screen screen;
-    ale_get_screen_size(aleptr, &screen);
-    printf("Height: %lu, Width: %lu", screen.height, screen.width);
-    */
     ale_interface_delete(aleptr);
+    */
 
     /*struct AtariEnvStepMetadata info; */
     struct RGBObservation obs;
     struct AtariRGBStepReturn state;
+    enum Action action = (enum Action) 0;
     /*
     bool done;
     float reward;
     */
-    struct AtariEnvParams params = default_atari_env_params_init();
-    params.rom_dir = run_config.rom_dir;
-    params.rom_name = run_config.rom_name;
-    AtariEnv* env = atari_env_make(/*run_config.rom_dir, run_config.rom_name, */params);
+    struct AtariConfig config = default_atari_env_config_init();
+    config.rom_dir = run_config.rom_dir;
+    config.rom_name = run_config.rom_name;
+    AtariEnv* env = atari_make(/*run_config.rom_dir, run_config.rom_name, */config);
 
     obs = atarirgb_reset(env, 123u);
+    size_t step_count = 0;
     while (1) {
-        state = atarirgb_step(env, (enum Action) 0/*, &obs, &done, &reward*/);
+        action = atari_random_action(env);
+        state = atarirgb_step(env, action/*, &obs, &done, &reward*/);
+        step_count++;
         obs = state.observation;
         if (state.terminated) break;
     }
+    printf("Step count: %lu", step_count);
 
-    atari_env_destroy(env);
+    atari_destroy(env);
 
     return 0;
 }

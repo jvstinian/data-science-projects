@@ -37,16 +37,24 @@ struct RomMD5Hash {
 };
 
 extern struct RomMD5Hash g_rom_md5[108];
-/*
-extern "C" {
-extern struct RomMD5Hash rom_md5[108];
-}
+
+/* We borrow some of the seed reset logic, but remove the NO_SET option
+enum SeedResetTag {
+    SET_DEFAULT,
+    SET_SEED
+};
+
+struct SeedReset {
+    enum SeedResetTag tag;
+    unsigned int seed;  \/\* Only used if tag == SET_SEED \*\/
+};
 */
 
 struct AtariEnvStepMetadata {
     int lives;
     int episode_frame_number;
     int frame_number;
+    unsigned int c_seed;
     int ale_seed;
 };
 
@@ -105,12 +113,11 @@ struct Frameskip {
 --               the current environment RGB frame.
 --           sound_obs: bool => Add the sound from the frame to the observation.
 */
-struct AtariEnvParams {
+struct AtariConfig {
     char* rom_dir;
     char* rom_name;
     game_mode_t mode;
     unsigned int difficulty;
-    /* obsType :: ObservationType */
     /*
     unsigned int frameskip_begin;
     unsigned int frameskip_end;
@@ -127,10 +134,23 @@ struct AtariEnvParams {
     bool sound_obs;
 };
 
+struct AtariEnvParams {
+    game_mode_t mode;
+    unsigned int difficulty;
+    struct Frameskip frameskip;
+    float repeat_action_probability;
+    bool full_action_space;
+    int max_num_frames_per_episode;
+    enum GymRenderMode render_mode;
+    bool sound_obs;
+};
+
 struct AtariEnv {
-    struct AtariEnvParams params;
-    /*char* game_rom;*/
     ALEInterface* aleptr;
+    /*char* game_rom;*/
+    unsigned int c_seed;
+    int ale_seed;
+    struct AtariEnvParams params;
 };
 
 struct AtariRGBStepReturn {
@@ -149,13 +169,16 @@ enum RomPathError {
 enum RomPathError get_rom_path(const char* rom_dir, const char* rom_name, size_t buf_size, char* rom_file_out);
 
 extern "C" {
-    struct AtariEnvParams default_atari_env_params_init();
-    enum RomPathError load_game(ALEInterface* aleptr, /*const char* rom_dir, const char* rom_name, */struct AtariEnvParams params);
-    int seed_game(ALEInterface* aleptr, unsigned int seed);
-    AtariEnv* atari_env_make(/*const char* rom_dir, const char* rom_name, */struct AtariEnvParams params);
-    void atari_env_destroy(AtariEnv* env);
+    struct AtariConfig default_atari_env_config_init();
+    enum RomPathError load_game(ALEInterface* aleptr, /*const char* rom_dir, const char* rom_name, */struct AtariConfig config);
+    /* int seed_game(ALEInterface* aleptr, unsigned int seed); */
+    AtariEnvStepMetadata atari_get_info(AtariEnv* env);
+    AtariEnv* atari_make(/*const char* rom_dir, const char* rom_name, */struct AtariConfig config);
+    void atari_destroy(AtariEnv* env);
+    RGBObservation atarirgb_reset_default_seed(AtariEnv* env);
     RGBObservation atarirgb_reset(AtariEnv* env, unsigned int seed);
     struct AtariRGBStepReturn atarirgb_step(AtariEnv* env, enum Action action);
+    enum Action atari_random_action(AtariEnv* env);
 }
 
 #endif

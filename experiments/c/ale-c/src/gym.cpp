@@ -169,12 +169,12 @@ enum RomPathError get_rom_path(const char* rom_dir, const char* rom_name, size_t
     return ROM_PATH_OK;
 }
 
-struct AtariEnvParams default_atari_env_params_init() {
+struct AtariConfig default_atari_env_config_init() {
     struct Frameskip default_frameskip = {
         .tag = FRAMESKIP_VALUE, .params = (union FrameskipParams) { .value = 4 } 
     };
     
-    return (struct AtariEnvParams) {
+    return (struct AtariConfig) {
         .rom_dir = NULL, .rom_name = NULL,
         .mode = ~0u, .difficulty = ~0u,
         .frameskip = default_frameskip,
@@ -187,31 +187,33 @@ struct AtariEnvParams default_atari_env_params_init() {
 }
 
 /* TODO: Should the following return an error? */
-enum RomPathError load_game(ALEInterface* aleptr, /*const char* rom_dir, const char* rom_name, */struct AtariEnvParams params) {
-    size_t buf_size = strlen(params.rom_dir) + strlen(params.rom_name) + 5 + 1;  /* +5 for "/" and ".bin" */
+enum RomPathError atari_load_game(ALEInterface* aleptr, /*const char* rom_dir, const char* rom_name, */struct AtariConfig config) {
+    size_t buf_size = strlen(config.rom_dir) + strlen(config.rom_name) + 5 + 1;  /* +5 for "/" and ".bin" */
     char rom_file[buf_size];
     enum RomPathError status = ROM_PATH_OK;
 
-    if ((status = get_rom_path(params.rom_dir, params.rom_name, buf_size, rom_file))) {
+    if ((status = get_rom_path(config.rom_dir, config.rom_name, buf_size, rom_file))) {
         fprintf(stderr, "load_game: could not determinae a valid rom path");
         return status;
     }
     ale_load_rom(aleptr, rom_file);
-    if (params.mode != (~0u)) {
-        ale_set_mode(aleptr, params.mode);
+    if (config.mode != (~0u)) {
+        ale_set_mode(aleptr, config.mode);
     }
-    if (params.difficulty != (~0u)) {
-        ale_set_difficulty(aleptr, params.difficulty);
+    if (config.difficulty != (~0u)) {
+        ale_set_difficulty(aleptr, config.difficulty);
     }
     return status;
 }
 
+/*
 int seed_game(ALEInterface* aleptr, unsigned int seed) {
     srand(seed);
     int ale_seed = (int) rand();
     ale_set_int(aleptr, "random_seed", ale_seed);
     return ale_seed;
 }
+*/
 /*
 -- """Initialize the ALE for Gymnasium.
 -- Args:
@@ -233,8 +235,20 @@ initAtariEnv rom params = do
           render_mode = renderMode params
           sound_obs = soundObs params
 */
+static struct AtariEnvParams atari_config_to_params(struct AtariConfig config) {
+    return (struct AtariEnvParams) {
+        .mode = config.mode,
+        .difficulty = config.difficulty,
+        .frameskip = config.frameskip,
+        .repeat_action_probability = config.repeat_action_probability,
+        .full_action_space = config.full_action_space,
+        .max_num_frames_per_episode = config.max_num_frames_per_episode,
+        .render_mode = config.render_mode,
+        .sound_obs = config.sound_obs
+    };
+}
 
-AtariEnv* atari_env_make(/*const char* rom_dir, const char* rom_name, */struct AtariEnvParams params) {
+AtariEnv* atari_make(/*const char* rom_dir, const char* rom_name, */struct AtariConfig config) {
     struct AtariEnv* env = (struct AtariEnv*) malloc(sizeof(struct AtariEnv));
     if (env == NULL) {
         fprintf(stderr, "atari_make: unable to allocate environment");
@@ -246,6 +260,7 @@ AtariEnv* atari_env_make(/*const char* rom_dir, const char* rom_name, */struct A
         free(env);
         return NULL;
     }
+    struct AtariEnvParams params = atari_config_to_params(config);
     env->params = params;
 
     ale_set_float(env->aleptr, "repeat_action_probability", params.repeat_action_probability);
@@ -268,7 +283,7 @@ AtariEnv* atari_env_make(/*const char* rom_dir, const char* rom_name, */struct A
     /*
     -- TODO: self.seed_game()
     */
-    if (load_game(env->aleptr, /*rom_dir, rom_name, */params)) {
+    if (atari_load_game(env->aleptr, /*rom_dir, rom_name, */config)) {
         fprintf(stderr, "atari_make: unable to load game");
         ale_interface_delete(env->aleptr);
         free(env);
@@ -277,16 +292,23 @@ AtariEnv* atari_env_make(/*const char* rom_dir, const char* rom_name, */struct A
     return env;
 }
 
-AtariEnvStepMetadata get_info(AtariEnv* env) {
+AtariEnvStepMetadata atari_get_info(AtariEnv* env) {
     return (struct AtariEnvStepMetadata) {
         .lives = ale_lives(env->aleptr),
         .episode_frame_number = ale_get_episode_frame_number(env->aleptr),
         .frame_number = ale_get_frame_number(env->aleptr),
-        .ale_seed = 0 /* TODO: Set seed info properly */
+        .c_seed = env->c_seed,
+        .ale_seed = env->ale_seed
     };
 }
 
+RGBObservation atarirgb_reset_default_seed(AtariEnv* env) {
+    unsigned int seed = time(NULL);
+    return atarirgb_reset(env, seed);
+}
+
 RGBObservation atarirgb_reset(AtariEnv* env, unsigned int seed/*, struct RGBObservation* obs*/) {
+    env->c_seed = seed;
     struct RGBObservation obs;
     /* super().reset(seed=seed, options=options)
        # sets the seeds if it's specified for both ALE and frameskip np
@@ -296,7 +318,11 @@ RGBObservation atarirgb_reset(AtariEnv* env, unsigned int seed/*, struct RGBObse
            seeded_with = self.seed_game(seed)
            self.load_game()
     */
-    seed_game(env->aleptr, seed); /* TODO: We currently don't use the returned ale_seed */
+    /* Set the seed */
+    srand(env->c_seed);
+    env->ale_seed = (int) rand();
+    ale_set_int(env->aleptr, "random_seed", env->ale_seed);
+    /* seed_game(env->aleptr, seed); */ /* TODO: We currently don't use the returned ale_seed */
     ale_reset_game(env->aleptr);
 
     /* obs = self._get_obs() */
@@ -317,7 +343,7 @@ RGBObservation atarirgb_reset(AtariEnv* env, unsigned int seed/*, struct RGBObse
     return obs;
 }
 
-void atari_env_destroy(AtariEnv* env) {
+void atari_destroy(AtariEnv* env) {
     ale_interface_delete(env->aleptr);
     free(env);
 }
@@ -366,4 +392,18 @@ struct AtariRGBStepReturn atarirgb_step(AtariEnv* env, enum Action action) {
     free(screen.screen);
 
     return ret;
+}
+    
+enum Action atari_random_action(AtariEnv* env) {
+    enum Action actions[PLAYER_A_MAX];
+    size_t fulllen;
+
+    if (env->params.full_action_space) {
+        fulllen = ale_get_legal_action_set(env->aleptr, actions, PLAYER_A_MAX);
+    } else {
+        fulllen = ale_get_minimal_action_set(env->aleptr, actions, PLAYER_A_MAX);
+    }
+    assert(fulllen <= PLAYER_A_MAX);
+
+    return actions[rand() % fulllen];
 }

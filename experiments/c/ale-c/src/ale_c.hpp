@@ -33,12 +33,14 @@
 #include <ale_interface.hpp>
 
 /*
-Many of the type definitions such as enum Action, game_mode_t, and difficulty_t
+enum Action, game_mode_t, and difficulty_t
 are defined in ale/common/Constants.h.
 We extract them from the ale namespace.
 */
-typedef ale::ALEInterface ALEInterface;
-typedef ale::game_mode_t game_mode_t;
+/*typedef ale::ALEInterface ALEInterface;
+typedef ale::game_mode_t game_mode_t; TODO */
+using ale::ALEInterface;
+using ale::game_mode_t;
 using ale::Action;
 using ale::pixel_t;  /* unsigned char */
 
@@ -80,21 +82,31 @@ extern "C" {
     bool ale_game_truncated(ALEInterface* aleptr);
     void ale_reset_game(ALEInterface* aleptr);
     int ale_lives(ALEInterface* aleptr);
+
     size_t ale_get_available_modes_length(ALEInterface* aleptr);
+    /* ale_get_available_modes returns the length of the game modes vector, i.e. the 
+     * length of the output if n had been sufficiently large. */
     size_t ale_get_available_modes(ALEInterface* aleptr, game_mode_t* modes_out, size_t n);
     void ale_set_mode(ALEInterface* aleptr, game_mode_t gamemode);
     game_mode_t ale_get_mode(ALEInterface* aleptr);
     size_t ale_get_available_difficulties_length(ALEInterface* aleptr);
+    /* ale_get_available_difficulties returns the length of the difficulties vector, i.e. the 
+     * length of the output if n had been sufficiently large. */
     size_t ale_get_available_difficulties(ALEInterface* aleptr, unsigned int* difficulties_out, size_t n);
     void ale_set_difficulty(ALEInterface* aleptr, unsigned int difficulty);
     unsigned int ale_get_difficulty(ALEInterface* aleptr);
     size_t ale_get_legal_action_set_length(ALEInterface* aleptr);
+    /* ale_get_legal_action_set returns the length of the vector of legal actions, i.e. the 
+     * length of the output if n had been sufficiently large. */
     size_t ale_get_legal_action_set(ALEInterface* aleptr, Action* actions_out, size_t n);
     size_t ale_get_minimal_action_set_length(ALEInterface* aleptr);
+    /* ale_get_minimal_action_set returns the length of the minimal action set, i.e. the 
+     * length of the output if n had been sufficiently large. */
     size_t ale_get_minimal_action_set(ALEInterface* aleptr, Action* actions_out, size_t n);
     int ale_get_frame_number(ALEInterface* aleptr);
     int ale_get_episode_frame_number(ALEInterface* aleptr);
     int ale_get_max_num_frames(ALEInterface* aleptr);
+    void ale_get_screen_dims(ALEInterface* aleptr, size_t* heightp, size_t* widthp);
     void ale_get_screen_size(ALEInterface* aleptr, struct Screen* screen);
     void ale_get_screen_grayscale(ALEInterface* aleptr, struct Screen* screen);
     void ale_get_screen_rgb(ALEInterface* aleptr, struct Screen* screen);
