@@ -131,8 +131,18 @@ int process_arguments(int argc, char *argv[], struct RunConfig *run_config) {
         fprintf(stderr, "Rom name must be specified\n");
         return 1;
     }
-    /* TODO: Check frameskip */
-    /* TODO: Check probability */
+    if (run_config->frameskip_begin == 0) {
+        fprintf(stderr, "Frameskip must be positive\n");
+        return 1;
+    }
+    if (run_config->frameskip_end < run_config->frameskip_begin) {
+        fprintf(stderr, "Invalid frameskip, lower bound must be less than or equal to upper bound\n");
+        return 1;
+    }
+    if (run_config->repeat_action_probability < 0.0 || run_config->repeat_action_probability > 1.0) {
+        fprintf(stderr, "Repeat action probability must be between 0 and 1 inclusive\n");
+        return 1;
+    }
     return 0;
 }
 
@@ -147,19 +157,23 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    /* TODO: Remove
     for (size_t i = 0; i < 108; i++) {
         if (i > 0) {
             printf("strcmp: %d\n", strcmp(g_rom_md5[i].rom_file, g_rom_md5[i-1].rom_file));
         }
         printf("%s: %s\n", g_rom_md5[i].rom_file, g_rom_md5[i].md5);
     }
+    */
 
+    /* TODO: Remove
     char welcome_message[100];
     get_welcome_message(welcome_message, 100);
 
     std::cout << "ALE C example" << std::endl << std::flush;
     std::cout << "Welcome message: " << std::endl;
     std::cout << welcome_message << std::endl << std::flush;
+    */
 
     /*
     size_t rom_file_buf_size = strlen(run_config.rom_dir) + strlen(run_config.rom_name) + 5 + 1;
@@ -174,20 +188,17 @@ int main(int argc, char *argv[]) {
     struct RGBObservation obs;
     struct AtariRGBStepReturn state;
     enum Action action = (enum Action) 0;
-    /*
-    bool done;
-    float reward;
-    */
+    /* TODO: atari config should reflect all the run settings */
     struct AtariConfig config = default_atari_env_config_init();
     config.rom_dir = run_config.rom_dir;
     config.rom_name = run_config.rom_name;
-    AtariEnv* env = atari_make(/*run_config.rom_dir, run_config.rom_name, */config);
+    AtariEnv* env = atari_make(config);
 
     obs = atarirgb_reset(env, 123u);
     size_t step_count = 0;
     while (1) {
         action = atari_random_action(env);
-        state = atarirgb_step(env, action/*, &obs, &done, &reward*/);
+        state = atarirgb_step(env, action);
         step_count++;
         obs = state.observation;
         if (state.terminated) break;

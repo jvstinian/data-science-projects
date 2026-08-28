@@ -166,14 +166,21 @@ enum RomPathError {
     ROM_MD5_HASH_CALCULATION_FAILED
 };
 
+/* get_rom_path not only concatenates the rom directory and name to form a file
+ * name, but also calculates the MD5 hash for the file and compares it to a
+ * value stored in this library. */
 enum RomPathError get_rom_path(const char* rom_dir, const char* rom_name, size_t buf_size, char* rom_file_out);
 
 extern "C" {
+    /* Supporting methods which could be useful when working
+     * with these environments */
     struct AtariConfig default_atari_env_config_init();
-    enum RomPathError load_game(ALEInterface* aleptr, /*const char* rom_dir, const char* rom_name, */struct AtariConfig config);
-    /* int seed_game(ALEInterface* aleptr, unsigned int seed); */
+    enum RomPathError load_game(ALEInterface* aleptr, struct AtariConfig config);
+
+    /* Gymnasium methods */
+    /* We provide two reset methods depending on whether a seed is provided */
     AtariEnvStepMetadata atari_get_info(AtariEnv* env);
-    AtariEnv* atari_make(/*const char* rom_dir, const char* rom_name, */struct AtariConfig config);
+    AtariEnv* atari_make(struct AtariConfig config);
     void atari_destroy(AtariEnv* env);
     RGBObservation atarirgb_reset_default_seed(AtariEnv* env);
     RGBObservation atarirgb_reset(AtariEnv* env, unsigned int seed);

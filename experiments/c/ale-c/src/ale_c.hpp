@@ -110,6 +110,11 @@ extern "C" {
     void ale_get_screen_size(ALEInterface* aleptr, struct Screen* screen);
     void ale_get_screen_grayscale(ALEInterface* aleptr, struct Screen* screen);
     void ale_get_screen_rgb(ALEInterface* aleptr, struct Screen* screen);
+    /* ale_get_rgb_array assumes rgbs_out is sufficiently large to
+     * hold the contents of the screen.
+     * This function is provided to avoid allocations associated with
+     * the struct Screen type. */
+    void ale_get_rgb_array(ALEInterface* aleptr, pixel_t* rgbs_out);
     void ale_save_screen_png(ALEInterface* aleptr, const char* filename);
 }
 
