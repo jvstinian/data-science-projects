@@ -27,13 +27,6 @@ returning an error if an issue was encountered.  The ROM file path
 is preserved and used in the `atari_reset` method to load the ROM
 without performing the validation again after the ale seed has been set.
 
-Also, in the constructor in the python version, a default seed is set and the
-ROM is loaded.  The loading of the ROM appears to be performed so that
-additional member variables such as the action and observation space can
-be defined.  As the additional variables are not used in the same way
-in these bindings, we instead simply set a default ale seed without
-loading the ROM.  The ROM is only loaded in one of the reset calls.
-
 It should be noted that we have two reset calls, `atari_reset` and
 `atari_reset_omit_seed`, depending on whether a seed will be
 provided when resetting.  

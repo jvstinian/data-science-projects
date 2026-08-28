@@ -157,19 +157,34 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    /* 
-    size_t rom_file_buf_size = strlen(run_config.rom_dir) + strlen(run_config.rom_name) + 5 + 1;
-    char rom_file_buf[rom_file_buf_size];
-    */
-
     /*struct AtariEnvStepMetadata info; */
     struct RGBObservation obs;
     struct AtariRGBStepReturn state;
     enum Action action = (enum Action) 0;
-    /* TODO: atari config should reflect all the run settings */
+
+    /* Set the Atari config using the run config */
     struct AtariConfig config = default_atari_env_config_init();
     config.rom_dir = run_config.rom_dir;
     config.rom_name = run_config.rom_name;
+    config.repeat_action_probability = run_config.repeat_action_probability;
+    if (run_config.frameskip_begin < run_config.frameskip_end) {
+        config.frameskip = (struct Frameskip) {
+            .tag = FRAMESKIP_TUPLE,
+            .params = {
+                .tuple = (struct FrameskipLowHigh) {
+                    .low = run_config.frameskip_begin,
+                    .high = run_config.frameskip_end
+                }
+            }
+        };
+    } else {
+        config.frameskip = (struct Frameskip) {
+            .tag = FRAMESKIP_VALUE,
+            .params = {
+                .value = run_config.frameskip_begin
+            }
+        };
+    }
     AtariEnv* env = atari_make(config);
 
     obs = atarirgb_reset(env, 123u);
@@ -193,7 +208,6 @@ int main(int argc, char *argv[]) {
         if (state.terminated) break;
     }
     printf("Step count: %lu\n", step_count);
-
 
     atari_destroy(env);
 

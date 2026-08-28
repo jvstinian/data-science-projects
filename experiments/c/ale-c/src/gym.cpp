@@ -45,29 +45,7 @@ static void md5_to_string(const unsigned char *digest, size_t digest_len, char *
 static int calculate_file_md5(const char *filename, char *md5_hex_out) {
     size_t digest_size = EVP_MD_size(EVP_md5());
     unsigned char digest[digest_size];
-    /*
-    FILE *file = fopen(filename, "rb");
-    if (file == NULL) {
-        return 1; // Failed to open file
-    }
 
-    MD5_CTX md5_context;
-    MD5_Init(&md5_context);
-
-    unsigned char buffer[BUFFER_SIZE];
-    size_t bytes_read;
-
-    // Read the file in chunks and stream it to the MD5 context
-    while ((bytes_read = fread(buffer, 1, BUFFER_SIZE, file)) != 0) {
-        MD5_Update(&md5_context, buffer, bytes_read);
-    }
-
-    MD5_Final(digest, &md5_context);
-    fclose(file);
-
-    md5_to_string(digest, md5_hex_out);
-    return 0; // Success
-    */
     EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
     unsigned int digest_len;
 
@@ -201,13 +179,12 @@ struct AtariConfig default_atari_env_config_init() {
 /* This method follows the python implementation.
  * In the python implementation of reset, the load_game method is called
  * whenever a seed is passed to reset.
- * We probably don't need to call get_rom_path each time, but separating
- * this method  from atari_load_game would require some refactoring.
- * For instance, we'd need to call get_rom_path once in the atari_make
- * and store the resulting full rom file path so that it could be
- * used in atari_load_game.
- * For now we follow the python implementation, with the exception
- * of some of the seed handling. */
+ * Since we don't need to call `get_rom_path` each time we reset the game
+ * and reload the ROM, we introduce `atari_load_game_from_rom_file`
+ * below which represents a refactoring of `atari_load_game`,
+ * and only loads the rom and performs some configuration.
+ * `get_rom_path` is then called once in `atari_make` to construct and
+ * validate the ROM file path. */
 enum RomPathError atari_load_game(ALEInterface* aleptr, struct AtariConfig config) {
     /* +5 for "/" and ".bin" */
     size_t buf_size = strlen(config.rom_dir) + strlen(config.rom_name) + 5 + 1;
@@ -228,6 +205,16 @@ enum RomPathError atari_load_game(ALEInterface* aleptr, struct AtariConfig confi
     return status;
 }
 
+void atari_load_game_from_rom_file(ALEInterface* aleptr, const char* rom_file, struct AtariEnvParams params) {
+    ale_load_rom(aleptr, rom_file);
+    if (params.mode != (~0u)) {
+        ale_set_mode(aleptr, params.mode);
+    }
+    if (params.difficulty != (~0u)) {
+        ale_set_difficulty(aleptr, params.difficulty);
+    }
+}
+
 static struct AtariEnvParams atari_config_to_params(struct AtariConfig config) {
     return (struct AtariEnvParams) {
         .mode = config.mode,
@@ -241,8 +228,6 @@ static struct AtariEnvParams atari_config_to_params(struct AtariConfig config) {
     };
 }
 
-/* NOTE: We omit the seed_game method and basically inline our modifications of
- * that function where needed. */
 AtariEnv* atari_make(struct AtariConfig config) {
     struct AtariEnv* env = (struct AtariEnv*) malloc(sizeof(struct AtariEnv));
     if (env == NULL) {
@@ -252,6 +237,24 @@ AtariEnv* atari_make(struct AtariConfig config) {
     env->aleptr = ale_interface_new();
     if (env->aleptr == NULL) {
         fprintf(stderr, "atari_make: unable to create a new ALE interface");
+        free(env);
+        return NULL;
+    }
+    /* Construct and store the ROM file path, as it is needed
+     * for loading the ROM any time the seed is reset */
+    /* +5 for "/" and ".bin" */
+    size_t buf_size = strlen(config.rom_dir) + strlen(config.rom_name) + 5 + 1;
+    env->rom_file_path = (char*) malloc(buf_size);
+    if (env->rom_file_path == NULL) {
+        fprintf(stderr, "atari_make: unable to allocate a rom file name");
+        ale_interface_delete(env->aleptr);
+        free(env);
+        return NULL;
+    }
+    if (get_rom_path(config.rom_dir, config.rom_name, buf_size, env->rom_file_path)) {
+        fprintf(stderr, "atari_make: could not determinae a valid rom path");
+        free(env->rom_file_path);
+        ale_interface_delete(env->aleptr);
         free(env);
         return NULL;
     }
@@ -275,12 +278,19 @@ AtariEnv* atari_make(struct AtariConfig config) {
 
     ale_set_bool(env->aleptr, "sound_obs", params.sound_obs);
 
-    if (atari_load_game(env->aleptr, config)) {
-        fprintf(stderr, "atari_make: unable to load game");
-        ale_interface_delete(env->aleptr);
-        free(env);
-        return NULL;
-    }
+    /* We omit the seed_game method and basically inline our modifications of
+     * that function where needed.
+     *
+     * We set a default ale seed and load the ROM.
+     * Note that if the `atari_reset` method is called with a seed then this
+     * seed will be overwritten and the ROM will be loaded again.
+     * See the README for additional details about seed setting and ROM
+     * loading. */
+    env->c_seed = 0; /* Just a dummy value, we don't actually reset the RNG */
+    env->ale_seed = (int) rand();
+    ale_set_int(env->aleptr, "random_seed", env->ale_seed);
+    atari_load_game_from_rom_file(env->aleptr, env->rom_file_path, env->params);
+    
     return env;
 }
 
@@ -294,26 +304,29 @@ AtariEnvStepMetadata atari_get_info(AtariEnv* env) {
     };
 }
 
-RGBObservation atarirgb_reset_default_seed(AtariEnv* env) {
-    unsigned int seed = time(NULL);
-    return atarirgb_reset(env, seed);
+RGBObservation atarirgb_reset_omit_seed(AtariEnv* env) {
+    struct RGBObservation obs;
+
+    ale_reset_game(env->aleptr);
+
+    /* The following assumes the screen is an array of size (210, 160). */
+    ale_get_rgb_array(env->aleptr, (pixel_t*) obs.rgb_array);
+
+    return obs;
 }
 
 RGBObservation atarirgb_reset(AtariEnv* env, unsigned int seed) {
-    env->c_seed = seed;
     struct RGBObservation obs;
-    /* In the python code, if seed is not none, then
-     * the following is run: 
-           seeded_with = self.seed_game(seed)
-           self.load_game()
-    */
+
     /* Set the seed */
+    env->c_seed = seed;
     srand(env->c_seed);
     env->ale_seed = (int) rand();
-    printf("ale seed: %d\n", env->ale_seed); /* TODO */
-    /* TODO: It appears that for the ale_seed to take effect, the rom
-     * must be reloaded */
     ale_set_int(env->aleptr, "random_seed", env->ale_seed);
+    atari_load_game_from_rom_file(env->aleptr, env->rom_file_path, env->params);
+
+    /* NOTE: We follow the python implementation and reset the game though
+     *       it's not clear it is necessary here. */
     ale_reset_game(env->aleptr);
 
     /* The following assumes the screen is an array of size (210, 160). */
@@ -323,6 +336,7 @@ RGBObservation atarirgb_reset(AtariEnv* env, unsigned int seed) {
 }
 
 void atari_destroy(AtariEnv* env) {
+    free(env->rom_file_path);
     ale_interface_delete(env->aleptr);
     free(env);
 }
