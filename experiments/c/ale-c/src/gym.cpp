@@ -27,9 +27,6 @@
 #include "gym.hpp"
 #include <cassert>
 
-/*
-#include <openssl/md5.h>
-*/
 #include <openssl/evp.h>
 
 #define BUFFER_SIZE 4096
@@ -79,7 +76,7 @@ static int calculate_file_md5(const char *filename, char *md5_hex_out) {
         return 1;
     }
 
-    // Initialize the context with the MD5 algorithm
+    /* Initialize the context with the MD5 algorithm */
     if (!EVP_DigestInit_ex(mdctx, EVP_md5(), NULL)) {
         fprintf(stderr, "calculate_file_md5: unable to initialize context");
         EVP_MD_CTX_free(mdctx);
@@ -131,8 +128,8 @@ static int void_compare_rom_for_md5_hash(const void* a, const void* b) {
     return compare_rom_for_md5_hash((const char*) a, (const struct RomMD5Hash*) b);
 }
 
-/* compare_rom_filenames and void_compare_rom_filenames are used for sorting
- * g_rom_md5 */
+/* compare_rom_filenames and void_compare_rom_filenames are
+ * used for sorting g_rom_md5 */
 static int compare_rom_filenames(const struct RomMD5Hash* rh1, const struct RomMD5Hash* rh2) {
     return strcmp(rh1->rom_file, rh2->rom_file);
 }
@@ -201,6 +198,16 @@ struct AtariConfig default_atari_env_config_init() {
     };
 }
 
+/* This method follows the python implementation.
+ * In the python implementation of reset, the load_game method is called
+ * whenever a seed is passed to reset.
+ * We probably don't need to call get_rom_path each time, but separating
+ * this method  from atari_load_game would require some refactoring.
+ * For instance, we'd need to call get_rom_path once in the atari_make
+ * and store the resulting full rom file path so that it could be
+ * used in atari_load_game.
+ * For now we follow the python implementation, with the exception
+ * of some of the seed handling. */
 enum RomPathError atari_load_game(ALEInterface* aleptr, struct AtariConfig config) {
     /* +5 for "/" and ".bin" */
     size_t buf_size = strlen(config.rom_dir) + strlen(config.rom_name) + 5 + 1;
@@ -221,14 +228,6 @@ enum RomPathError atari_load_game(ALEInterface* aleptr, struct AtariConfig confi
     return status;
 }
 
-/* TODO: Remove
-int seed_game(ALEInterface* aleptr, unsigned int seed) {
-    srand(seed);
-    int ale_seed = (int) rand();
-    ale_set_int(aleptr, "random_seed", ale_seed);
-    return ale_seed;
-}
-*/
 static struct AtariEnvParams atari_config_to_params(struct AtariConfig config) {
     return (struct AtariEnvParams) {
         .mode = config.mode,
@@ -242,6 +241,8 @@ static struct AtariEnvParams atari_config_to_params(struct AtariConfig config) {
     };
 }
 
+/* NOTE: We omit the seed_game method and basically inline our modifications of
+ * that function where needed. */
 AtariEnv* atari_make(struct AtariConfig config) {
     struct AtariEnv* env = (struct AtariEnv*) malloc(sizeof(struct AtariEnv));
     if (env == NULL) {
@@ -273,9 +274,7 @@ AtariEnv* atari_make(struct AtariConfig config) {
     };
 
     ale_set_bool(env->aleptr, "sound_obs", params.sound_obs);
-    /*
-    -- TODO: self.seed_game()
-    */
+
     if (atari_load_game(env->aleptr, config)) {
         fprintf(stderr, "atari_make: unable to load game");
         ale_interface_delete(env->aleptr);
@@ -311,19 +310,13 @@ RGBObservation atarirgb_reset(AtariEnv* env, unsigned int seed) {
     /* Set the seed */
     srand(env->c_seed);
     env->ale_seed = (int) rand();
+    printf("ale seed: %d\n", env->ale_seed); /* TODO */
+    /* TODO: It appears that for the ale_seed to take effect, the rom
+     * must be reloaded */
     ale_set_int(env->aleptr, "random_seed", env->ale_seed);
     ale_reset_game(env->aleptr);
 
-    /* TODO: Remove when ready
-    struct Screen screen;
-    screen.height = 210;
-    screen.width = 160;
-    screen.channels = 3;
-    screen.screen = (pixel_t*) malloc(210 * 160 * 3 * sizeof(pixel_t));
-    ale_get_screen_rgb(env->aleptr, &screen);
-    memcpy(obs.rgb_array, screen.screen, 210 * 160 * 3 * sizeof(pixel_t));
-    free(screen.screen);
-    */
+    /* The following assumes the screen is an array of size (210, 160). */
     ale_get_rgb_array(env->aleptr, (pixel_t*) obs.rgb_array);
 
     return obs;
@@ -364,18 +357,7 @@ struct AtariRGBStepReturn atarirgb_step(AtariEnv* env, enum Action action) {
     truncated = ale_game_truncated(env->aleptr);
 
     ret.terminated = terminal || truncated;
-    /* TODO: Need a alternate method for ale_get_screen_rgb to directly pass the array
-     *       since we already know the size */
-    /*
-    struct Screen screen;
-    screen.height = 210;
-    screen.width = 160;
-    screen.channels = 3;
-    screen.screen = (pixel_t*) malloc(210 * 160 * 3 * sizeof(pixel_t));
-    ale_get_screen_rgb(env->aleptr, &screen);
-    memcpy(ret.observation.rgb_array, screen.screen, 210 * 160 * 3 * sizeof(pixel_t));
-    free(screen.screen);
-    */
+    /* The following assumes the screen is an array of size (210, 160). */
     ale_get_rgb_array(env->aleptr, (pixel_t*) ret.observation.rgb_array);
 
     return ret;

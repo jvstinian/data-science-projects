@@ -157,31 +157,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    /* TODO: Remove
-    for (size_t i = 0; i < 108; i++) {
-        if (i > 0) {
-            printf("strcmp: %d\n", strcmp(g_rom_md5[i].rom_file, g_rom_md5[i-1].rom_file));
-        }
-        printf("%s: %s\n", g_rom_md5[i].rom_file, g_rom_md5[i].md5);
-    }
-    */
-
-    /* TODO: Remove
-    char welcome_message[100];
-    get_welcome_message(welcome_message, 100);
-
-    std::cout << "ALE C example" << std::endl << std::flush;
-    std::cout << "Welcome message: " << std::endl;
-    std::cout << welcome_message << std::endl << std::flush;
-    */
-
-    /*
+    /* 
     size_t rom_file_buf_size = strlen(run_config.rom_dir) + strlen(run_config.rom_name) + 5 + 1;
     char rom_file_buf[rom_file_buf_size];
-
-    ALEInterface* aleptr = ale_interface_new();
-    get_rom_path(run_config.rom_dir, run_config.rom_name, rom_file_buf_size, rom_file_buf);
-    ale_interface_delete(aleptr);
     */
 
     /*struct AtariEnvStepMetadata info; */
@@ -203,7 +181,19 @@ int main(int argc, char *argv[]) {
         obs = state.observation;
         if (state.terminated) break;
     }
-    printf("Step count: %lu", step_count);
+    printf("Step count: %lu\n", step_count);
+
+    obs = atarirgb_reset(env, 123u);
+    step_count = 0;
+    while (1) {
+        action = atari_random_action(env);
+        state = atarirgb_step(env, action);
+        step_count++;
+        // obs = state.observation;
+        if (state.terminated) break;
+    }
+    printf("Step count: %lu\n", step_count);
+
 
     atari_destroy(env);
 
