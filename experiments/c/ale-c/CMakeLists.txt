@@ -19,10 +19,9 @@ add_library(ale-c
 # link ALE library
 target_link_libraries(ale-c PRIVATE PkgConfig::ZLIB PkgConfig::SDL2 PkgConfig::ALE OpenSSL::SSL)
 
-# TODO: Maybe change includes from src to include
 target_include_directories(ale-c
     PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/src
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/include
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
     PRIVATE
         src
