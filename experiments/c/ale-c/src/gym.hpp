@@ -137,6 +137,9 @@ extern "C" {
     /* Supporting methods which could be useful when working
      * with these environments */
     struct AtariConfig default_atari_env_config_init();
+    /* load_game calls get_rom_path and is no longer used in the methods
+     * below.  atari_load_game_from_rom_file is used instead.
+     * load_game might be removed in the future. */
     enum RomPathError load_game(ALEInterface* aleptr, struct AtariConfig config);
     void atari_load_game_from_rom_file(
         ALEInterface* aleptr, const char* rom_file, struct AtariConfig config

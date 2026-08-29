@@ -318,7 +318,7 @@ RGBObservation atarirgb_reset_omit_seed(AtariEnv* env) {
 RGBObservation atarirgb_reset(AtariEnv* env, unsigned int seed) {
     struct RGBObservation obs;
 
-    /* Set the seed */
+    /* Set the seed, reload the rom */
     env->c_seed = seed;
     srand(env->c_seed);
     env->ale_seed = (int) rand();
