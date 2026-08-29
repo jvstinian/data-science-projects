@@ -39,6 +39,7 @@ We extract them from the ale namespace.
 */
 using ale::ALEInterface;
 using ale::game_mode_t; /* unsigned int */
+using ale::difficulty_t; /* unsigned int */
 using ale::Action;
 using ale::pixel_t;  /* unsigned char */
 
@@ -90,9 +91,9 @@ extern "C" {
     size_t ale_get_available_difficulties_length(ALEInterface* aleptr);
     /* ale_get_available_difficulties returns the length of the difficulties vector, i.e. the 
      * length of the output if n had been sufficiently large. */
-    size_t ale_get_available_difficulties(ALEInterface* aleptr, unsigned int* difficulties_out, size_t n);
-    void ale_set_difficulty(ALEInterface* aleptr, unsigned int difficulty);
-    unsigned int ale_get_difficulty(ALEInterface* aleptr);
+    size_t ale_get_available_difficulties(ALEInterface* aleptr, difficulty_t* difficulties_out, size_t n);
+    void ale_set_difficulty(ALEInterface* aleptr, difficulty_t difficulty);
+    difficulty_t ale_get_difficulty(ALEInterface* aleptr);
     size_t ale_get_legal_action_set_length(ALEInterface* aleptr);
     /* ale_get_legal_action_set returns the length of the vector of legal actions, i.e. the 
      * length of the output if n had been sufficiently large. */

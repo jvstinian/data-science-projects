@@ -36,6 +36,7 @@ struct RunConfig {
     float repeat_action_probability;
     unsigned int frameskip_begin;
     unsigned int frameskip_end;
+    bool render_human;
 };
 
 
@@ -50,6 +51,7 @@ void print_help() {
     printf("                     two values separated by a comma (e.g., START,END) can be provided\n");
     printf("                     in which case the frameskip will be sampled from the range (inclusive).\n");
     printf("  -p PROB          The repeat action probability as a value in the range (0, 1)\n");
+    printf("  -s               Show the Atari screen\n");
 }
 
 int process_env_vars(struct RunConfig *run_config) {
@@ -88,7 +90,7 @@ int process_arguments(int argc, char *argv[], struct RunConfig *run_config) {
     int opt;
     int i;
     
-    while ((opt = getopt(argc, argv, "hd:r:f:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "hd:r:f:p:s")) != -1) {
         switch (opt) {
             case 'h':
                 print_help();
@@ -104,6 +106,9 @@ int process_arguments(int argc, char *argv[], struct RunConfig *run_config) {
                     fprintf(stderr, "process_arguments: error processing frameskip\n");
                     exit(2);
                 }
+                break;
+            case 's':
+                run_config->render_human = true;
                 break;
             case 'p':
                 run_config->repeat_action_probability = strtof(optarg, NULL);
@@ -151,6 +156,7 @@ int main(int argc, char *argv[]) {
         .rom_dir = NULL, .rom_name = NULL,
         .repeat_action_probability = 0.25,
         .frameskip_begin = 4, .frameskip_end = 4,
+        .render_human = false
     };
     
     if (process_arguments(argc, argv, &run_config) != 0) {
@@ -185,6 +191,7 @@ int main(int argc, char *argv[]) {
             }
         };
     }
+    config.render_mode = run_config.render_human ? RENDER_HUMAN : NO_RENDER;
     AtariEnv* env = atari_make(config);
 
     obs = atarirgb_reset(env, 123u);

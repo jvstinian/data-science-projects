@@ -87,7 +87,7 @@ struct AtariConfig {
     char* rom_dir;
     char* rom_name;
     game_mode_t mode;
-    unsigned int difficulty;
+    difficulty_t difficulty;
     struct Frameskip frameskip;
     float repeat_action_probability;
     bool full_action_space;
@@ -98,7 +98,7 @@ struct AtariConfig {
 
 struct AtariEnvParams {
     game_mode_t mode;
-    unsigned int difficulty;
+    difficulty_t difficulty;
     struct Frameskip frameskip;
     float repeat_action_probability;
     bool full_action_space;
