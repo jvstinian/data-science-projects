@@ -5,6 +5,7 @@ Created on Mar 28, 2018
 @author: ywz
 '''
 import os
+os.environ["TF_USE_LEGACY_KERAS"]="1"  # Must import before tensorflow
 import argparse
 #import tensorflow as tf
 import gymnasium as gym

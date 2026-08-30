@@ -6,9 +6,9 @@ Created on 4 Sep 2017
 import numpy
 import cv2
 import scipy.signal
-#import tensorflow as tf
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import tensorflow as tf
+# import tensorflow.compat.v1 as tf
+# tf.disable_v2_behavior()
 
 
 def flatten_tensor_variables(ts):
@@ -77,16 +77,22 @@ def iterate_minibatches(input_list=None, batch_size=None, shuffle=False):
 def create_optimizer(method, learning_rate, rho, epsilon):
     
     if method == 'rmsprop':
-        opt = tf.train.RMSPropOptimizer(learning_rate=learning_rate, 
-                                        decay=rho,
-                                        epsilon=epsilon)
+        # DONE
+        opt = tf.keras.optimizers.RMSprop(
+                learning_rate=learning_rate, 
+                rho=rho, # DONE: v1 field was called `decay`
+                epsilon=epsilon
+        )
     elif method == 'adam':
-        opt = tf.train.AdamOptimizer(learning_rate=learning_rate,
-                                     beta1=rho)
+        opt = tf.keras.optimizers.Adam(
+                learning_rate=learning_rate,
+                beta1=rho
+        )
     elif method == 'momentum':
-        opt = tf.train.MomentumOptimizer(
+        opt = tf.keras.optimizers.SGD(
             learning_rate=learning_rate, 
-            momentum=rho)
+            momentum=rho
+        )
     else:
         raise ValueError('optimizer method %s not supported' % (method))
     
