@@ -41,12 +41,12 @@ struct RunConfig {
 
 
 void print_help() {
-    printf("Usage: program [-h] [-d ROM_DIR] [-r ROM_FILE] [-f FRAMESKIP_START[,FRAMESKIP_END] [-p PROB]\n");
+    printf("Usage: program [-h] [-d ROM_DIR] [-r ROM_FILE] [-f FRAMESKIP_START[,FRAMESKIP_END]] [-p PROB]\n");
     printf("Options:\n");
     printf("  -h               Show this help message\n");
     printf("  -d ROM_DIR       The directory where to look for the rom file.\n");
     printf("  -r ROM_FILE      The rom file name, should have a \"bin\" file extension.\n");
-    printf("  -r FRAMESKIP     The frameskip range to use.  Two formats are possible.\n");
+    printf("  -f FRAMESKIP     The frameskip range to use.  Two formats are possible.\n");
     printf("                     A single value can be provided for a deterministic frameskip, or\n");
     printf("                     two values separated by a comma (e.g., START,END) can be provided\n");
     printf("                     in which case the frameskip will be sampled from the range (inclusive).\n");
