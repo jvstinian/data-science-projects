@@ -27,7 +27,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <climits>
-#include <ale_c.hpp>
+#include <cstring>
 #include <gym.h>
 
 struct RunConfig {
@@ -193,25 +193,23 @@ int main(int argc, char *argv[]) {
     }
     config.render_mode = run_config.render_human ? RENDER_HUMAN : NO_RENDER;
     AtariEnv* env = atari_make(config);
+    struct AtariEnvStepMetadata metadata;
 
     obs = atarirgb_reset(env, 123u);
     size_t step_count = 0;
+    /* Following the reset, the metadata will include the ALE seed */
+    metadata = atari_get_info(env);
+    printf("Atari Env Metadata\n");
+    printf("  Lives:                %d\n", metadata.lives);
+    printf("  Episode Frame Number: %d\n", metadata.episode_frame_number);
+    printf("  Frame Number:         %d\n", metadata.frame_number);
+    printf("  C Seed:               %u\n", metadata.c_seed);
+    printf("  Ale Seed:             %d\n", metadata.ale_seed);
     while (1) {
         action = atari_random_action(env);
         state = atarirgb_step(env, action);
         step_count++;
         obs = state.observation;
-        if (state.terminated) break;
-    }
-    printf("Step count: %lu\n", step_count);
-
-    obs = atarirgb_reset(env, 123u);
-    step_count = 0;
-    while (1) {
-        action = atari_random_action(env);
-        state = atarirgb_step(env, action);
-        step_count++;
-        // obs = state.observation;
         if (state.terminated) break;
     }
     printf("Step count: %lu\n", step_count);
