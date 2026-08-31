@@ -2,8 +2,5 @@
 build
 debug
 
-# The resources directory will not be put under source control
-resources
-
 # Remaining Haskell files
 **/*.hs
