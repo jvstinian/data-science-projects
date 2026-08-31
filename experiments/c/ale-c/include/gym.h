@@ -24,12 +24,15 @@
  * Based on: Stella  --  "An Atari 2600 VCS Emulator"
  * Copyright (c) 1995-2007 by Bradford W. Mott and the Stella team
  */
-#ifndef INC_GYM_HPP
-#define INC_GYM_HPP
+#ifndef INC_GYM_H
+#define INC_GYM_H
 
-#include <climits>
-#include "ale_c.hpp"
+#include <stdbool.h>
+#include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct RomMD5Hash {
     const char* rom_file;
@@ -37,6 +40,57 @@ struct RomMD5Hash {
 };
 
 extern struct RomMD5Hash g_rom_md5[108];
+
+typedef unsigned char pixel_t;
+typedef unsigned int game_mode_t;
+typedef unsigned int difficulty_t;
+
+/* Define actions */
+enum AtariAction {
+  PLAYER_A_NOOP          = 0,
+  PLAYER_A_FIRE          = 1,
+  PLAYER_A_UP            = 2,
+  PLAYER_A_RIGHT         = 3,
+  PLAYER_A_LEFT          = 4,
+  PLAYER_A_DOWN          = 5,
+  PLAYER_A_UPRIGHT       = 6,
+  PLAYER_A_UPLEFT        = 7,
+  PLAYER_A_DOWNRIGHT     = 8,
+  PLAYER_A_DOWNLEFT      = 9,
+  PLAYER_A_UPFIRE        = 10,
+  PLAYER_A_RIGHTFIRE     = 11,
+  PLAYER_A_LEFTFIRE      = 12,
+  PLAYER_A_DOWNFIRE      = 13,
+  PLAYER_A_UPRIGHTFIRE   = 14,
+  PLAYER_A_UPLEFTFIRE    = 15,
+  PLAYER_A_DOWNRIGHTFIRE = 16,
+  PLAYER_A_DOWNLEFTFIRE  = 17,
+  PLAYER_B_NOOP          = 18,
+  PLAYER_B_FIRE          = 19,
+  PLAYER_B_UP            = 20,
+  PLAYER_B_RIGHT         = 21,
+  PLAYER_B_LEFT          = 22,
+  PLAYER_B_DOWN          = 23,
+  PLAYER_B_UPRIGHT       = 24,
+  PLAYER_B_UPLEFT        = 25,
+  PLAYER_B_DOWNRIGHT     = 26,
+  PLAYER_B_DOWNLEFT      = 27,
+  PLAYER_B_UPFIRE        = 28,
+  PLAYER_B_RIGHTFIRE     = 29,
+  PLAYER_B_LEFTFIRE      = 30,
+  PLAYER_B_DOWNFIRE      = 31,
+  PLAYER_B_UPRIGHTFIRE   = 32,
+  PLAYER_B_UPLEFTFIRE    = 33,
+  PLAYER_B_DOWNRIGHTFIRE = 34,
+  PLAYER_B_DOWNLEFTFIRE  = 35,
+  RESET                  = 40, /* MGB: Use SYSTEM_RESET to reset the environment. */
+  UNDEFINED              = 41,
+  RANDOM                 = 42,
+  SAVE_STATE             = 43,
+  LOAD_STATE             = 44,
+  SYSTEM_RESET           = 45,
+  LAST_ACTION_INDEX      = 50
+};
 
 struct AtariEnvStepMetadata {
     int lives;
@@ -107,13 +161,14 @@ struct AtariEnvParams {
     bool sound_obs;
 };
 
-struct AtariEnv {
+/* TODO: Clean up the following */
+struct AtariEnv;/* {
     ALEInterface* aleptr;
     char* rom_file_path;
     unsigned int c_seed;
     int ale_seed;
     struct AtariEnvParams params;
-};
+};*/
 
 struct AtariRGBStepReturn {
     struct RGBObservation observation;
@@ -133,27 +188,22 @@ enum RomPathError {
  * value stored in this library. */
 enum RomPathError get_rom_path(const char* rom_dir, const char* rom_name, size_t buf_size, char* rom_file_out);
 
-extern "C" {
-    /* Supporting methods which could be useful when working
-     * with these environments */
-    struct AtariConfig default_atari_env_config_init();
-    /* load_game calls get_rom_path and is no longer used in the methods
-     * below.  atari_load_game_from_rom_file is used instead.
-     * load_game might be removed in the future. */
-    enum RomPathError load_game(ALEInterface* aleptr, struct AtariConfig config);
-    void atari_load_game_from_rom_file(
-        ALEInterface* aleptr, const char* rom_file, struct AtariConfig config
-    );
+/* Supporting methods which could be useful when working
+ * with these environments */
+struct AtariConfig default_atari_env_config_init();
 
-    /* Gymnasium methods */
-    /* We provide two reset methods depending on whether a seed is provided */
-    AtariEnvStepMetadata atari_get_info(AtariEnv* env);
-    AtariEnv* atari_make(struct AtariConfig config);
-    void atari_destroy(AtariEnv* env);
-    RGBObservation atarirgb_reset_omit_seed(AtariEnv* env);
-    RGBObservation atarirgb_reset(AtariEnv* env, unsigned int seed);
-    struct AtariRGBStepReturn atarirgb_step(AtariEnv* env, enum Action action);
-    enum Action atari_random_action(AtariEnv* env);
+/* Gymnasium methods */
+/* We provide two reset methods depending on whether a seed is provided */
+struct AtariEnvStepMetadata atari_get_info(struct AtariEnv* env);
+struct AtariEnv* atari_make(struct AtariConfig config);
+void atari_destroy(struct AtariEnv* env);
+struct RGBObservation atarirgb_reset_omit_seed(struct AtariEnv* env);
+struct RGBObservation atarirgb_reset(struct AtariEnv* env, unsigned int seed);
+struct AtariRGBStepReturn atarirgb_step(struct AtariEnv* env, enum AtariAction action);
+enum AtariAction atari_random_action(struct AtariEnv* env);
+
+#ifdef __cplusplus
 }
+#endif
 
 #endif

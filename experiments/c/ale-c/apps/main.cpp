@@ -28,7 +28,7 @@
 #include <unistd.h>
 #include <climits>
 #include <ale_c.hpp>
-#include <gym.hpp>
+#include <gym.h>
 
 struct RunConfig {
     char* rom_dir;
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
     /*struct AtariEnvStepMetadata info; */
     struct RGBObservation obs;
     struct AtariRGBStepReturn state;
-    enum Action action = (enum Action) 0;
+    enum AtariAction action = (enum AtariAction) 0;
 
     /* Set the Atari config using the run config */
     struct AtariConfig config = default_atari_env_config_init();

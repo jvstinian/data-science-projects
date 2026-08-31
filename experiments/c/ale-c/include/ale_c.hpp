@@ -36,6 +36,9 @@
 enum Action, game_mode_t, and difficulty_t
 are defined in ale/common/Constants.h.
 We extract them from the ale namespace.
+
+Note that game_mode_t, difficulty_t, and pixel_t
+are defined in gym.h as well.
 */
 using ale::ALEInterface;
 using ale::game_mode_t; /* unsigned int */

@@ -301,7 +301,7 @@ let
   my-python = pkgs.python3.withPackages my-python-packages;
 in 
 pkgs.mkShell {
-  packages = [ ale-cpp my-python ] ++ (with pkgs; [ myNeovim cmake SDL2 SDL2.dev zlib openssl ]);
+  packages = [ ale-cpp my-python ] ++ (with pkgs; [ myNeovim cmake SDL2 SDL2.dev zlib openssl check ]);
   nativeBuildInputs = [ ale-cpp-pkgconfig ] ++ (with pkgs; [ pkg-config ]);
   # buildInputs = [
   #     my-python pkgs.SDL2 pkgs.SDL2.dev pkgs.zlib

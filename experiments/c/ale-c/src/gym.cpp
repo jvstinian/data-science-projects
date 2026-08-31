@@ -24,8 +24,17 @@
  * Based on: Stella  --  "An Atari 2600 VCS Emulator"
  * Copyright (c) 1995-2007 by Bradford W. Mott and the Stella team
  */
-#include "gym.hpp"
+#include "gym.h"
+#include "ale_c.hpp"
 #include <cassert>
+
+struct AtariEnv {
+    ALEInterface* aleptr;
+    char* rom_file_path;
+    unsigned int c_seed;
+    int ale_seed;
+    struct AtariEnvParams params;
+};
 
 #include <openssl/evp.h>
 
@@ -185,7 +194,11 @@ struct AtariConfig default_atari_env_config_init() {
  * and only loads the rom and performs some configuration.
  * `get_rom_path` is then called once in `atari_make` to construct and
  * validate the ROM file path. */
-enum RomPathError atari_load_game(ALEInterface* aleptr, struct AtariConfig config) {
+/* load_game calls get_rom_path and is no longer used in the methods
+ * below.  atari_load_game_from_rom_file is used instead.
+ * load_game might be removed in the future.
+*/
+static enum RomPathError atari_load_game(ALEInterface* aleptr, struct AtariConfig config) {
     /* +5 for "/" and ".bin" */
     size_t buf_size = strlen(config.rom_dir) + strlen(config.rom_name) + 5 + 1;
     char rom_file[buf_size];
@@ -205,7 +218,7 @@ enum RomPathError atari_load_game(ALEInterface* aleptr, struct AtariConfig confi
     return status;
 }
 
-void atari_load_game_from_rom_file(ALEInterface* aleptr, const char* rom_file, struct AtariEnvParams params) {
+static void atari_load_game_from_rom_file(ALEInterface* aleptr, const char* rom_file, struct AtariEnvParams params) {
     ale_load_rom(aleptr, rom_file);
     if (params.mode != (~0u)) {
         ale_set_mode(aleptr, params.mode);
@@ -341,7 +354,7 @@ void atari_destroy(AtariEnv* env) {
     free(env);
 }
 
-struct AtariRGBStepReturn atarirgb_step(AtariEnv* env, enum Action action) {
+struct AtariRGBStepReturn atarirgb_step(AtariEnv* env, enum AtariAction action) {
     unsigned int fskip;
     unsigned int i;
     unsigned int low, high;
@@ -365,7 +378,7 @@ struct AtariRGBStepReturn atarirgb_step(AtariEnv* env, enum Action action) {
             break;
     }
     for (i = 0; i < fskip; i++) {
-        ret.reward += (float) ale_act(env->aleptr, action, strength);
+        ret.reward += (float) ale_act(env->aleptr, (enum Action) action, strength);
     }
     terminal = ale_game_over(env->aleptr, false);
     truncated = ale_game_truncated(env->aleptr);
@@ -376,8 +389,8 @@ struct AtariRGBStepReturn atarirgb_step(AtariEnv* env, enum Action action) {
 
     return ret;
 }
-    
-enum Action atari_random_action(AtariEnv* env) {
+ 
+enum AtariAction atari_random_action(struct AtariEnv* env) {
     enum Action actions[PLAYER_A_MAX];
     size_t fulllen;
 
@@ -388,5 +401,5 @@ enum Action atari_random_action(AtariEnv* env) {
     }
     assert(fulllen <= PLAYER_A_MAX);
 
-    return actions[rand() % fulllen];
+    return (enum AtariAction) actions[rand() % fulllen];
 }
