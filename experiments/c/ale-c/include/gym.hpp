@@ -38,18 +38,6 @@ struct RomMD5Hash {
 
 extern struct RomMD5Hash g_rom_md5[108];
 
-/* We borrow some of the seed reset logic, but remove the NO_SET option
-enum SeedResetTag {
-    SET_DEFAULT,
-    SET_SEED
-};
-
-struct SeedReset {
-    enum SeedResetTag tag;
-    unsigned int seed;  \/\* Only used if tag == SET_SEED \*\/
-};
-*/
-
 struct AtariEnvStepMetadata {
     int lives;
     int episode_frame_number;
@@ -92,43 +80,17 @@ struct Frameskip {
     union FrameskipParams params;
 };
 
-/*
---           mode: Optional[int] => Game mode, see Machado et al., 2018
---           difficulty: Optional[int] => Game difficulty,see Machado et al., 2018
---           obs_type: str => Observation type in { 'rgb', 'grayscale', 'ram' }
---           frameskip: Union[tuple[int, int], int] =>
---               Stochastic frameskip as tuple or fixed.
---           repeat_action_probability: int =>
---               Probability to repeat actions, see Machado et al., 2018
---           full_action_space: bool => Use full action space?
---           continuous: bool => Use continuous actions?
---           continuous_action_threshold: float => threshold used for continuous actions.
---           max_num_frames_per_episode: int => Max number of frame per epsiode.
---               Once `max_num_frames_per_episode` is reached the episode is
---               truncated.
---           render_mode: str => One of { 'human', 'rgb_array' }.
---               If `human` we'll interactively display the screen and enable
---               game sounds. This will lock emulation to the ROMs specified FPS
---               If `rgb_array` we'll return the `rgb` key in step metadata with
---               the current environment RGB frame.
---           sound_obs: bool => Add the sound from the frame to the observation.
-*/
+/* For mode (Game mode) and difficulty (Game difficulty), see
+ * Machado et al., 2018 */
+/* We omit the continuous action variables from the configuration */
 struct AtariConfig {
     char* rom_dir;
     char* rom_name;
     game_mode_t mode;
-    unsigned int difficulty;
-    /*
-    unsigned int frameskip_begin;
-    unsigned int frameskip_end;
-    */
+    difficulty_t difficulty;
     struct Frameskip frameskip;
     float repeat_action_probability;
     bool full_action_space;
-    /*
-    bool continuous;
-    float continuous_action_threshold;
-    */
     int max_num_frames_per_episode;
     enum GymRenderMode render_mode;
     bool sound_obs;
@@ -136,7 +98,7 @@ struct AtariConfig {
 
 struct AtariEnvParams {
     game_mode_t mode;
-    unsigned int difficulty;
+    difficulty_t difficulty;
     struct Frameskip frameskip;
     float repeat_action_probability;
     bool full_action_space;
@@ -147,7 +109,7 @@ struct AtariEnvParams {
 
 struct AtariEnv {
     ALEInterface* aleptr;
-    /*char* game_rom;*/
+    char* rom_file_path;
     unsigned int c_seed;
     int ale_seed;
     struct AtariEnvParams params;
@@ -175,14 +137,20 @@ extern "C" {
     /* Supporting methods which could be useful when working
      * with these environments */
     struct AtariConfig default_atari_env_config_init();
+    /* load_game calls get_rom_path and is no longer used in the methods
+     * below.  atari_load_game_from_rom_file is used instead.
+     * load_game might be removed in the future. */
     enum RomPathError load_game(ALEInterface* aleptr, struct AtariConfig config);
+    void atari_load_game_from_rom_file(
+        ALEInterface* aleptr, const char* rom_file, struct AtariConfig config
+    );
 
     /* Gymnasium methods */
     /* We provide two reset methods depending on whether a seed is provided */
     AtariEnvStepMetadata atari_get_info(AtariEnv* env);
     AtariEnv* atari_make(struct AtariConfig config);
     void atari_destroy(AtariEnv* env);
-    RGBObservation atarirgb_reset_default_seed(AtariEnv* env);
+    RGBObservation atarirgb_reset_omit_seed(AtariEnv* env);
     RGBObservation atarirgb_reset(AtariEnv* env, unsigned int seed);
     struct AtariRGBStepReturn atarirgb_step(AtariEnv* env, enum Action action);
     enum Action atari_random_action(AtariEnv* env);
