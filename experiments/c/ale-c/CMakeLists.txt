@@ -29,7 +29,7 @@ target_include_directories(ale-c
 
 # Executable
 add_executable(ale-example
-    apps/main.cpp
+    apps/main.c
 )
 
 # Link executable

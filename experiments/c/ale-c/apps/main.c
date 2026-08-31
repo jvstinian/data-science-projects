@@ -24,10 +24,10 @@
  * Based on: Stella  --  "An Atari 2600 VCS Emulator"
  * Copyright (c) 1995-2007 by Bradford W. Mott and the Stella team
  */
-#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <climits>
-#include <cstring>
+#include <string.h>
 #include <gym.h>
 
 struct RunConfig {
@@ -164,7 +164,6 @@ int main(int argc, char *argv[]) {
     }
 
     /*struct AtariEnvStepMetadata info; */
-    struct RGBObservation obs;
     struct AtariRGBStepReturn state;
     enum AtariAction action = (enum AtariAction) 0;
 
@@ -192,10 +191,10 @@ int main(int argc, char *argv[]) {
         };
     }
     config.render_mode = run_config.render_human ? RENDER_HUMAN : NO_RENDER;
-    AtariEnv* env = atari_make(config);
+    struct AtariEnv* env = atari_make(config);
     struct AtariEnvStepMetadata metadata;
 
-    obs = atarirgb_reset(env, 123u);
+    atarirgb_reset(env, 123u);
     size_t step_count = 0;
     /* Following the reset, the metadata will include the ALE seed */
     metadata = atari_get_info(env);
@@ -209,7 +208,6 @@ int main(int argc, char *argv[]) {
         action = atari_random_action(env);
         state = atarirgb_step(env, action);
         step_count++;
-        obs = state.observation;
         if (state.terminated) break;
     }
     printf("Step count: %lu\n", step_count);
