@@ -147,19 +147,19 @@ size_t ale_get_available_difficulties_length(ALEInterface* aleptr) {
     return aleptr->getAvailableDifficulties().size();
 }
 
-size_t ale_get_available_difficulties(ALEInterface* aleptr, unsigned int* difficulties_out, size_t n) {
-    std::vector<unsigned int> game_difficulties(aleptr->getAvailableDifficulties());
+size_t ale_get_available_difficulties(ALEInterface* aleptr, difficulty_t* difficulties_out, size_t n) {
+    std::vector<difficulty_t> game_difficulties(aleptr->getAvailableDifficulties());
     size_t len = game_difficulties.size();
     size_t outlen = (len < n) ? len : n;
     std::copy(game_difficulties.begin(), game_difficulties.begin() + outlen, difficulties_out);
     return len;
 }
 
-void ale_set_difficulty(ALEInterface* aleptr, unsigned int difficulty) {
+void ale_set_difficulty(ALEInterface* aleptr, difficulty_t difficulty) {
     aleptr->setDifficulty(difficulty);
 }
 
-unsigned int ale_get_difficulty(ALEInterface* aleptr) {
+difficulty_t ale_get_difficulty(ALEInterface* aleptr) {
     return aleptr->getDifficulty();
 }
 
@@ -238,4 +238,14 @@ void ale_get_screen_rgb(ALEInterface* aleptr, struct Screen* screen) {
     std::vector<pixel_t> rgb_buffer(size, 0u);
     aleptr->getScreenRGB(rgb_buffer);
     std::copy(rgb_buffer.begin(), rgb_buffer.end(), screen->screen);
+}
+
+void ale_get_rgb_array(ALEInterface* aleptr, pixel_t* rgbs_out) {
+    size_t h = aleptr->getScreen().height();
+    size_t w = aleptr->getScreen().width();
+    size_t size = 3 * h * w;
+
+    std::vector<pixel_t> rgb_buffer(size, 0u);
+    aleptr->getScreenRGB(rgb_buffer);
+    std::copy(rgb_buffer.begin(), rgb_buffer.end(), rgbs_out);
 }

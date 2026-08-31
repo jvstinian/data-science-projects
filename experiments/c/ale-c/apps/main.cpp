@@ -36,20 +36,22 @@ struct RunConfig {
     float repeat_action_probability;
     unsigned int frameskip_begin;
     unsigned int frameskip_end;
+    bool render_human;
 };
 
 
 void print_help() {
-    printf("Usage: program [-h] [-d ROM_DIR] [-r ROM_FILE] [-f FRAMESKIP_START[,FRAMESKIP_END] [-p PROB]\n");
+    printf("Usage: program [-h] [-d ROM_DIR] [-r ROM_FILE] [-f FRAMESKIP_START[,FRAMESKIP_END]] [-p PROB]\n");
     printf("Options:\n");
     printf("  -h               Show this help message\n");
     printf("  -d ROM_DIR       The directory where to look for the rom file.\n");
     printf("  -r ROM_FILE      The rom file name, should have a \"bin\" file extension.\n");
-    printf("  -r FRAMESKIP     The frameskip range to use.  Two formats are possible.\n");
+    printf("  -f FRAMESKIP     The frameskip range to use.  Two formats are possible.\n");
     printf("                     A single value can be provided for a deterministic frameskip, or\n");
     printf("                     two values separated by a comma (e.g., START,END) can be provided\n");
     printf("                     in which case the frameskip will be sampled from the range (inclusive).\n");
     printf("  -p PROB          The repeat action probability as a value in the range (0, 1)\n");
+    printf("  -s               Show the Atari screen\n");
 }
 
 int process_env_vars(struct RunConfig *run_config) {
@@ -88,7 +90,7 @@ int process_arguments(int argc, char *argv[], struct RunConfig *run_config) {
     int opt;
     int i;
     
-    while ((opt = getopt(argc, argv, "hd:r:f:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "hd:r:f:p:s")) != -1) {
         switch (opt) {
             case 'h':
                 print_help();
@@ -104,6 +106,9 @@ int process_arguments(int argc, char *argv[], struct RunConfig *run_config) {
                     fprintf(stderr, "process_arguments: error processing frameskip\n");
                     exit(2);
                 }
+                break;
+            case 's':
+                run_config->render_human = true;
                 break;
             case 'p':
                 run_config->repeat_action_probability = strtof(optarg, NULL);
@@ -131,8 +136,18 @@ int process_arguments(int argc, char *argv[], struct RunConfig *run_config) {
         fprintf(stderr, "Rom name must be specified\n");
         return 1;
     }
-    /* TODO: Check frameskip */
-    /* TODO: Check probability */
+    if (run_config->frameskip_begin == 0) {
+        fprintf(stderr, "Frameskip must be positive\n");
+        return 1;
+    }
+    if (run_config->frameskip_end < run_config->frameskip_begin) {
+        fprintf(stderr, "Invalid frameskip, lower bound must be less than or equal to upper bound\n");
+        return 1;
+    }
+    if (run_config->repeat_action_probability < 0.0 || run_config->repeat_action_probability > 1.0) {
+        fprintf(stderr, "Repeat action probability must be between 0 and 1 inclusive\n");
+        return 1;
+    }
     return 0;
 }
 
@@ -141,58 +156,65 @@ int main(int argc, char *argv[]) {
         .rom_dir = NULL, .rom_name = NULL,
         .repeat_action_probability = 0.25,
         .frameskip_begin = 4, .frameskip_end = 4,
+        .render_human = false
     };
     
     if (process_arguments(argc, argv, &run_config) != 0) {
         return 1;
     }
 
-    for (size_t i = 0; i < 108; i++) {
-        if (i > 0) {
-            printf("strcmp: %d\n", strcmp(g_rom_md5[i].rom_file, g_rom_md5[i-1].rom_file));
-        }
-        printf("%s: %s\n", g_rom_md5[i].rom_file, g_rom_md5[i].md5);
-    }
-
-    char welcome_message[100];
-    get_welcome_message(welcome_message, 100);
-
-    std::cout << "ALE C example" << std::endl << std::flush;
-    std::cout << "Welcome message: " << std::endl;
-    std::cout << welcome_message << std::endl << std::flush;
-
-    /*
-    size_t rom_file_buf_size = strlen(run_config.rom_dir) + strlen(run_config.rom_name) + 5 + 1;
-    char rom_file_buf[rom_file_buf_size];
-
-    ALEInterface* aleptr = ale_interface_new();
-    get_rom_path(run_config.rom_dir, run_config.rom_name, rom_file_buf_size, rom_file_buf);
-    ale_interface_delete(aleptr);
-    */
-
     /*struct AtariEnvStepMetadata info; */
     struct RGBObservation obs;
     struct AtariRGBStepReturn state;
     enum Action action = (enum Action) 0;
-    /*
-    bool done;
-    float reward;
-    */
+
+    /* Set the Atari config using the run config */
     struct AtariConfig config = default_atari_env_config_init();
     config.rom_dir = run_config.rom_dir;
     config.rom_name = run_config.rom_name;
-    AtariEnv* env = atari_make(/*run_config.rom_dir, run_config.rom_name, */config);
+    config.repeat_action_probability = run_config.repeat_action_probability;
+    if (run_config.frameskip_begin < run_config.frameskip_end) {
+        config.frameskip = (struct Frameskip) {
+            .tag = FRAMESKIP_TUPLE,
+            .params = {
+                .tuple = (struct FrameskipLowHigh) {
+                    .low = run_config.frameskip_begin,
+                    .high = run_config.frameskip_end
+                }
+            }
+        };
+    } else {
+        config.frameskip = (struct Frameskip) {
+            .tag = FRAMESKIP_VALUE,
+            .params = {
+                .value = run_config.frameskip_begin
+            }
+        };
+    }
+    config.render_mode = run_config.render_human ? RENDER_HUMAN : NO_RENDER;
+    AtariEnv* env = atari_make(config);
 
     obs = atarirgb_reset(env, 123u);
     size_t step_count = 0;
     while (1) {
         action = atari_random_action(env);
-        state = atarirgb_step(env, action/*, &obs, &done, &reward*/);
+        state = atarirgb_step(env, action);
         step_count++;
         obs = state.observation;
         if (state.terminated) break;
     }
-    printf("Step count: %lu", step_count);
+    printf("Step count: %lu\n", step_count);
+
+    obs = atarirgb_reset(env, 123u);
+    step_count = 0;
+    while (1) {
+        action = atari_random_action(env);
+        state = atarirgb_step(env, action);
+        step_count++;
+        // obs = state.observation;
+        if (state.terminated) break;
+    }
+    printf("Step count: %lu\n", step_count);
 
     atari_destroy(env);
 
