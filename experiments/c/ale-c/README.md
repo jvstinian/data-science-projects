@@ -32,3 +32,17 @@ It should be noted that we have two reset calls, `atari_reset` and
 provided when resetting.  
 `atari_reset` has the functionality described above.
 `atari_reset_omit_seed` resets the game without reloading the ROM.
+
+# Nix Build
+
+A flake is provided for building the C bindings.
+The flake also includes a development environment for building or
+using the C bindings.
+
+The C bindings require the directory containing the ROMs to be specified.
+In the build process, we install the ROMs to a subdirectory of the
+`ale-py` installation.  This directory can be determined using
+```bash
+python -c 'import ale_py; import os; print(os.path.dirname(ale_py.roms.get_rom_path("breakout")))'
+```
+
