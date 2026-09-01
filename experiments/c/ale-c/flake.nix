@@ -19,10 +19,6 @@
             };
             unpackPhase = ''
               runHook preUnpack
-              echo "LS: $(ls)"
-              echo "SRC: $src"
-              echo "OUT: $(basename $(stripHash "$src") .b64)"
-              # cp "$src" $(stripHash "$_src")
               base64 -d ${src} > $(basename $(stripHash "$src") .b64)
               runHook postUnpack
             '';
@@ -67,7 +63,7 @@
 
                     meta = {
                         homepage = "https://github.com/Farama-Foundation/AutoROM";
-                        description = "Description here.";
+                        description = "A tool to automate installing Atari ROMs for the Arcade Learning Environment";
                         license = final.pkgs.lib.licenses.mit;
                         maintainers = [ "Farama Foundation" ];
                     };
@@ -95,7 +91,7 @@
 
                     meta = {
                         homepage = "https://github.com/Farama-Foundation/AutoROM";
-                        description = "Description here.";
+                        description = "A tool to automate installing Atari ROMs for the Arcade Learning Environment";
                         license = final.pkgs.lib.licenses.mit;
                         maintainers = [ "Farama Foundation" ];
                     };
@@ -155,7 +151,6 @@
               Description: ALE C++ library
               Cflags: -I''${includedir}
               Libs: -L''${libdir} -lale
-              # Libs.private: -lz -lm
             '';
             destination = "/lib/pkgconfig/ale.pc";
         };
@@ -203,7 +198,6 @@
                 ];
                 nativeBuildInputs = with pkgs; [ pkg-config ale-cpp-pkgconfig ];
                 shellHook = ''
-    # This does work, `python` can be used instead of `my-wrapper`
     export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath [
        dev-python
        pkgs.SDL2
