@@ -53,46 +53,17 @@
                         click requests
                     ]);
 
-                    nativeBuildInputs = with python-final; [
-                        click requests
-                    ];
-
-                    propagatedBuildInputs = with python-final; [
-                        click requests
-                    ];
-
-                    nativeCheckInputs = with python-final; [
-                        click requests
-                    ];
-
-                    # buildInputs = with pkgs.python3.pkgs; [ docopt ];
+                    nativeBuildInputs = with python-final; [ click requests ];
+                    propagatedBuildInputs = with python-final; [ click requests ];
+                    nativeCheckInputs = with python-final; [ click requests ];
 
                     # build-system = with pkgs.python3.pkgs; [ setuptools pip ];
-                    # propagatedBuildInputs = with pkgs.python3Packages; [ setproctitle ];
-                    doCheck = true; # tests failing
+                    doCheck = true;
 
-                    # optional-dependencies = {
-                    #   accept-rom-license = with pkgs.python3.pkgs; [ farama-notifications ];
-                    # };
-                    # postInstall = ''
-                    #   echo "NOTE: postInstall"
-                    #   ls $out/lib/python3.11/site-packages/
-                    #   $out/bin/AutoROM -y
-                    # '';
                     postInstall = ''
                         echo "NOTE: postInstall - COPYING ROMS"
                         $out/bin/AutoROM -y -s ${final.atari-roms-targz}/Roms.tar.gz -d $out/lib/python3.12/site-packages/AutoROM/roms
                     '';
-                    # installPhase = ''
-                    #   runHook preInstall
-                    #   echo "In autorom, running install phase"
-                    #   ls ./
-                    #   ls ./dist/
-                    #   runHook installPhase
-                    #   runHook posInstall
-                    #   echo "NOTE: Attempting to install roms"
-                    #   $out/bin/AutoROM -y;
-                    # '';
 
                     meta = {
                         homepage = "https://github.com/Farama-Foundation/AutoROM";
@@ -130,10 +101,11 @@
                     };
                 };
                 ale-py-with-roms = python-final.ale-py.overrideAttrs (oldAttrs: {
-                  postInstall = ''
-                    echo "NOTE: postInstall - COPYING ROMS - local ale-py"
-                    ${python-final.autorom}/bin/AutoROM -y -s ${final.atari-roms-targz}/Roms.tar.gz -d $out/lib/python3.12/site-packages/ale_py/roms
-                  '';
+                    # works now, copying roms to autoroms/roms isn't sufficient anymore, copying to ale_py/roms seems to work
+                    postInstall = ''
+                        echo "NOTE: postInstall - COPYING ROMS - ale-py"
+                        ${python-final.autorom}/bin/AutoROM -y -s ${final.atari-roms-targz}/Roms.tar.gz -d $out/lib/python3.12/site-packages/ale_py/roms
+                    '';
                 });
             })
         ];
@@ -212,10 +184,10 @@
               gymnasium
               pygame
               pybind11 pysdl2
-              ale-py-with-roms # works now, copying roms to autoroms/roms isn't sufficient anymore, copying to ale_py/roms seems to work
+              jupyter ipython matplotlib
+              ale-py-with-roms
               autorom
               autorom-accept-rom-license
-              jupyter ipython matplotlib
           ];
     
           dev-python = pkgs.python3.withPackages dev-python-packages;
