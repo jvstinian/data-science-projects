@@ -1,7 +1,7 @@
 {
   inputs = {
     nixpkgs = {
-      url = "github:nixos/nixpkgs/nixos-25.11";
+      url = "github:nixos/nixpkgs/nixos-25.05";
     };
     flake-utils = {
       url = "github:numtide/flake-utils";
@@ -10,10 +10,10 @@
   outputs = { nixpkgs, flake-utils, ... }: 
     let 
       ale-overlay = final: prev: {
-        atari-roms-targz = pkgs.stdenv.mkDerivation rec {
+        atari-roms-targz = final.pkgs.stdenv.mkDerivation rec {
             name = "atari-roms-targz";
             version = "1.0.0";
-            src = pkgs.fetchurl {
+            src = final.pkgs.fetchurl {
               url = "https://gist.githubusercontent.com/jjshoots/61b22aefce4456920ba99f2c36906eda/raw/00046ac3403768bfe45857610a3d333b8e35e026/Roms.tar.gz.b64";
               hash = "sha256-Asp3fBZHanL6NmgKK6ePJMOsMbIVUDNUml83oGUxF94=";
             };
@@ -33,132 +33,119 @@
               runHook postInstall
             '';
         };
-        autorom = pkgs.python3.pkgs.buildPythonPackage rec {
-            name = "autorom";
-            version = "64071fb9d2f4d476ca3089c2866fbc08f4d6dbfa";
 
-            src = pkgs.fetchFromGitHub {
-                owner = "Farama-Foundation";
-                repo = "${name}";
-                rev = "${version}";
-                sha256 = "sha256-fC5OOXAnnP4x4j/IbpG0YdTz5F5pgyY0tumNjyrQ8FM=";
-            };
+        pythonPackagesOverlays = (prev.pythonPackagesOverlays or [ ]) ++ [
+            (python-final: python-prev: {
+                autorom = python-final.buildPythonPackage rec {
+                    name = "autorom";
+                    version = "64071fb9d2f4d476ca3089c2866fbc08f4d6dbfa";
 
-            # sourceRoot = "${src.name}/packages/AutoROM.accept-rom-license";
-            sourceRoot = "${src.name}/packages/AutoROM"; # .accept-rom-license";
+                    src = final.pkgs.fetchFromGitHub {
+                        owner = "Farama-Foundation";
+                        repo = "${name}";
+                        rev = "${version}";
+                        sha256 = "sha256-fC5OOXAnnP4x4j/IbpG0YdTz5F5pgyY0tumNjyrQ8FM=";
+                    };
+
+                    sourceRoot = "${src.name}/packages/AutoROM";
               
-            dependencies = with pkgs.python3.pkgs; [
-                # atari-roms  # TODO: I don't think this is needed
-                atari-roms-targz click requests
-            ];
+                    dependencies = (with final; [ atari-roms-targz ]) ++ (with python-final; [
+                        click requests
+                    ]);
 
-            nativeBuildInputs = with pkgs.python3.pkgs; [
-                click requests
-            ];
+                    nativeBuildInputs = with python-final; [
+                        click requests
+                    ];
 
-            propagatedBuildInputs = with pkgs.python3.pkgs; [
-                click requests
-            ];
+                    propagatedBuildInputs = with python-final; [
+                        click requests
+                    ];
 
-            nativeCheckInputs = with pkgs.python3.pkgs; [
-                click requests
-            ];
+                    nativeCheckInputs = with python-final; [
+                        click requests
+                    ];
 
-            # buildInputs = with pkgs.python3.pkgs; [ docopt ];
+                    # buildInputs = with pkgs.python3.pkgs; [ docopt ];
 
-            # build-system = with pkgs.python3.pkgs; [ setuptools pip ];
-            # propagatedBuildInputs = with pkgs.python3Packages; [ setproctitle ];
-            doCheck = true; # tests failing
+                    # build-system = with pkgs.python3.pkgs; [ setuptools pip ];
+                    # propagatedBuildInputs = with pkgs.python3Packages; [ setproctitle ];
+                    doCheck = true; # tests failing
 
-            # optional-dependencies = {
-            #   accept-rom-license = with pkgs.python3.pkgs; [ farama-notifications ];
-            # };
-            # postInstall = ''
-            #   echo "NOTE: postInstall"
-            #   ls $out/lib/python3.11/site-packages/
-            #   $out/bin/AutoROM -y
-            # '';
-            postInstall = ''
-                echo "NOTE: postInstall - COPYING ROMS"
-                # ls ${atari-roms}/
-                # The following works too
-                # cp -v ${atari-roms}/roms/* $out/lib/python3.11/site-packages/AutoROM/roms/
-                # For python 3.11: 
-                # $out/bin/AutoROM -y -s ${atari-roms-targz}/Roms.tar.gz -d $out/lib/python3.11/site-packages/AutoROM/roms
-                $out/bin/AutoROM -y -s ${atari-roms-targz}/Roms.tar.gz -d $out/lib/python3.12/site-packages/AutoROM/roms
-            '';
-            # installPhase = ''
-            #   runHook preInstall
-            #   echo "In autorom, running install phase"
-            #   ls ./
-            #   ls ./dist/
-            #   runHook installPhase
-            #   runHook posInstall
-            #   echo "NOTE: Attempting to install roms"
-            #   $out/bin/AutoROM -y;
-            # '';
+                    # optional-dependencies = {
+                    #   accept-rom-license = with pkgs.python3.pkgs; [ farama-notifications ];
+                    # };
+                    # postInstall = ''
+                    #   echo "NOTE: postInstall"
+                    #   ls $out/lib/python3.11/site-packages/
+                    #   $out/bin/AutoROM -y
+                    # '';
+                    postInstall = ''
+                        echo "NOTE: postInstall - COPYING ROMS"
+                        $out/bin/AutoROM -y -s ${final.atari-roms-targz}/Roms.tar.gz -d $out/lib/python3.12/site-packages/AutoROM/roms
+                    '';
+                    # installPhase = ''
+                    #   runHook preInstall
+                    #   echo "In autorom, running install phase"
+                    #   ls ./
+                    #   ls ./dist/
+                    #   runHook installPhase
+                    #   runHook posInstall
+                    #   echo "NOTE: Attempting to install roms"
+                    #   $out/bin/AutoROM -y;
+                    # '';
 
-            meta = {
-                homepage = "https://github.com/Farama-Foundation/AutoROM";
-                description = "Description here.";
-                license = pkgs.lib.licenses.mit;
-                maintainers = [ "Farama Foundation" ];
-            };
+                    meta = {
+                        homepage = "https://github.com/Farama-Foundation/AutoROM";
+                        description = "Description here.";
+                        license = final.pkgs.lib.licenses.mit;
+                        maintainers = [ "Farama Foundation" ];
+                    };
+                };
+                autorom-accept-rom-license = python-final.buildPythonPackage rec {
+                    name = "autorom-accept-rom-license";
+                    version = "64071fb9d2f4d476ca3089c2866fbc08f4d6dbfa";
+
+                    src = final.pkgs.fetchFromGitHub {
+                        owner = "Farama-Foundation";
+                        repo = "${name}";
+                        rev = "${version}";
+                        sha256 = "sha256-fC5OOXAnnP4x4j/IbpG0YdTz5F5pgyY0tumNjyrQ8FM=";
+                    };
+
+                    sourceRoot = "${src.name}/packages/AutoROM.accept-rom-license";
+                      
+                    dependencies = with python-final; [ click requests ];
+                    # Note autorom in the following
+                    nativeBuildInputs = (with python-final; [ click requests autorom ]); 
+                    propagatedBuildInputs = with python-final; [ click requests ];
+                    nativeCheckInputs = with python-final; [ click requests ];
+
+                    doCheck = true;
+
+                    meta = {
+                        homepage = "https://github.com/Farama-Foundation/AutoROM";
+                        description = "Description here.";
+                        license = final.pkgs.lib.licenses.mit;
+                        maintainers = [ "Farama Foundation" ];
+                    };
+                };
+                ale-py-with-roms = python-final.ale-py.overrideAttrs (oldAttrs: {
+                  postInstall = ''
+                    echo "NOTE: postInstall - COPYING ROMS - local ale-py"
+                    ${python-final.autorom}/bin/AutoROM -y -s ${final.atari-roms-targz}/Roms.tar.gz -d $out/lib/python3.12/site-packages/ale_py/roms
+                  '';
+                });
+            })
+        ];
+
+        # Trying the simpler approach described in the manual at 
+        # https://nixos.org/manual/nixpkgs/unstable/#how-to-override-a-python-package-using-overlays
+        python3 = prev.python3.override {
+            packageOverrides = prev.lib.composeManyExtensions final.pythonPackagesOverlays;
         };
-        autorom-accept-rom-license = pkgs.python3.pkgs.buildPythonPackage rec {
-            name = "autorom-accept-rom-license";
-            version = "64071fb9d2f4d476ca3089c2866fbc08f4d6dbfa";
 
-            src = pkgs.fetchFromGitHub {
-                owner = "Farama-Foundation";
-                repo = "${name}";
-                rev = "${version}";
-                sha256 = "sha256-fC5OOXAnnP4x4j/IbpG0YdTz5F5pgyY0tumNjyrQ8FM=";
-            };
+        python3Packages = final.python3.pkgs;
 
-            sourceRoot = "${src.name}/packages/AutoROM.accept-rom-license";
-            # sourceRoot = "${src.name}/packages/AutoROM"; # .accept-rom-license";
-              
-            dependencies = with pkgs.python3.pkgs; [
-                click requests
-            ];
-
-            nativeBuildInputs = (with pkgs.python3.pkgs; [
-                click requests
-            ]) ++ [ autorom ];
-
-            propagatedBuildInputs = with pkgs.python3.pkgs; [
-                click requests
-            ];
-
-            nativeCheckInputs = with pkgs.python3.pkgs; [
-                click requests
-            ];
-
-            # buildInputs = with pkgs.python3.pkgs; [ docopt ];
-
-            # build-system = with pkgs.python3.pkgs; [ setuptools pip ];
-            # propagatedBuildInputs = with pkgs.python3Packages; [ setproctitle ];
-            doCheck = true; # tests failing
-
-            # optional-dependencies = {
-            #   accept-rom-license = with pkgs.python3.pkgs; [ farama-notifications ];
-            # };
-            # postInstall = "$out/bin/AutoROM -y; ls $out/lib/python3.11/site-packages/";
-
-            meta = {
-                homepage = "https://github.com/Farama-Foundation/AutoROM";
-                description = "Description here.";
-                license = pkgs.lib.licenses.mit;
-                maintainers = [ "Farama Foundation" ];
-            };
-        };
-        ale-py-with-roms = pkgs.python3.pkgs.ale-py.overrideAttrs (oldAttrs: {
-          postInstall = ''
-            echo "NOTE: postInstall - COPYING ROMS - local ale-py"
-            ${autorom}/bin/AutoROM -y -s ${atari-roms-targz}/Roms.tar.gz -d $out/lib/python3.12/site-packages/ale_py/roms
-          '';
-        });
         ale-cpp = final.pkgs.stdenv.mkDerivation rec {
             pname = "ale-cpp";
             version = "0.11.2";
@@ -177,40 +164,37 @@
                     'set(CMAKE_INTERPROCEDURAL_OPTIMIZATION FALSE)'
             '';
 
-            # build-system = with pkgs; [ cmake ninja ];
+            nativeBuildInputs = with final.pkgs; [ cmake vcpkg pkg-config ];
+            buildInputs = with final.pkgs; [ zlib SDL2 vcpkg ];
 
-            nativeBuildInputs = with pkgs; [ cmake vcpkg pkg-config ];
-            buildInputs = with pkgs; [ zlib SDL2 vcpkg ];
-
-            # dontUseCmakeConfigure = true;
-            # Optional: You can pass specific CMake flags if needed
+            # Pass CMake flags
             cmakeFlags = [ "-DCMAKE_BUILD_TYPE=Release" "-DSDL_SUPPORT=ON" "-DBUILD_PYTHON_LIB=OFF" ];
         };
         ale-cpp-pkgconfig = final.pkgs.writeTextFile {
             name = "ale-cpp-pkgconfig";
             text = ''
               # ale.pc
-              prefix=${ale-cpp}
-              includedir=${ale-cpp}/include/ale
+              prefix=${final.ale-cpp}
+              includedir=${final.ale-cpp}/include/ale
               libdir=''${prefix}/lib
-      
+
               Name: ale
-              Version: ${ale-cpp.version}
+              Version: ${final.ale-cpp.version}
               Description: ALE C++ library
               Cflags: -I''${includedir}
               Libs: -L''${libdir} -lale
               # Libs.private: -lz -lm
             '';
             destination = "/lib/pkgconfig/ale.pc";
-          };
-        ale-c = pkgs.stdenv.mkDerivation rec {
+        };
+        ale-c = final.pkgs.stdenv.mkDerivation rec {
             pname = "ale-c";
             version = "0.1.0";
 
             src = ./.;
-          
-            nativeBuildInputs = with pkgs; [ cmake pkg-config ];
-            buildInputs = with pkgs; [ zlib SDL2 ];
+ 
+            nativeBuildInputs = with final.pkgs; [ cmake pkg-config ];
+            buildInputs = with final.pkgs; [ zlib SDL2 ale-cpp ale-cpp-pkgconfig openssl check ];
 
             cmakeFlags = [ "-DCMAKE_BUILD_TYPE=Release" ];
         };
@@ -231,7 +215,7 @@
               ale-py-with-roms # works now, copying roms to autoroms/roms isn't sufficient anymore, copying to ale_py/roms seems to work
               autorom
               autorom-accept-rom-license
-              jupyter ipython matplotlib # TODO: Are these needed?
+              jupyter ipython matplotlib
           ];
     
           dev-python = pkgs.python3.withPackages dev-python-packages;
@@ -242,9 +226,10 @@
                 buildInputs = with pkgs; [
                   dev-python
                   ale-cpp
+                  ale-c
                   cmake SDL2 SDL2.dev zlib openssl check
                 ];
-                nativeBuildInputs = [ ale-cpp-pkgconfig ] ++ (with pkgs; [ pkg-config ]);
+                nativeBuildInputs = with pkgs; [ pkg-config ale-cpp-pkgconfig ];
                 shellHook = ''
     # This does work, `python` can be used instead of `my-wrapper`
     export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath [
@@ -252,7 +237,7 @@
        pkgs.SDL2
        pkgs.zlib
     ]}:$LD_LIBRARY_PATH"
-    export PS1='\\[\\e[1;34m\\]ale-c > \\[\\e[0m\\]';
+    export PS1="\[\e[1;34m\]ale-c > \[\e[0m\]";
                 '';
               };
             };
