@@ -24,7 +24,7 @@
  * Based on: Stella  --  "An Atari 2600 VCS Emulator"
  * Copyright (c) 1995-2007 by Bradford W. Mott and the Stella team
  */
-#include "gym.h"
+#include <ale_gym.h>
 #include "ale_c.hpp"
 #include <cassert>
 

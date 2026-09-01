@@ -1,7 +1,7 @@
 #include <check.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <gym.h>
+#include <ale_gym.h>
 
 START_TEST (test_ale_seed)
 {

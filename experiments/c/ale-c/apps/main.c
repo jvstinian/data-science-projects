@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <gym.h>
+#include <ale_gym.h>
 
 struct RunConfig {
     char* rom_dir;
