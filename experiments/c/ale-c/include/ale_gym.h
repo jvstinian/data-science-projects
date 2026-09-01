@@ -161,14 +161,7 @@ struct AtariEnvParams {
     bool sound_obs;
 };
 
-/* TODO: Clean up the following */
-struct AtariEnv;/* {
-    ALEInterface* aleptr;
-    char* rom_file_path;
-    unsigned int c_seed;
-    int ale_seed;
-    struct AtariEnvParams params;
-};*/
+struct AtariEnv;
 
 struct AtariRGBStepReturn {
     struct RGBObservation observation;
