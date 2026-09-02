@@ -1,0 +1,7 @@
+# Build artifacts
+build
+debug
+resources/md5.json
+
+# Remaining Haskell files
+**/*.hs
