@@ -71,5 +71,10 @@ configure_file(
 include(GNUInstallDirs)
 install(TARGETS ale-c ale-example)
 
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/"
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+)
+
 # To auto-generate a "package" target
 include(CPack)
