@@ -24,11 +24,11 @@
  * Based on: Stella  --  "An Atari 2600 VCS Emulator"
  * Copyright (c) 1995-2007 by Bradford W. Mott and the Stella team
  */
-#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <climits>
-#include <ale_c.hpp>
-#include <gym.hpp>
+#include <string.h>
+#include <ale_gym.h>
 
 struct RunConfig {
     char* rom_dir;
@@ -164,9 +164,8 @@ int main(int argc, char *argv[]) {
     }
 
     /*struct AtariEnvStepMetadata info; */
-    struct RGBObservation obs;
     struct AtariRGBStepReturn state;
-    enum Action action = (enum Action) 0;
+    enum AtariAction action = (enum AtariAction) 0;
 
     /* Set the Atari config using the run config */
     struct AtariConfig config = default_atari_env_config_init();
@@ -192,26 +191,23 @@ int main(int argc, char *argv[]) {
         };
     }
     config.render_mode = run_config.render_human ? RENDER_HUMAN : NO_RENDER;
-    AtariEnv* env = atari_make(config);
+    struct AtariEnv* env = atari_make(config);
+    struct AtariEnvStepMetadata metadata;
 
-    obs = atarirgb_reset(env, 123u);
+    atarirgb_reset(env, 123u);
     size_t step_count = 0;
+    /* Following the reset, the metadata will include the ALE seed */
+    metadata = atari_get_info(env);
+    printf("Atari Env Metadata\n");
+    printf("  Lives:                %d\n", metadata.lives);
+    printf("  Episode Frame Number: %d\n", metadata.episode_frame_number);
+    printf("  Frame Number:         %d\n", metadata.frame_number);
+    printf("  C Seed:               %u\n", metadata.c_seed);
+    printf("  Ale Seed:             %d\n", metadata.ale_seed);
     while (1) {
         action = atari_random_action(env);
         state = atarirgb_step(env, action);
         step_count++;
-        obs = state.observation;
-        if (state.terminated) break;
-    }
-    printf("Step count: %lu\n", step_count);
-
-    obs = atarirgb_reset(env, 123u);
-    step_count = 0;
-    while (1) {
-        action = atari_random_action(env);
-        state = atarirgb_step(env, action);
-        step_count++;
-        // obs = state.observation;
         if (state.terminated) break;
     }
     printf("Step count: %lu\n", step_count);

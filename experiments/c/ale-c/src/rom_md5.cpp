@@ -1,4 +1,4 @@
-#include <gym.hpp>
+#include <ale_gym.h>
 
 struct RomMD5Hash g_rom_md5[108] = {
     { .rom_file = "adventure.bin"        , .md5 = "4b27f5397c442d25f0c418ccdacf1926" },

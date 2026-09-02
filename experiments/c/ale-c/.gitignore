@@ -1,9 +1,7 @@
 # Build artifacts
 build
 debug
-
-# The resources directory will not be put under source control
-resources
+resources/md5.json
 
 # Remaining Haskell files
 **/*.hs
