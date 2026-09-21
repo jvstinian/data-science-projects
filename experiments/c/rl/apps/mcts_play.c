@@ -259,6 +259,7 @@ int ttt_uct_example(struct TTTRunConfig run_config) {
     enum TTTPlayer p;
     struct TTTTree* tree = ttt_mcts_tree_new(config);
     unsigned int p_row, p_col;
+    char omit;
 
     s = ttt_uct_get_state(tree);
     p = get_player(s);
@@ -269,6 +270,7 @@ int ttt_uct_example(struct TTTRunConfig run_config) {
             while (1) {
                 if (scanf("%u %u", &p_row, &p_col) != 2) {
                     fprintf(stderr, "Error reading input. Please enter two integers.\n");
+                    while ((omit = getchar()) != '\n' && omit != EOF); 
                     continue;
                 }
                 if (p_row > 2 || p_col > 2) {
@@ -365,6 +367,7 @@ int hex_uct_example(struct HexRunConfig run_config) {
     enum HexPlayer p;
     unsigned int p_row, p_col;
     struct HexTree* tree = hex_mcts_tree_new(config);
+    char omit;
 
     s = hex_uct_get_state(tree);
     p = hex_get_player(s);
@@ -375,6 +378,7 @@ int hex_uct_example(struct HexRunConfig run_config) {
             while (1) {
                 if (scanf("%u %u", &p_row, &p_col) != 2) {
                     fprintf(stderr, "Error reading input. Please enter two integers.\n");
+                    while ((omit = getchar()) != '\n' && omit != EOF); 
                     continue;
                 }
                 if (p_row > BOARD_WIDTH || p_col > BOARD_WIDTH) {
