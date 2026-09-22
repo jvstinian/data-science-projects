@@ -16,27 +16,19 @@ bool contourAreaLessThan250(const std::vector<cv::Point>& ipts) {
     return cv::contourArea(fpts, false) < 250.0;
 }
 
-/* References:
- * - https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-VideoIO-VideoCapture.html#newVideoCapture
- * - https://hackage-content.haskell.org/package/opencv-0.0.2.1/src/src/OpenCV/HighGui.hsc
- */
-int main() {
-    std::cout << "OpenCV example" << std::endl << std::flush;
-    std::string file("./videos/1744035803-video.mp4");
-
+bool print_video_properties(const std::string& file) {
     std::cout << "Working with file " << file << std::endl;
     cv::VideoCapture* vcptr = new cv::VideoCapture();
-    // open_vc
     vcptr->open(cv::String(file), 0);
     
-    // video_processor 
-    std::cout << "Width (D): " << vcptr->get(cv::CAP_PROP_FRAME_WIDTH) << std::endl;
-    std::cout << "Width (I): " << (int) vcptr->get(cv::CAP_PROP_FRAME_WIDTH) << std::endl;
-    std::cout << "Height (I): " << (int) vcptr->get(cv::CAP_PROP_FRAME_HEIGHT) << std::endl;
-    std::cout << "posFrames (D): " << (int) vcptr->get(cv::CAP_PROP_POS_FRAMES) << std::endl;
-    std::cout << "fourcc (I): " << (int) vcptr->get(cv::CAP_PROP_FOURCC) << std::endl;
+    // Video capture properties
+    std::cout << "Width: " << (int) vcptr->get(cv::CAP_PROP_FRAME_WIDTH) << std::endl;
+    std::cout << "Height: " << (int) vcptr->get(cv::CAP_PROP_FRAME_HEIGHT) << std::endl;
+    std::cout << "posFrames: " << (int) vcptr->get(cv::CAP_PROP_POS_FRAMES) << std::endl;
+    std::cout << "fourcc: " << (int) vcptr->get(cv::CAP_PROP_FOURCC) << std::endl;
     std::cout << "Is open: " << (bool) vcptr->isOpened() << std::endl;
     std::cout << "Grab successful: " << (bool) vcptr->grab() << std::endl;
+
     cv::Mat* mptr = new cv::Mat();
     bool ok = vcptr->retrieve(*mptr, 0);
     if (ok) {
@@ -45,45 +37,78 @@ int main() {
         std::cout << "Unable to retrieve image" << std::endl;
     }
     delete mptr;
-    std::cout << "PropMode (I): " << (int) vcptr->get(cv::CAP_PROP_MODE) << std::endl;
+    std::cout << "PropMode: " << (int) vcptr->get(cv::CAP_PROP_MODE) << std::endl;
     vcptr->release();
+    return ok;
+}
+
+int main() {
+    std::cout << "OpenCV example" << std::endl << std::flush;
+    std::string file("./videos/1744035803-video.mp4");
+
+    if (!print_video_properties(file)) {
+        std::cerr << "Error working with file " << file << std::endl;
+        exit(1);
+    }
+
+    cv::VideoCapture* vcptr = new cv::VideoCapture();
 
     /* See https://hackage-content.haskell.org/package/opencv-0.0.2.1/src/src/OpenCV/HighGui.hsc
      * It seems that the window name is made by first obtaining a unique string,
        then hashing so that an integer is obtained, and
        then converting the integer to a string.
-       We instead just use "custom_winname_0" for now.
+       We instead just use "opencv_contour_example_0" for now.
     */
     /* Also, in Haskell makeWindow specifies that
        mouseCallback and trackbars are empty.
     */
-    cv::String winname("custom_winname_0");
-    cv::String wintitle("wookie");
+    cv::String winname("opencv_contour_example_0");
+    cv::String wintitle("opencv contour example");
     cv::namedWindow(winname, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
     cv::setWindowTitle(winname, wintitle);
     cv::resizeWindow(winname, 1920 / 4, 1080 / 4);
-    // open_vc
+    
+    // Open video file
     vcptr->open(cv::String(file), 0);
-    std::cout << "Grab successful: " << (bool) vcptr->grab() << std::endl;
-    cv::Mat* image_ptr = new cv::Mat();
-    /* bool ok; */
+    if (!vcptr->grab()) {
+        std::cerr << "Grab not successful" << std::endl;
+        exit(2);
+    }
+    cv::Mat* rawimagep = new cv::Mat();
+
     int ct = 0;
     cv::Mat* cumdiffframe0 = new cv::Mat();
-    cv::Mat* baseframe = new cv::Mat();
+    cv::Mat* framep = new cv::Mat();
+    cv::Mat* grayframep = new cv::Mat();
+    cv::Mat* grayblurp = new cv::Mat();
+    cv::Mat* lastframep = new cv::Mat();
     cv::Mat* framedelta = new cv::Mat();
     cv::Mat* cumdiffframeDouble = new cv::Mat();
     double decayrate = 0.2; /* 0.4 works pretty well with threshold val 5.  0.8 works very well with threshold val 5 for unnormalized series sum. */
     double fdmin, fdmax, cdmin, cdmax;
-    /*
-    double totalweight;
-    double prevweight;
-    */
+       
+    /* Initial frames */ 
+    if (!vcptr->retrieve(*rawimagep, 0)) {
+        std::cerr << "Unable to retrieve image" << std::endl;
+        exit(1);
+    }
+    // Should the height be 270 in the following? 
+    cv::resize(*rawimagep, *framep, cv::Size2i(480, 262), 0.0, 0.0, cv::INTER_AREA);
+    cv::cvtColor(*framep, *grayframep, cv::COLOR_BGR2GRAY, 0);
+    cv::GaussianBlur(*grayframep, *grayblurp, cv::Size(21, 21), 0.0, 0.0);
+    /* cv::Mat* zeromatp = new cv::Mat(); */
+    *cumdiffframe0 = cv::Mat::zeros(grayblurp->size(), grayblurp->type());
+    // *lastframep = *grayblurp;
+    grayblurp->copyTo(*lastframep);
+
     while (1) {
-        /* TODO: Grab appears to be necessary to move to the next image */
-        std::cout << "Grab successful: " << (bool) vcptr->grab() << std::endl;
-        ok = vcptr->retrieve(*image_ptr, 0);
-        if (!ok) {
-            std::cout << "Unable to retrieve image" << std::endl;
+        /* Grab is necessary to move to the next image */
+        if (!vcptr->grab()) {
+            std::cerr << "Grab not successful" << std::endl;
+            exit(2);
+        }
+        if (!vcptr->retrieve(*rawimagep, 0)) {
+            std::cerr << "Unable to retrieve image" << std::endl;
             break;
         }
         /*
@@ -104,20 +129,20 @@ int main() {
                , miChannels = channels
                }
         */
-        std::cout << "Flags: " << image_ptr->flags << std::endl;
-        std::cout << "Depth: " << (image_ptr->flags & cv::Mat::DEPTH_MASK) << std::endl;
-        std::cout << "Channels: " << 1 + ((image_ptr->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
-        std::cout << "Dims: " << image_ptr->dims << std::endl;
-        std::cout << "Dims again: " << image_ptr->size.dims() << std::endl;
+        std::cout << "Flags: " << rawimagep->flags << std::endl;
+        std::cout << "Depth: " << (rawimagep->flags & cv::Mat::DEPTH_MASK) << std::endl;
+        std::cout << "Channels: " << 1 + ((rawimagep->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
+        std::cout << "Dims: " << rawimagep->dims << std::endl;
+        std::cout << "Dims again: " << rawimagep->size.dims() << std::endl;
         std::cout << "Shape: ";
-        for (int i = 0; i < image_ptr->size.dims(); i++) {
-            std::cout << image_ptr->size[i] << ", ";
+        for (int i = 0; i < rawimagep->size.dims(); i++) {
+            std::cout << rawimagep->size[i] << ", ";
         }
         /* TODO: Might need shape, depth, and channels */
         std::cout << std::endl;
         /* let frame      = exceptError $ resize (ResizeAbs (toSize (V2 480 262))) InterArea image */
-        cv::Mat* framep = new cv::Mat();
-        cv::resize(*image_ptr, *framep, cv::Size2i(480, 262 /*Should this be 270?*/), 0.0, 0.0, cv::INTER_AREA);
+        /* cv::Mat* framep = new cv::Mat(); */
+        cv::resize(*rawimagep, *framep, cv::Size2i(480, 262 /*Should this be 270?*/), 0.0, 0.0, cv::INTER_AREA);
         std::cout << "Frame Depth: " << (framep->flags & cv::Mat::DEPTH_MASK) << std::endl;
         std::cout << "Frame Channels: " << 1 + ((framep->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
         std::cout << "Frame Shape: "; /* NOTE: This appears to specify the expected height and width */
@@ -128,11 +153,11 @@ int main() {
         /* No need for this coercion, frame already has the desired dimensions, channels, and depth
            cframe     = (exceptError $ coerceMat frame) :: Mat ('S ['S 262, 'S 480]) ('S 3) ('S Word8) */
         /* grayframe  = exceptError $ cvtColor bgr gray cframe */
-        cv::Mat* grayframep = new cv::Mat();
+        /* cv::Mat* grayframep = new cv::Mat(); */
         cv::cvtColor(*framep, *grayframep, cv::COLOR_BGR2GRAY, 0);
         std::cout << "Gray Depth: " << (grayframep->flags & cv::Mat::DEPTH_MASK) << std::endl;
         std::cout << "Gray Channels: " << 1 + ((grayframep->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
-        cv::Mat* grayblurp = new cv::Mat();
+        /* cv::Mat* grayblurp = new cv::Mat(); */
         /* grayblur   = exceptError $ gaussianBlur (toSize (V2 21 21)) 0.0 0.0 grayframe */
         cv::GaussianBlur(*grayframep, *grayblurp, cv::Size(21, 21), 0.0, 0.0);
         std::cout << "Blur Depth: " << (grayblurp->flags & cv::Mat::DEPTH_MASK) << std::endl;
@@ -140,15 +165,16 @@ int main() {
         cv::Mat* zeromatp = new cv::Mat();
         /* zeromat    = matAbsDiff grayblur grayblur -- TODO: Maybe try another way if this works */
         /* cv::absdiff(*grayblurp, *grayblurp, *zeromatp); */
-        *zeromatp = cv::Mat::zeros(grayblurp->size(), grayblurp->type());
+        *zeromatp = cv::Mat::zeros(grayblurp->size(), grayblurp->type());  /* TODO: Is not needed anymore */
         /* (ct, cumdiffframe0, baseframe) = fromMaybe (0 :: Int32, zeromat, grayblur) firstframeM */
+        /* TODO: This needs work
         if (ct == 0) {
-            /* TODO: This needs work */
             *cumdiffframe0 = *zeromatp;
             *baseframe = *grayblurp;
         }
+        */
         /* framedelta = matAbsDiff grayblur baseframe */
-        cv::absdiff(*grayblurp, *baseframe, *framedelta);
+        cv::absdiff(*grayblurp, *lastframep, *framedelta);
         
         // totalweight = (1.0 - decayrate) / (1.0 - pow(decayrate, (double) ct + 2)); /* TODO: Note the +2 rather than +1 to fix the weighted average below */
         // prevweight = (1.0 - decayrate) / (1.0 - pow(decayrate, (double) ct + 1)); /* TODO: Note the +2 rather than +1 to fix the weighted average below */
@@ -243,14 +269,18 @@ int main() {
         cv::waitKey(1000 / 30);
 
         delete zeromatp;
+        /*
         delete grayblurp;
         delete grayframep;
         delete framep;
+        */
         
         ct++;
+        // *lastframep = *grayblurp; // TODO
+        grayblurp->copyTo(*lastframep);
         if (ct >= 100) break;
     }
-    delete baseframe;
+    delete lastframep;
     delete cumdiffframe0;
     delete framedelta;
     delete cumdiffframeDouble;
@@ -264,6 +294,7 @@ int main() {
 }
 
 /*
+threshold 
    :: (depth `In` [Word8, Float])
     => ThreshValue -- ^
     -> ThreshType
@@ -364,8 +395,12 @@ dilate src mbKernel mbAnchor iterations borderMode = unsafeWrapException $ do
 #define 	CV_32F   5
 #define 	CV_64F   6
 #define 	CV_16F   7
-// note the last item isn't listed for the depth() method in
-// https://docs.opencv.org/4.11.0/d3/d63/classcv_1_1Mat.html
+*/
+/* Note the last item isn't listed for the depth() method in
+ * https://docs.opencv.org/4.11.0/d3/d63/classcv_1_1Mat.html#a8da9f853b6f3a29d738572fd1ffc44c0
+ * It is listed on
+ * https://docs.opencv.org/4.11.0/d1/d1b/group__core__hal__interface.html
+ * though.
 */
 /*
 https://hackage-content.haskell.org/package/opencv-0.0.2.1/src/src/OpenCV/Internal/Core/Types/Mat/Marshal.hsc
