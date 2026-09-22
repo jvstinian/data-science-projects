@@ -77,24 +77,27 @@ int main() {
     }
 
     int ct = 0;
+    /*
     cv::Mat* rawimagep = new cv::Mat();
+    */
+    cv::Mat rawimagem; /* cv::Mat() */
     cv::Mat* cumdiffframe0 = new cv::Mat();
     cv::Mat* framep = new cv::Mat();
     cv::Mat* grayframep = new cv::Mat();
     cv::Mat* grayblurp = new cv::Mat();
     cv::Mat* lastframep = new cv::Mat();
     cv::Mat* framedelta = new cv::Mat();
-    cv::Mat* cumdiffframeDouble = new cv::Mat();
+    cv::Mat tempcumdiff; /* cv::Mat() */
     double decayrate = 0.2; /* 0.4 works pretty well with threshold val 5.  0.8 works very well with threshold val 5 for unnormalized series sum. */
     double fdmin, fdmax, cdmin, cdmax;
        
     /* Initial frames */ 
-    if (!vcptr->retrieve(*rawimagep, 0)) {
+    if (!vcptr->retrieve(rawimagem, 0)) {
         std::cerr << "Unable to retrieve image" << std::endl;
         exit(1);
     }
     // Should the height be 270 in the following? 
-    cv::resize(*rawimagep, *framep, cv::Size2i(480, 262), 0.0, 0.0, cv::INTER_AREA);
+    cv::resize(rawimagem, *framep, cv::Size2i(480, 262), 0.0, 0.0, cv::INTER_AREA);
     cv::cvtColor(*framep, *grayframep, cv::COLOR_BGR2GRAY, 0);
     cv::GaussianBlur(*grayframep, *grayblurp, cv::Size(21, 21), 0.0, 0.0);
     *cumdiffframe0 = cv::Mat::zeros(grayblurp->size(), grayblurp->type());
@@ -106,26 +109,26 @@ int main() {
             std::cerr << "Grab not successful" << std::endl;
             exit(2);
         }
-        if (!vcptr->retrieve(*rawimagep, 0)) {
+        if (!vcptr->retrieve(rawimagem, 0)) {
             std::cerr << "Unable to retrieve image" << std::endl;
             break;
         }
         if (verbose && (ct == 0)) {
             /* We print frame information following the approach used in the Haskell code
              * for the methods matInfo and unmarshalFlags. */
-            std::cout << "Flags: " << rawimagep->flags << std::endl;
-            std::cout << "Depth: " << (rawimagep->flags & cv::Mat::DEPTH_MASK) << std::endl;
-            std::cout << "Channels: " << 1 + ((rawimagep->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
-            std::cout << "Dims: " << rawimagep->dims << std::endl;
-            std::cout << "Dims from size: " << rawimagep->size.dims() << std::endl;
+            std::cout << "Flags: " << rawimagem.flags << std::endl;
+            std::cout << "Depth: " << (rawimagem.flags & cv::Mat::DEPTH_MASK) << std::endl;
+            std::cout << "Channels: " << 1 + ((rawimagem.flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
+            std::cout << "Dims: " << rawimagem.dims << std::endl;
+            std::cout << "Dims from size: " << rawimagem.size.dims() << std::endl;
             std::cout << "Shape: ";
-            for (int i = 0; i < rawimagep->size.dims(); i++) {
-                std::cout << rawimagep->size[i] << ", ";
+            for (int i = 0; i < rawimagem.size.dims(); i++) {
+                std::cout << rawimagem.size[i] << ", ";
             }
             std::cout << std::endl;
         }
 
-        cv::resize(*rawimagep, *framep, cv::Size2i(480, 262 /*Should this be 270?*/), 0.0, 0.0, cv::INTER_AREA);
+        cv::resize(rawimagem, *framep, cv::Size2i(480, 262 /*Should this be 270?*/), 0.0, 0.0, cv::INTER_AREA);
 
         if (verbose && (ct == 0)) {
             /* NOTE: Height and width are reversed in the dimensions array, e.g. the following yields
@@ -152,13 +155,13 @@ int main() {
         */
 
         cv::absdiff(*grayblurp, *lastframep, *framedelta);
-        cv::addWeighted(*cumdiffframe0, decayrate, *framedelta, (1.0 - decayrate), 0.0, *cumdiffframeDouble, cumdiffframe0->depth());
+        cv::addWeighted(*cumdiffframe0, decayrate, *framedelta, (1.0 - decayrate), 0.0, tempcumdiff, cumdiffframe0->depth());
 
         cv::minMaxLoc(*framedelta, &fdmin, &fdmax, NULL, NULL);
-        cv::minMaxLoc(*cumdiffframeDouble, &cdmin, &cdmax, NULL, NULL);
+        cv::minMaxLoc(tempcumdiff, &cdmin, &cdmax, NULL, NULL);
        
         /* Perhaps copyTo would be preferable */
-        cumdiffframeDouble->convertTo(*cumdiffframe0, cumdiffframe0->depth(), 1.0, 0.0);
+        tempcumdiff.convertTo(*cumdiffframe0, cumdiffframe0->depth(), 1.0, 0.0);
 
         /* NOTE: The tutorial uses threshold value 25 */
         cv::Mat* threshp = new cv::Mat();
@@ -170,7 +173,6 @@ int main() {
         /* Discard the output of the following the input threshVal is returned when
          * the threshold type is THRESH_BINARY (or so it appears). */
         cv::threshold(*cumdiffframe0, *threshp, threshVal, threshMaxVal, finalThreshType);
-        /* std::cout << "Threshold return value: " << calcThresh << std::endl; TODO */
 
         /* See https://docs.opencv.org/4.11.0/d4/d86/group__imgproc__filter.html#ga4ff0f3318642c4f469d0e11f242f3b6c
          * for the dilate method.
@@ -248,12 +250,12 @@ int main() {
         /* Increment */
         ct++;
         grayblurp->copyTo(*lastframep);
-        if (ct >= 10) break;
+        /* if (ct >= 100) break; TODO */
     }
     delete lastframep;
     delete cumdiffframe0;
     delete framedelta;
-    delete cumdiffframeDouble;
+    /*delete cumdiffframeDouble; TODO*/
     vcptr->release();
     cv::destroyWindow(winname);
     
@@ -273,28 +275,12 @@ Haskell Method Implementations (method name in HTML anchor):
 OpenCV ThresholdTypes:
 https://docs.opencv.org/4.11.0/d7/d1b/group__imgproc__misc.html#gaa9e58d2860d4afa658ef70a9b1115576
 
-marshalThreshType :: ThreshType -> (Int32, CDouble)
-marshalThreshType = \case
-    Thresh_Binary    maxVal -> (c'THRESH_BINARY    , realToFrac maxVal)
-    Thresh_BinaryInv maxVal -> (c'THRESH_BINARY_INV, realToFrac maxVal)
-    Thresh_Truncate         -> (c'THRESH_TRUNC     , 0)
-    Thresh_ToZero           -> (c'THRESH_TOZERO    , 0)
-    Thresh_ToZeroInv        -> (c'THRESH_TOZERO_INV, 0)
-
-data ThreshValue
-   = ThreshVal_Abs !Double
-   | ThreshVal_Otsu
-   | ThreshVal_Triangle
-     deriving (Show, Eq)
-
-marshalThreshValue :: ThreshValue -> (Int32, CDouble)
-marshalThreshValue = \case
-    ThreshVal_Abs val  -> (0                , realToFrac val)
-    ThreshVal_Otsu     -> (c'THRESH_OTSU    , 0)
-    ThreshVal_Triangle -> (c'THRESH_TRIANGLE, 0)
 */
 
 /*
+Depth values can be found in
+https://docs.opencv.org/4.11.0/d1/d1b/group__core__hal__interface.html#ga32b18d904ee2b1731a9416a8eef67d06
+
 #define 	CV_8U   0
 #define 	CV_8S   1
 #define 	CV_16U   2
@@ -303,75 +289,6 @@ marshalThreshValue = \case
 #define 	CV_32F   5
 #define 	CV_64F   6
 #define 	CV_16F   7
-*/
-/* Note the last item isn't listed for the depth() method in
- * https://docs.opencv.org/4.11.0/d3/d63/classcv_1_1Mat.html#a8da9f853b6f3a29d738572fd1ffc44c0
- * It is listed on
- * https://docs.opencv.org/4.11.0/d1/d1b/group__core__hal__interface.html
- * though.
-*/
-/*
-https://hackage-content.haskell.org/package/opencv-0.0.2.1/src/src/OpenCV/Internal/Core/Types/Mat/Marshal.hsc
-
-unmarshalFlags :: Int32 -> (Depth, Int32)
-unmarshalFlags n =
-    ( unmarshalDepth $ n .&. c'CV_MAT_DEPTH_MASK
-    , 1 + ((n `unsafeShiftR` c'CV_CN_SHIFT) .&. (c'CV_CN_MAX - 1))
-    )
-*/
-
-/* resize 
-https://hackage-content.haskell.org/package/opencv-0.0.2.1/src/src/OpenCV/ImgProc/GeometricImgTransform.hsc
-    let frame      = exceptError $ resize (ResizeAbs (toSize (V2 480 262))) InterArea image
-
-resize
-    :: ResizeAbsRel
-    -> InterpolationMethod
-    -> Mat ('S [height, width]) channels depth
-    -> CvExcept (Mat ('S ['D, 'D]) channels depth)
-resize factor interpolationMethod src = unsafeWrapException $ do
-    dst <- newEmptyMat
-    handleCvException (pure $ unsafeCoerceMat dst) $
-      withPtr src   $ \srcPtr   ->
-      withPtr dst   $ \dstPtr   ->
-      withPtr dsize $ \dsizePtr ->
-        [cvExcept|
-          cv::resize
-          ( *$(Mat * srcPtr)
-          , *$(Mat * dstPtr)
-          , *$(Size2i * dsizePtr)
-          , $(double fx)
-          , $(double fy)
-          , $(int32_t c'interpolation)
-          );
-        |]
-  where
-    (dsize, fx, fy) = marshalResizeAbsRel factor
-    c'interpolation = marshalInterpolationMethod interpolationMethod
-
-
-marshalResizeAbsRel
-    :: ResizeAbsRel
-    -> (Size2i, CDouble, CDouble)
-marshalResizeAbsRel (ResizeAbs s) = (s, 0   , 0   )
-marshalResizeAbsRel (ResizeRel f) = (s, c'fx, c'fy)
-  where
-    s :: Size2i
-    s = toSize (zero :: V2 Int32)
-
-    (V2 c'fx c'fy) = realToFrac <$> f
-*/
-
-/*
-https://hackage-content.haskell.org/package/opencv-0.0.2.1/src/src/OpenCV/Internal/ImgProc/Types.hsc
-
-marshalInterpolationMethod :: InterpolationMethod -> Int32
-marshalInterpolationMethod = \case
-   InterNearest  -> c'INTER_NEAREST
-   InterLinear   -> c'INTER_LINEAR
-   InterCubic    -> c'INTER_CUBIC
-   InterArea     -> c'INTER_AREA
-   InterLanczos4 -> c'INTER_LANCZOS4
 */
 
 /*
@@ -422,10 +339,6 @@ main = do
         file = "./videos/1710073869-video.mp4"
         source = VideoFileSource file Nothing
     putStrLn $ "Working with file " ++ file
-    _ <- bracket (newVideoCapture >>= (open_vc source))
-            (exceptErrorIO . videoCaptureRelease)
-            -- (\vc -> videoCaptureGrab vc >>= (putStrLn . show))
-            video_processor
     
     lvc <- newVideoCapture
     emptyvalE <- runExceptT . (flip videoCaptureOpen source) $ lvc
@@ -448,35 +361,6 @@ main = do
   where open_vc vsource vc = do
           exceptErrorIO . (flip videoCaptureOpen vsource) $ vc
           return vc
-        video_processor vc = do
-          -- setwidthCheck <- videoCaptureSetI vc VideoCapPropFrameWidth 1920
-          -- putStrLn $ "Set width check: " ++ show setwidthCheck
-          widthD <- videoCaptureGetD vc VideoCapPropFrameWidth
-          widthI <- videoCaptureGetI vc VideoCapPropFrameWidth
-          putStrLn $ "Width (D): " ++ show widthD
-          putStrLn $ "Width (I): " ++ show widthI
-          heightD <- videoCaptureGetD vc VideoCapPropFrameHeight
-          heightI <- videoCaptureGetI vc VideoCapPropFrameHeight
-          putStrLn $ "Height (D): " ++ show heightD
-          putStrLn $ "Height (I): " ++ show heightI
-          posFramesD <- videoCaptureGetD vc VideoCapPropPosFrames
-          posFramesI <- videoCaptureGetI vc VideoCapPropPosFrames
-          putStrLn $ "posFrames (D): " ++ show posFramesD
-          putStrLn $ "posFrames (I): " ++ show posFramesI
-          fourccI <- videoCaptureGetI vc VideoCapPropFourCc
-          putStrLn $ "fourcc (I): " ++ show (FourCC fourccI)
-          videoCaptureIsOpened vc >>= (putStrLn . ("Is open: "++) .  show)
-          videoCaptureGrab vc >>= (putStrLn . ("Grab successful: "++) . show)
-          imageM <- videoCaptureRetrieve vc
-          case imageM of
-            Nothing -> putStrLn "Unable to retrieve image"
-            _       -> putStrLn "Able to retrieve image!"
-          propModeD <- videoCaptureGetD vc VideoCapPropMode
-          propModeI <- videoCaptureGetI vc VideoCapPropMode
-          putStrLn $ "PropMode (D): " ++ show propModeD
-          putStrLn $ "PropMode (I): " ++ show propModeI
-          return "Finished" --  :: String -- specify type to suppress compiler warnings 
-
         write_to_window firstframeM window vc = do
           videoCaptureGrab vc >>= (putStrLn . ("Grab successful: "++) . show)
           imageM <- videoCaptureRetrieve vc
@@ -485,7 +369,6 @@ main = do
               putStrLn "Unable to retrieve image"
               return "Finished" -- :: String
             Just image -> do
-              -- putStrLn "Showing image"
               putStrLn $ show $ matInfo image
               let frame      = exceptError $ resize (ResizeAbs (toSize (V2 480 262))) InterArea image
                   -- Use ShapeT in the following
