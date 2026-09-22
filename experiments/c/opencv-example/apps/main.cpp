@@ -24,7 +24,7 @@ bool print_video_properties(const std::string& file) {
     // Video capture properties
     std::cout << "Width: " << (int) vcptr->get(cv::CAP_PROP_FRAME_WIDTH) << std::endl;
     std::cout << "Height: " << (int) vcptr->get(cv::CAP_PROP_FRAME_HEIGHT) << std::endl;
-    std::cout << "posFrames: " << (int) vcptr->get(cv::CAP_PROP_POS_FRAMES) << std::endl;
+    std::cout << "Pos Frames: " << (int) vcptr->get(cv::CAP_PROP_POS_FRAMES) << std::endl;
     std::cout << "fourcc: " << (int) vcptr->get(cv::CAP_PROP_FOURCC) << std::endl;
     std::cout << "Is open: " << (bool) vcptr->isOpened() << std::endl;
     std::cout << "Grab successful: " << (bool) vcptr->grab() << std::endl;
@@ -43,10 +43,10 @@ bool print_video_properties(const std::string& file) {
 }
 
 int main() {
-    std::cout << "OpenCV example" << std::endl << std::flush;
     std::string file("./videos/1744035803-video.mp4");
+    bool verbose(true);
 
-    if (!print_video_properties(file)) {
+    if (verbose && !print_video_properties(file)) {
         std::cerr << "Error working with file " << file << std::endl;
         exit(1);
     }
@@ -55,12 +55,13 @@ int main() {
 
     /* See https://hackage-content.haskell.org/package/opencv-0.0.2.1/src/src/OpenCV/HighGui.hsc
      * It seems that the window name is made by first obtaining a unique string,
-       then hashing so that an integer is obtained, and
-       then converting the integer to a string.
-       We instead just use "opencv_contour_example_0" for now.
+     * then hashing so that an integer is obtained, and
+     * then converting the integer to a string.
+     * We instead just use "opencv_contour_example_0" for now.
     */
     /* Also, in Haskell makeWindow specifies that
        mouseCallback and trackbars are empty.
+       We omit the latter here.
     */
     cv::String winname("opencv_contour_example_0");
     cv::String wintitle("opencv contour example");
@@ -68,15 +69,15 @@ int main() {
     cv::setWindowTitle(winname, wintitle);
     cv::resizeWindow(winname, 1920 / 4, 1080 / 4);
     
-    // Open video file
+    /* Open video file */
     vcptr->open(cv::String(file), 0);
     if (!vcptr->grab()) {
         std::cerr << "Grab not successful" << std::endl;
         exit(2);
     }
-    cv::Mat* rawimagep = new cv::Mat();
 
     int ct = 0;
+    cv::Mat* rawimagep = new cv::Mat();
     cv::Mat* cumdiffframe0 = new cv::Mat();
     cv::Mat* framep = new cv::Mat();
     cv::Mat* grayframep = new cv::Mat();
@@ -96,9 +97,7 @@ int main() {
     cv::resize(*rawimagep, *framep, cv::Size2i(480, 262), 0.0, 0.0, cv::INTER_AREA);
     cv::cvtColor(*framep, *grayframep, cv::COLOR_BGR2GRAY, 0);
     cv::GaussianBlur(*grayframep, *grayblurp, cv::Size(21, 21), 0.0, 0.0);
-    /* cv::Mat* zeromatp = new cv::Mat(); */
     *cumdiffframe0 = cv::Mat::zeros(grayblurp->size(), grayblurp->type());
-    // *lastframep = *grayblurp;
     grayblurp->copyTo(*lastframep);
 
     while (1) {
@@ -111,114 +110,92 @@ int main() {
             std::cerr << "Unable to retrieve image" << std::endl;
             break;
         }
-        /*
-        matInfo
-        [CU.block|void {
-            const Mat * const matPtr = $(Mat * matPtr);
-            *$(int32_t *   const flagsPtr) = matPtr->flags;
-            *$(int32_t *   const dimsPtr ) = matPtr->dims;
-            *$(int32_t * * const sizePtr ) = matPtr->size.p;
-          }|]
-          (depth, channels) <- unmarshalFlags <$> peek flagsPtr
-          dims <- peek dimsPtr
-          size <- peek sizePtr
-          shape <- peekArray (fromIntegral dims) size
-          pure MatInfo
-               { miShape    = shape
-               , miDepth    = depth
-               , miChannels = channels
-               }
-        */
-        std::cout << "Flags: " << rawimagep->flags << std::endl;
-        std::cout << "Depth: " << (rawimagep->flags & cv::Mat::DEPTH_MASK) << std::endl;
-        std::cout << "Channels: " << 1 + ((rawimagep->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
-        std::cout << "Dims: " << rawimagep->dims << std::endl;
-        std::cout << "Dims again: " << rawimagep->size.dims() << std::endl;
-        std::cout << "Shape: ";
-        for (int i = 0; i < rawimagep->size.dims(); i++) {
-            std::cout << rawimagep->size[i] << ", ";
+        if (verbose && (ct == 0)) {
+            /* We print frame information following the approach used in the Haskell code
+             * for the methods matInfo and unmarshalFlags. */
+            std::cout << "Flags: " << rawimagep->flags << std::endl;
+            std::cout << "Depth: " << (rawimagep->flags & cv::Mat::DEPTH_MASK) << std::endl;
+            std::cout << "Channels: " << 1 + ((rawimagep->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
+            std::cout << "Dims: " << rawimagep->dims << std::endl;
+            std::cout << "Dims from size: " << rawimagep->size.dims() << std::endl;
+            std::cout << "Shape: ";
+            for (int i = 0; i < rawimagep->size.dims(); i++) {
+                std::cout << rawimagep->size[i] << ", ";
+            }
+            std::cout << std::endl;
         }
-        /* TODO: Might need shape, depth, and channels */
-        std::cout << std::endl;
-        /* let frame      = exceptError $ resize (ResizeAbs (toSize (V2 480 262))) InterArea image */
-        /* cv::Mat* framep = new cv::Mat(); */
+
         cv::resize(*rawimagep, *framep, cv::Size2i(480, 262 /*Should this be 270?*/), 0.0, 0.0, cv::INTER_AREA);
-        std::cout << "Frame Depth: " << (framep->flags & cv::Mat::DEPTH_MASK) << std::endl;
-        std::cout << "Frame Channels: " << 1 + ((framep->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
-        std::cout << "Frame Shape: "; /* NOTE: This appears to specify the expected height and width */
-        for (int i = 0; i < framep->size.dims(); i++) {
-            std::cout << framep->size[i] << ", ";
+
+        if (verbose && (ct == 0)) {
+            /* NOTE: Height and width are reversed in the dimensions array, e.g. the following yields
+             *       "Frame Shape: 262, 480" */
+            std::cout << "Resized Frame Depth: " << (framep->flags & cv::Mat::DEPTH_MASK) << std::endl;
+            std::cout << "Resized Frame Channels: " << 1 + ((framep->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
+            std::cout << "Resized Frame Shape: "; /* NOTE: This appears to specify the expected height and width */
+            for (int i = 0; i < framep->size.dims(); i++) {
+                std::cout << framep->size[i] << ", ";
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
-        /* No need for this coercion, frame already has the desired dimensions, channels, and depth
-           cframe     = (exceptError $ coerceMat frame) :: Mat ('S ['S 262, 'S 480]) ('S 3) ('S Word8) */
-        /* grayframe  = exceptError $ cvtColor bgr gray cframe */
-        /* cv::Mat* grayframep = new cv::Mat(); */
+
         cv::cvtColor(*framep, *grayframep, cv::COLOR_BGR2GRAY, 0);
+        /* TODO: Remove.  Just gives 0 for depth and 1 for channels 
         std::cout << "Gray Depth: " << (grayframep->flags & cv::Mat::DEPTH_MASK) << std::endl;
         std::cout << "Gray Channels: " << 1 + ((grayframep->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
-        /* cv::Mat* grayblurp = new cv::Mat(); */
-        /* grayblur   = exceptError $ gaussianBlur (toSize (V2 21 21)) 0.0 0.0 grayframe */
+        */
+
         cv::GaussianBlur(*grayframep, *grayblurp, cv::Size(21, 21), 0.0, 0.0);
+        /* TODO: Remove.  Just gives 0 for depth and 1 for channels 
         std::cout << "Blur Depth: " << (grayblurp->flags & cv::Mat::DEPTH_MASK) << std::endl;
         std::cout << "Blur Channels: " << 1 + ((grayblurp->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
-        cv::Mat* zeromatp = new cv::Mat();
-        /* zeromat    = matAbsDiff grayblur grayblur -- TODO: Maybe try another way if this works */
-        /* cv::absdiff(*grayblurp, *grayblurp, *zeromatp); */
-        *zeromatp = cv::Mat::zeros(grayblurp->size(), grayblurp->type());  /* TODO: Is not needed anymore */
-        /* (ct, cumdiffframe0, baseframe) = fromMaybe (0 :: Int32, zeromat, grayblur) firstframeM */
-        /* TODO: This needs work
-        if (ct == 0) {
-            *cumdiffframe0 = *zeromatp;
-            *baseframe = *grayblurp;
-        }
         */
-        /* framedelta = matAbsDiff grayblur baseframe */
-        cv::absdiff(*grayblurp, *lastframep, *framedelta);
-        
-        // totalweight = (1.0 - decayrate) / (1.0 - pow(decayrate, (double) ct + 2)); /* TODO: Note the +2 rather than +1 to fix the weighted average below */
-        // prevweight = (1.0 - decayrate) / (1.0 - pow(decayrate, (double) ct + 1)); /* TODO: Note the +2 rather than +1 to fix the weighted average below */
 
-        /* matConvertTo seems to be for conversion, not entirely clear on coerceMat
-        cumdiffframeDouble = exceptError $ matConvertTo Nothing Nothing cumdiffframe0 :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Double)
-        cumdiffframe = exceptError $ matConvertTo Nothing Nothing cumdiffframe0 :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Word8)
-        */
+        cv::absdiff(*grayblurp, *lastframep, *framedelta);
         cv::addWeighted(*cumdiffframe0, decayrate, *framedelta, (1.0 - decayrate), 0.0, *cumdiffframeDouble, cumdiffframe0->depth());
 
         cv::minMaxLoc(*framedelta, &fdmin, &fdmax, NULL, NULL);
         cv::minMaxLoc(*cumdiffframeDouble, &cdmin, &cdmax, NULL, NULL);
-        /* cumdiffframe = exceptError $ matConvertTo Nothing {-(Just (255.0/cdmax))-} Nothing cumdiffframeDouble :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Word8) */
-        /* TODO: Using cumdiffframe0 here rather than a new cumdiffframe */
+       
+        /* Perhaps copyTo would be preferable */
         cumdiffframeDouble->convertTo(*cumdiffframe0, cumdiffframe0->depth(), 1.0, 0.0);
-        /* (thresh, _ {-threshret-}) = exceptError $ threshold (ThreshVal_Abs 5) (Thresh_Binary 255) cumdiffframe -- TODO: The tutorial uses threshold value 25 */
+
+        /* NOTE: The tutorial uses threshold value 25 */
         cv::Mat* threshp = new cv::Mat();
         enum cv::ThresholdTypes threshValMode = (enum cv::ThresholdTypes) 0;  /* NOTE: cv::THRESH_BINARY == 0 */
         double threshVal = 5.0;
         enum cv::ThresholdTypes threshType = cv::THRESH_BINARY;
         double threshMaxVal = 255.0;
         enum cv::ThresholdTypes finalThreshType = static_cast<enum cv::ThresholdTypes>(threshType | threshValMode);
-        double calcThresh = cv::threshold( /* TODO: Move declaration later */
-            *cumdiffframe0, *threshp, threshVal, threshMaxVal, finalThreshType 
-        );
-        (void)calcThresh;
-        /* thresh2 = exceptError $ dilate thresh Nothing (Just (toPoint (V2 (-1) (-1))):: Maybe Point2i) 30 (BorderConstant morphologyDefaultBorderValue) */
+        /* Discard the output of the following the input threshVal is returned when
+         * the threshold type is THRESH_BINARY (or so it appears). */
+        cv::threshold(*cumdiffframe0, *threshp, threshVal, threshMaxVal, finalThreshType);
+        /* std::cout << "Threshold return value: " << calcThresh << std::endl; TODO */
+
+        /* See https://docs.opencv.org/4.11.0/d4/d86/group__imgproc__filter.html#ga4ff0f3318642c4f469d0e11f242f3b6c
+         * for the dilate method.
+         * While we could have omitted the arguments starting with anchor since the C++ method has default values,
+         * we include them here as we did end up defining them for the Haskell code.
+         * The value borderValue is intended to be identical to the return of morphologyDefaultBorderValue
+         * for the dilate method.
+         * See https://docs.opencv.org/4.11.0/d4/d86/group__imgproc__filter.html#ga94756fad83d9d24d29c9bf478558c40a
+         * for more information.
+         */
         cv::Mat* thresh2p = new cv::Mat();
         cv::Point2i anchor(-1, -1);
         cv::BorderTypes borderType = cv::BORDER_CONSTANT;
         cv::Scalar borderValue(-DBL_MAX, -DBL_MAX, -DBL_MAX, -DBL_MAX);
-        cv::Mat kernel; /* = maybe (relaxMat emptyMat) unsafeCoerceMat mbKernel */
+        cv::Mat kernel;
         cv::dilate(*threshp, *thresh2p, kernel, anchor, 30,  borderType, borderValue);
         delete threshp;
-              
-        double totalweight = (1.0 - decayrate) / (1.0 - pow(decayrate, (double) (ct + 2))); /* TODO: Not needed */
-        std::cout << "wa double mat min: " << cdmin << std::endl
-                  << "wa double mat max: " << cdmax << std::endl
-                  << "framedelta mat min: " << fdmin << std::endl
-                  << "framedelta mat max: " << fdmax << std::endl
-                  << "totalweight: " << totalweight << std::endl
-                  << "decay to power: " << pow(decayrate, (double) (ct + 1)) << std::endl;
 
-        /* contours <- (thaw thresh2 >>= findContours ContourRetrievalExternal ContourApproximationSimple) */
+        if (verbose) {
+            std::cout << "wa double mat min: " << cdmin << std::endl
+                      << "wa double mat max: " << cdmax << std::endl
+                      << "framedelta mat min: " << fdmin << std::endl
+                      << "framedelta mat max: " << fdmax << std::endl;
+        }
+
         enum cv::RetrievalModes contour_mode = cv::RETR_EXTERNAL;
         enum cv::ContourApproximationModes contour_method = cv::CHAIN_APPROX_SIMPLE;
 
@@ -226,27 +203,29 @@ int main() {
         std::vector<cv::Vec4i> hierarchy;
         cv::findContours(*thresh2p, contours, hierarchy, contour_mode, contour_method);
               
-        std::cout << "contour areas: " << std::endl;
-        for (std::vector<std::vector<cv::Point> >::const_iterator cit = contours.begin(); cit != contours.end(); cit++) {
-            std::vector<cv::Point2f> fpts(cit->size());
-            /* cv::Point2f ptfloat = cv::Point2f(*cit); */
-            for(size_t i = 0; i < cit->size(); i++) {
-                fpts[i] = cv::Point2f((*cit)[i]);
+        if (verbose) {
+            std::cout << "contour areas: " << std::endl;
+            for (std::vector<std::vector<cv::Point> >::const_iterator cit = contours.begin(); cit != contours.end(); cit++) {
+                std::vector<cv::Point2f> fpts(cit->size());
+                for(size_t i = 0; i < cit->size(); i++) {
+                    fpts[i] = cv::Point2f((*cit)[i]);
+                }
+                double area = cv::contourArea(fpts, false); // ContourAreaAbsoluteValue corresponds to not oriented
+                std::cout << "    contour " << cit - contours.begin() << ": " << area << std::endl;
             }
-            double area = cv::contourArea(fpts, false); // ContourAreaAbsoluteValue corresponds to not oriented
-            std::cout << "    contour " << cit - contours.begin() << ": " << area << std::endl;
+            std::cout << "contour count: " << contours.size() << std::endl;
         }
-        std::cout << "contour count: " << contours.size() << std::endl;
 
         delete thresh2p;
-
         
         std::vector<std::vector<cv::Point> > largecontours(contours);
         std::vector<std::vector<cv::Point> >::iterator rm_it = std::remove_if(
             largecontours.begin(), largecontours.end(), contourAreaLessThan250
         );
         largecontours.erase(rm_it, largecontours.end());
-        std::cout << "large contour count: " << largecontours.size() << std::endl;
+        if (verbose) {
+            std::cout << "large contour count: " << largecontours.size() << std::endl;
+        }
 
         /* The following logic can probably be condensed */
         std::vector<cv::RotatedRect> rotrects(largecontours.size());
@@ -255,7 +234,6 @@ int main() {
         }
         std::vector<cv::Rect2i> bddrects(largecontours.size());
         for (size_t i = 0; i < largecontours.size(); i++) {
-            /*bddrects[i] = cv::rotatedRectBoundingRect(rotrects[i]);*/
             bddrects[i] = rotrects[i].boundingRect();
         }
               
@@ -265,27 +243,17 @@ int main() {
         }
 
         cv::imshow(winname, *framep);
-        /* cv::imshow(winname, *grayblurp); */
         cv::waitKey(1000 / 30);
 
-        delete zeromatp;
-        /*
-        delete grayblurp;
-        delete grayframep;
-        delete framep;
-        */
-        
+        /* Increment */
         ct++;
-        // *lastframep = *grayblurp; // TODO
         grayblurp->copyTo(*lastframep);
-        if (ct >= 100) break;
+        if (ct >= 10) break;
     }
     delete lastframep;
     delete cumdiffframe0;
     delete framedelta;
     delete cumdiffframeDouble;
-    std::cout << "Finished" << std::endl;
-    sleep(1);
     vcptr->release();
     cv::destroyWindow(winname);
     
@@ -294,31 +262,16 @@ int main() {
 }
 
 /*
-threshold 
-   :: (depth `In` [Word8, Float])
-    => ThreshValue -- ^
-    -> ThreshType
-    -> (Mat shape ('S 1) ('S depth))
-    -> CvExcept (Mat shape ('S 1) ('S depth), Double)
-threshold threshVal threshType src = unsafeWrapException $ do
-    dst <- newEmptyMat
-    alloca $ \calcThreshPtr ->
-      handleCvException ((unsafeCoerceMat dst, ) . realToFrac <$> peek calcThreshPtr) $
-      withPtr src $ \srcPtr ->
-      withPtr dst $ \dstPtr ->
-        [cvExcept|
-          *$(double * calcThreshPtr) =
-            cv::threshold( *$(Mat * srcPtr)
-                         , *$(Mat * dstPtr)
-                         , $(double c'threshVal)
-                         , $(double c'maxVal)
-                         , $(int32_t c'type)
-                         );
-        |]
-  where
-    c'type = c'threshType .|. c'threshValMode
-    (c'threshType, c'maxVal) = marshalThreshType threshType
-    (c'threshValMode, c'threshVal) = marshalThreshValue threshVal
+Haskell Method Implementations (method name in HTML anchor):
+* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-Core-Types.html#rotatedRectBoundingRect
+* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-Core-Types-Mat.html#emptyMat
+* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-Core-Types-Mat.html#matConvertTo
+* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-ImgProc-ImgFiltering.html#dilate
+* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-ImgProc-MiscImgTransform.html#threshold
+* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-ImgProc-StructuralAnalysis.html#findContours
+
+OpenCV ThresholdTypes:
+https://docs.opencv.org/4.11.0/d7/d1b/group__imgproc__misc.html#gaa9e58d2860d4afa658ef70a9b1115576
 
 marshalThreshType :: ThreshType -> (Int32, CDouble)
 marshalThreshType = \case
@@ -339,51 +292,6 @@ marshalThreshValue = \case
     ThreshVal_Abs val  -> (0                , realToFrac val)
     ThreshVal_Otsu     -> (c'THRESH_OTSU    , 0)
     ThreshVal_Triangle -> (c'THRESH_TRIANGLE, 0)
-
-*/
-
-/*
-dilate
-    :: ( IsPoint2 point2 Int32
-       , depth `In` [Word8, Word16, Int16, Float, Double]
-       )
-    => Mat shape channels ('S depth) -- ^ Input image.
-    -> Maybe (Mat ('S [sh, sw]) ('S 1) ('S Word8))
-       -- ^ Structuring element used for dilation. If `emptyMat` is
-       -- used a @3x3@ rectangular structuring element is used. Kernel
-       -- can be created using `getStructuringElement`.
-    -> Maybe (point2 Int32) -- ^ anchor
-    -> Int -- ^ iterations
-    -> BorderMode
-    -> CvExcept (Mat shape channels ('S depth))
-dilate src mbKernel mbAnchor iterations borderMode = unsafeWrapException $ do
-    dst <- newEmptyMat
-    handleCvException (pure $ unsafeCoerceMat dst) $
-      withPtr src    $ \srcPtr    ->
-      withPtr dst    $ \dstPtr    ->
-      withPtr kernel $ \kernelPtr ->
-      withPtr anchor $ \anchorPtr ->
-      withPtr borderValue $ \borderValuePtr ->
-        [cvExcept|
-          cv::dilate
-          ( *$(Mat     * srcPtr        )
-          , *$(Mat     * dstPtr        )
-          , *$(Mat     * kernelPtr     )
-          , *$(Point2i * anchorPtr     )
-          ,  $(int32_t   c'iterations  )
-          ,  $(int32_t   c'borderType  )
-          , *$(Scalar  * borderValuePtr)
-          );
-        |]
-  where
-    kernel :: Mat 'D 'D 'D
-    kernel = maybe (relaxMat emptyMat) unsafeCoerceMat mbKernel
-
-    anchor :: Point2i
-    anchor = maybe defaultAnchor toPoint mbAnchor
-
-    c'iterations = fromIntegral iterations
-    (c'borderType, borderValue) = marshalBorderMode borderMode
 */
 
 /*
@@ -467,13 +375,6 @@ marshalInterpolationMethod = \case
 */
 
 /*
-import Data.Maybe
-import Data.Word (Word8)
-import Data.Int (Int32)
-import qualified Data.Vector as V (filter, forM_, Vector)
-import Numeric.Limits (maxValue)
-import Control.Exception (bracket)
-import Control.Monad.Except (runExceptT)
 import OpenCV.Core.Types (ToScalar(toScalar), FreezeThaw(thaw, freeze), rotatedRectBoundingRect)
 import OpenCV.Core.Types.Point (Point2i, IsPoint(toPoint, fromPoint), Point2f)
 import OpenCV.Core.Types.Mat (coerceMat, matInfo, Mat, cloneMat, matConvertTo)
@@ -669,8 +570,7 @@ main = do
         pointConversion :: Point2i -> Point2f
         pointConversion ipoint = toPoint $ fmap fromIntegral (fromPoint ipoint :: V2 Int32) 
         getContourArea contour = exceptError $ contourArea (fmap pointConversion (contourPoints contour)) ContourAreaAbsoluteValue
-        -- imageWithRects :: (Mat ('S ['S 262, 'S 480]) ('S 3) ('S Word8)) -> (V.Vector Rect2i) -> (Mat ('S ['S 262, 'S 480]) ('S 3) ('S Word8))
-        -- TODO: Figure out why the following doesn't work
+
         imageWithRects :: Mat ('S [height, width]) channels depth -> V.Vector Rect2i -> IO (Mat ('S [height, width]) channels depth)
         imageWithRects img rects = do
           let blue = V4 255.0 0.0 0.0 0.0 :: V4 Double
@@ -678,17 +578,4 @@ main = do
           mimg <- thaw $ cimg -- cloneMat img
           V.forM_ rects (\rect -> rectangle mimg rect blue 2 LineType_8 0)
           freeze mimg
-
-{-
-imageWithRects img rects = do
-  let cimg = cloneMat img
-      blue = V4 255.0 0.0 0.0 0.0 :: V4 Double
-  mimg <- thaw $ cimg -- cloneMat img
-  V.forM_ rects (\rect -> rectangle mimg rect blue 2 LineType_8 0)
-  freeze mimg
--}
-
--- resize (ResizeAbs (toSize (V2 480 262))) InterArea image
--- resize :: ResizeAbsRel -> InterpolationMethod -> Mat (S [height, width]) channels depth -> CvExcept (Mat (S [D, D]) channels depth)
--- findContours :: ContourRetrievalMode -> ContourApproximationMethod -> Mut (Mat (S [h, w]) (S 1) (S Word8)) (PrimState m) -> m (Vector Contour)
 */
