@@ -5,7 +5,7 @@ let
         opencv4 = prev.opencv4.override { enableFfmpeg = true; enableGtk2 = true; enableGtk3 = true; };
       })
     ];
-  }; # pin the channel to ensure reproducibility!
+  };
 in
 pkgs.mkShell {
     name = "opencv-dev";
