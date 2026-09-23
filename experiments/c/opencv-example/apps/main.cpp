@@ -4,7 +4,6 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
-/* #include <opencv2/core/hal/interface.h> CV_CN_MAX CV_CN_SHIFT */
 
 bool contourAreaLessThan250(const std::vector<cv::Point>& ipts) {
     std::vector<cv::Point2f> fpts(ipts.size());
@@ -42,8 +41,12 @@ bool print_video_properties(const std::string& file) {
     return ok;
 }
 
-int main() {
-    std::string file("./videos/1744035803-video.mp4");
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <video_file>" << std::endl;
+        return 1;
+    }
+    std::string file(argv[1]);
     bool verbose(true);
 
     if (verbose && !print_video_properties(file)) {
@@ -58,16 +61,18 @@ int main() {
      * then hashing so that an integer is obtained, and
      * then converting the integer to a string.
      * We instead just use "opencv_contour_example_0" for now.
-    */
-    /* Also, in Haskell makeWindow specifies that
-       mouseCallback and trackbars are empty.
-       We omit the latter here.
-    */
+     *
+     * Also, in Haskell makeWindow specifies that
+     * mouseCallback and trackbars are empty.
+     * We omit the latter here.
+     */
+    int resizeWidth = 1920 / 4;
+    int resizeHeight = 1080 / 4;
     cv::String winname("opencv_contour_example_0");
     cv::String wintitle("opencv contour example");
     cv::namedWindow(winname, cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
     cv::setWindowTitle(winname, wintitle);
-    cv::resizeWindow(winname, 1920 / 4, 1080 / 4);
+    cv::resizeWindow(winname, resizeWidth, resizeHeight);
     
     /* Open video file */
     vcptr->open(cv::String(file), 0);
@@ -77,17 +82,11 @@ int main() {
     }
 
     int ct = 0;
-    /*
-    cv::Mat* rawimagep = new cv::Mat();
-    */
-    cv::Mat rawimagem; /* cv::Mat() */
-    cv::Mat* cumdiffframe0 = new cv::Mat();
-    cv::Mat* framep = new cv::Mat();
-    cv::Mat* grayframep = new cv::Mat();
-    cv::Mat* grayblurp = new cv::Mat();
-    cv::Mat* lastframep = new cv::Mat();
-    cv::Mat* framedelta = new cv::Mat();
-    cv::Mat tempcumdiff; /* cv::Mat() */
+    cv::Mat rawimagem, cumdiffframe; /* cv::Mat() */
+    cv::Mat framem, grayframem, grayblurm, lastframem, framedeltam;
+    cv::Mat tempcumdiff;
+    /* Mat for thresholds */
+    cv::Mat threshm, thresh2m; /* cv::Mat(); */
     double decayrate = 0.2; /* 0.4 works pretty well with threshold val 5.  0.8 works very well with threshold val 5 for unnormalized series sum. */
     double fdmin, fdmax, cdmin, cdmax;
        
@@ -96,18 +95,19 @@ int main() {
         std::cerr << "Unable to retrieve image" << std::endl;
         exit(1);
     }
-    // Should the height be 270 in the following? 
-    cv::resize(rawimagem, *framep, cv::Size2i(480, 262), 0.0, 0.0, cv::INTER_AREA);
-    cv::cvtColor(*framep, *grayframep, cv::COLOR_BGR2GRAY, 0);
-    cv::GaussianBlur(*grayframep, *grayblurp, cv::Size(21, 21), 0.0, 0.0);
-    *cumdiffframe0 = cv::Mat::zeros(grayblurp->size(), grayblurp->type());
-    grayblurp->copyTo(*lastframep);
+    /* Frames are processed by resizing to 480x270, converting to grayscale,
+     * and applying Gaussian blur. */
+    cv::resize(rawimagem, framem, cv::Size2i(resizeWidth, resizeHeight), 0.0, 0.0, cv::INTER_AREA);
+    cv::cvtColor(framem, grayframem, cv::COLOR_BGR2GRAY, 0);
+    cv::GaussianBlur(grayframem, grayblurm, cv::Size(21, 21), 0.0, 0.0);
+    cumdiffframe = cv::Mat::zeros(grayblurm.size(), grayblurm.type());
+    grayblurm.copyTo(lastframem);
 
     while (1) {
         /* Grab is necessary to move to the next image */
         if (!vcptr->grab()) {
-            std::cerr << "Grab not successful" << std::endl;
-            exit(2);
+            /* Finished processing frames. */
+            break;
         }
         if (!vcptr->retrieve(rawimagem, 0)) {
             std::cerr << "Unable to retrieve image" << std::endl;
@@ -128,51 +128,47 @@ int main() {
             std::cout << std::endl;
         }
 
-        cv::resize(rawimagem, *framep, cv::Size2i(480, 262 /*Should this be 270?*/), 0.0, 0.0, cv::INTER_AREA);
+        cv::resize(rawimagem, framem, cv::Size2i(resizeWidth, resizeHeight), 0.0, 0.0, cv::INTER_AREA);
 
         if (verbose && (ct == 0)) {
             /* NOTE: Height and width are reversed in the dimensions array, e.g. the following yields
-             *       "Frame Shape: 262, 480" */
-            std::cout << "Resized Frame Depth: " << (framep->flags & cv::Mat::DEPTH_MASK) << std::endl;
-            std::cout << "Resized Frame Channels: " << 1 + ((framep->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
+             *       "Frame Shape: 262, 480," */
+            std::cout << "Resized Frame Depth: " << (framem.flags & cv::Mat::DEPTH_MASK) << std::endl;
+            std::cout << "Resized Frame Channels: " << 1 + ((framem.flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
             std::cout << "Resized Frame Shape: "; /* NOTE: This appears to specify the expected height and width */
-            for (int i = 0; i < framep->size.dims(); i++) {
-                std::cout << framep->size[i] << ", ";
+            for (int i = 0; i < framem.size.dims(); i++) {
+                std::cout << framem.size[i] << ", ";
             }
             std::cout << std::endl;
         }
 
-        cv::cvtColor(*framep, *grayframep, cv::COLOR_BGR2GRAY, 0);
-        /* TODO: Remove.  Just gives 0 for depth and 1 for channels 
-        std::cout << "Gray Depth: " << (grayframep->flags & cv::Mat::DEPTH_MASK) << std::endl;
-        std::cout << "Gray Channels: " << 1 + ((grayframep->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
-        */
+        cv::cvtColor(framem, grayframem, cv::COLOR_BGR2GRAY, 0);
+        cv::GaussianBlur(grayframem, grayblurm, cv::Size(21, 21), 0.0, 0.0);
 
-        cv::GaussianBlur(*grayframep, *grayblurp, cv::Size(21, 21), 0.0, 0.0);
-        /* TODO: Remove.  Just gives 0 for depth and 1 for channels 
-        std::cout << "Blur Depth: " << (grayblurp->flags & cv::Mat::DEPTH_MASK) << std::endl;
-        std::cout << "Blur Channels: " << 1 + ((grayblurp->flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
-        */
+        /* Compare current blurred frame to the last and updated the
+         * weighted cumulative difference frame.
+         * We initially store to a temporary frame and copy to the
+         * target frame below. */
+        cv::absdiff(grayblurm, lastframem, framedeltam);
+        cv::addWeighted(cumdiffframe, decayrate, framedeltam, (1.0 - decayrate), 0.0, tempcumdiff, cumdiffframe.depth());
 
-        cv::absdiff(*grayblurp, *lastframep, *framedelta);
-        cv::addWeighted(*cumdiffframe0, decayrate, *framedelta, (1.0 - decayrate), 0.0, tempcumdiff, cumdiffframe0->depth());
-
-        cv::minMaxLoc(*framedelta, &fdmin, &fdmax, NULL, NULL);
+        cv::minMaxLoc(framedeltam, &fdmin, &fdmax, NULL, NULL);
         cv::minMaxLoc(tempcumdiff, &cdmin, &cdmax, NULL, NULL);
        
         /* Perhaps copyTo would be preferable */
-        tempcumdiff.convertTo(*cumdiffframe0, cumdiffframe0->depth(), 1.0, 0.0);
+        tempcumdiff.convertTo(cumdiffframe, cumdiffframe.depth(), 1.0, 0.0);
 
         /* NOTE: The tutorial uses threshold value 25 */
-        cv::Mat* threshp = new cv::Mat();
+        /* NOTE: We use threshValMode to follow the Haskell implementation.
+         *       This could be skipped. */
         enum cv::ThresholdTypes threshValMode = (enum cv::ThresholdTypes) 0;  /* NOTE: cv::THRESH_BINARY == 0 */
         double threshVal = 5.0;
         enum cv::ThresholdTypes threshType = cv::THRESH_BINARY;
         double threshMaxVal = 255.0;
         enum cv::ThresholdTypes finalThreshType = static_cast<enum cv::ThresholdTypes>(threshType | threshValMode);
-        /* Discard the output of the following the input threshVal is returned when
+        /* We ignore the output of the following method as the input threshVal is returned when
          * the threshold type is THRESH_BINARY (or so it appears). */
-        cv::threshold(*cumdiffframe0, *threshp, threshVal, threshMaxVal, finalThreshType);
+        cv::threshold(cumdiffframe, threshm, threshVal, threshMaxVal, finalThreshType);
 
         /* See https://docs.opencv.org/4.11.0/d4/d86/group__imgproc__filter.html#ga4ff0f3318642c4f469d0e11f242f3b6c
          * for the dilate method.
@@ -183,13 +179,11 @@ int main() {
          * See https://docs.opencv.org/4.11.0/d4/d86/group__imgproc__filter.html#ga94756fad83d9d24d29c9bf478558c40a
          * for more information.
          */
-        cv::Mat* thresh2p = new cv::Mat();
         cv::Point2i anchor(-1, -1);
         cv::BorderTypes borderType = cv::BORDER_CONSTANT;
         cv::Scalar borderValue(-DBL_MAX, -DBL_MAX, -DBL_MAX, -DBL_MAX);
         cv::Mat kernel;
-        cv::dilate(*threshp, *thresh2p, kernel, anchor, 30,  borderType, borderValue);
-        delete threshp;
+        cv::dilate(threshm, thresh2m, kernel, anchor, 30,  borderType, borderValue);
 
         if (verbose) {
             std::cout << "wa double mat min: " << cdmin << std::endl
@@ -203,8 +197,8 @@ int main() {
 
         std::vector<std::vector<cv::Point> > contours;
         std::vector<cv::Vec4i> hierarchy;
-        cv::findContours(*thresh2p, contours, hierarchy, contour_mode, contour_method);
-              
+        cv::findContours(thresh2m, contours, hierarchy, contour_mode, contour_method);
+
         if (verbose) {
             std::cout << "contour areas: " << std::endl;
             for (std::vector<std::vector<cv::Point> >::const_iterator cit = contours.begin(); cit != contours.end(); cit++) {
@@ -212,14 +206,14 @@ int main() {
                 for(size_t i = 0; i < cit->size(); i++) {
                     fpts[i] = cv::Point2f((*cit)[i]);
                 }
-                double area = cv::contourArea(fpts, false); // ContourAreaAbsoluteValue corresponds to not oriented
+                /* ContourAreaAbsoluteValue corresponds to not oriented */
+                double area = cv::contourArea(fpts, false);
                 std::cout << "    contour " << cit - contours.begin() << ": " << area << std::endl;
             }
             std::cout << "contour count: " << contours.size() << std::endl;
         }
 
-        delete thresh2p;
-        
+        /* We remove the contours with area less than 250.0 */
         std::vector<std::vector<cv::Point> > largecontours(contours);
         std::vector<std::vector<cv::Point> >::iterator rm_it = std::remove_if(
             largecontours.begin(), largecontours.end(), contourAreaLessThan250
@@ -229,33 +223,28 @@ int main() {
             std::cout << "large contour count: " << largecontours.size() << std::endl;
         }
 
-        /* The following logic can probably be condensed */
+        /* NOTE: We don't need to persist the lists rectangles.
+         *       We could just write the rectangles to the target frame
+         *       directly in the following loop. */
         std::vector<cv::RotatedRect> rotrects(largecontours.size());
-        for (size_t i = 0; i < largecontours.size(); i++) {
-            rotrects[i] = cv::minAreaRect(largecontours[i]);
-        }
         std::vector<cv::Rect2i> bddrects(largecontours.size());
         for (size_t i = 0; i < largecontours.size(); i++) {
+            rotrects[i] = cv::minAreaRect(largecontours[i]);
             bddrects[i] = rotrects[i].boundingRect();
         }
               
         cv::Scalar blue(255.0, 0.0, 0.0, 0.0);
         for (size_t i = 0; i < bddrects.size(); i++) {
-            cv::rectangle(*framep, bddrects[i], blue, 2, cv::LINE_8, 0);
+            cv::rectangle(framem, bddrects[i], blue, 2, cv::LINE_8, 0);
         }
 
-        cv::imshow(winname, *framep);
+        cv::imshow(winname, framem);
         cv::waitKey(1000 / 30);
 
         /* Increment */
         ct++;
-        grayblurp->copyTo(*lastframep);
-        /* if (ct >= 100) break; TODO */
+        grayblurm.copyTo(lastframem);
     }
-    delete lastframep;
-    delete cumdiffframe0;
-    delete framedelta;
-    /*delete cumdiffframeDouble; TODO*/
     vcptr->release();
     cv::destroyWindow(winname);
     
@@ -340,16 +329,6 @@ main = do
         source = VideoFileSource file Nothing
     putStrLn $ "Working with file " ++ file
     
-    lvc <- newVideoCapture
-    emptyvalE <- runExceptT . (flip videoCaptureOpen source) $ lvc
-    case emptyvalE of
-      Left _ -> putStrLn "Encountered error opening video file"
-      Right _ -> putStrLn "Successfully opened file"
-    emptyvalE2 <- runExceptT . videoCaptureRelease $ lvc
-    case emptyvalE2 of
-      Left _ -> putStrLn "Encountered error releasing video file"
-      Right _ -> putStrLn "Successfully released file"
-
     window <- makeWindow "wookie"
     resizeWindow window (1920 `div` 4) (1080 `div` 4) -- 1920 1080
     _ <- bracket (newVideoCapture >>= (open_vc source))
@@ -367,85 +346,36 @@ main = do
           case imageM of
             Nothing    -> do
               putStrLn "Unable to retrieve image"
-              return "Finished" -- :: String
+              return "Finished"
             Just image -> do
               putStrLn $ show $ matInfo image
               let frame      = exceptError $ resize (ResizeAbs (toSize (V2 480 262))) InterArea image
-                  -- Use ShapeT in the following
                   cframe     = (exceptError $ coerceMat frame) :: Mat ('S ['S 262, 'S 480]) ('S 3) ('S Word8)
                   grayframe  = exceptError $ cvtColor bgr gray cframe
                   grayblur   = exceptError $ gaussianBlur (toSize (V2 21 21)) 0.0 0.0 grayframe 
-                  zeromat    = matAbsDiff grayblur grayblur -- TODO: Maybe try another way if this works
+                  zeromat    = matAbsDiff grayblur grayblur
                   (ct, cumdiffframe0, baseframe) = fromMaybe (0 :: Int32, zeromat, grayblur) firstframeM
                   framedelta = matAbsDiff grayblur baseframe
                   
-                  decayrate = 0.2 -- 0.4 works pretty well with threshold val 5.  0.8 works very well with threshold val 5 for unnormalized series sum.
-                  totalweight = (1.0 - decayrate) / (1.0 - (decayrate ^^ (ct + 2) )) -- TODO: Note the +2 rather than +1 to fix the weighted average below
-                  prevweight = (1.0 - decayrate) / (1.0 - (decayrate ^^ (ct + 1) )) -- TODO: Note the +2 rather than +1 to fix the weighted average below
-                  {- matConvertTo seems to be for conversion, not entirely clear on coerceMat
-                  cumdiffframeDouble = exceptError $ matConvertTo Nothing Nothing cumdiffframe0 :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Double)
-                  -- cumdiffframe = exceptError $ coerceMat cumdiffframeDouble :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Word8)
-                  cumdiffframe = exceptError $ matConvertTo Nothing Nothing cumdiffframe0 :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Word8)
-                  -}
+                  decayrate = 0.2 
                   cumdiffframeDouble = exceptError $ matAddWeighted (exceptError $ matConvertTo Nothing Nothing cumdiffframe0 :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Double))
-                                                                    decayrate -- (decayrate*totalweight/prevweight)  -- (decayrate*totalweight) -- TODO: What do we use here?
+                                                                    decayrate 
                                                                     (exceptError $ matConvertTo Nothing Nothing framedelta :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Double))
-                                                                    (1.0 - decayrate) -- totalweight -- TODO: What do we use here?
+                                                                    (1.0 - decayrate)
                                                                     (0.0 :: Double) :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Double)
-                  -- cumdiffframe = exceptError $ coerceMat cumdiffframeDouble :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Word8)
                   (fdmin, fdmax, _, _) = exceptError $ minMaxLoc framedelta
                   (cdmin, cdmax, _, _) = exceptError $ minMaxLoc cumdiffframeDouble
-                  -- TODO: When we use a scalar multiple multipliers, it appears to modify cumdiffframeDouble as though it were mutable
-                  -- cumdiffframe = exceptError $ matConvertTo Nothing {-(Just (255.0/cdmax))-} Nothing (matScalarMult cumdiffframeDouble (255.0/cdmax)) :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Word8)
-                  cumdiffframe = exceptError $ matConvertTo Nothing {-(Just (255.0/cdmax))-} Nothing cumdiffframeDouble :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Word8)
-                  -- (cdmin2, cdmax2, _, _) = exceptError $ minMaxLoc cumdiffframe
+                  cumdiffframe = exceptError $ matConvertTo Nothing Nothing cumdiffframeDouble :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Word8)
                   
-                  (thresh, _ {-threshret-}) = exceptError $ threshold (ThreshVal_Abs 5) (Thresh_Binary 255) cumdiffframe -- framedelta -- TODO: The tutorial uses threshold value 25
-                  -- TODO: Arguments in the following follow the example and use defaults based on https://docs.opencv.org/3.4.20/d4/d86/group__imgproc__filter.html
-                  -- thresh2 = dilate thresh Nothing (Nothing :: Maybe Point2i) 2 BorderConstant 
+                  (thresh, _ {-threshret-}) = exceptError $ threshold (ThreshVal_Abs 5) (Thresh_Binary 255) cumdiffframe
                   thresh2 = exceptError $ dilate thresh Nothing (Just (toPoint (V2 (-1) (-1))):: Maybe Point2i) 30 (BorderConstant morphologyDefaultBorderValue)
-                  adjbaseframe = if (ct <= 0) 
-                    then 
-                      grayblur
-                    else
-                      -- matAdd (matScalarMult baseframe (decayrate * totalweight)) (matScalarMult grayblur totalweight)
-                      -- matScalarMult (matAdd baseframe (matScalarMult grayblur (decayrate ^^ ct))) totalweight
-                      -- exceptError $ matAddWeighted baseframe totalweight grayblur (totalweight * (decayrate ^^ ct)) (0.0 :: Double)
-                      -- matScalarMult (matAdd baseframe (matScalarMult grayblur (decayrate ^^ ct))) totalweight
-                      -- exceptError $ matAddWeighted baseframe 0.5 grayblur 0.5 (0.0 :: Double)
-                      grayblur
-                      -- baseframe
-                  -- adjbaseframe = matAdd (matScalarMult baseframe decayrate) grayblur 
-                  -- adjbaseframe = matAdd (matScalarMult baseframe (decayrate * (1.0 - decayrate))) (matScalarMult grayblur decayrate)
-              -- putStrLn $ ("threshold return value: " ++) . show $ threshret
-              putStrLn $ ("wa double mat min: " ++) . show $ cdmin
-              putStrLn $ ("wa double mat max: " ++) . show $ cdmax
-              -- putStrLn $ ("cumdiff mat min: " ++) . show $ cdmin2
-              -- putStrLn $ ("cumdiff mat max: " ++) . show $ cdmax2
-              putStrLn $ ("framedelta mat min: " ++) . show $ fdmin
-              putStrLn $ ("framedelta mat max: " ++) . show $ fdmax
-              putStrLn $ ("totalweight: " ++) . show $ totalweight
-              putStrLn $ ("decay to power: " ++) . show $ decayrate ^^ (ct + 1)
+                  adjbaseframe = if (ct <= 0) then grayblur else grayblur
               contours <- (thaw thresh2 >>= findContours ContourRetrievalExternal ContourApproximationSimple)
-              putStrLn $ ("contour areas: " ++) . show $ fmap getContourArea contours
-              putStrLn $ ("contour count: " ++) . show $ length contours
-              let largecontours = V.filter ((>= 250) . getContourArea) contours -- TODO: Previously we used 400
-              putStrLn $ ("large contour count: " ++) . show $ length largecontours
+              let largecontours = V.filter ((>= 250) . getContourArea) contours
               let rotrects = fmap (minAreaRect . contourPoints) largecontours
                   bddrects = fmap rotatedRectBoundingRect rotrects
-              -- lcontours = filter  contours
               output <- imageWithRects cframe bddrects
-              -- imshow window thresh2 -- grayframe -- grayblur -- TODO: Decide what to do here
-              -- imshow window baseframe -- grayframe -- grayblur -- TODO: Decide what to do here
-              -- remove the following when ready
-              {-
-              mimg <- thaw $ cloneMat cframe
-              V.forM_ bddrects (\rect -> rectangle mimg rect blue 2 LineType_8 0)
-              output <- freeze mimg
-              -}
-              -- imshow window cumdiffframeDouble 
               imshow window output 
-              -- end of remove
               _ <- waitKey (1000 `div` 30)
               write_to_window (Just (ct+1, cumdiffframe, adjbaseframe)) window vc 
         morphologyDefaultBorderValue = toScalar (V4 val val val val) 
@@ -458,7 +388,7 @@ main = do
         imageWithRects img rects = do
           let blue = V4 255.0 0.0 0.0 0.0 :: V4 Double
               cimg = cloneMat img
-          mimg <- thaw $ cimg -- cloneMat img
+          mimg <- thaw $ cimg 
           V.forM_ rects (\rect -> rectangle mimg rect blue 2 LineType_8 0)
           freeze mimg
 */
