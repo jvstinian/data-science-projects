@@ -83,7 +83,6 @@ int main(int argc, char* argv[]) {
 
     int ct = 0;
     cv::Mat rawimagem, cumdiffframe; /* cv::Mat() */
-    /*cv::Mat* cumdiffframe0 = new cv::Mat();*/
     cv::Mat framem, grayframem, grayblurm, lastframem, framedeltam;
     cv::Mat tempcumdiff;
     /* Mat for thresholds */
@@ -96,7 +95,8 @@ int main(int argc, char* argv[]) {
         std::cerr << "Unable to retrieve image" << std::endl;
         exit(1);
     }
-    // Should the height be 270 in the following? 
+    /* Frames are processed by resizing to 480x270, converting to grayscale,
+     * and applying Gaussian blur. */
     cv::resize(rawimagem, framem, cv::Size2i(resizeWidth, resizeHeight), 0.0, 0.0, cv::INTER_AREA);
     cv::cvtColor(framem, grayframem, cv::COLOR_BGR2GRAY, 0);
     cv::GaussianBlur(grayframem, grayblurm, cv::Size(21, 21), 0.0, 0.0);
@@ -106,10 +106,7 @@ int main(int argc, char* argv[]) {
     while (1) {
         /* Grab is necessary to move to the next image */
         if (!vcptr->grab()) {
-            /* TODO
-            std::cerr << "Grab not successful" << std::endl;
-            exit(2);
-            */
+            /* Finished processing frames. */
             break;
         }
         if (!vcptr->retrieve(rawimagem, 0)) {
@@ -131,11 +128,11 @@ int main(int argc, char* argv[]) {
             std::cout << std::endl;
         }
 
-        cv::resize(rawimagem, framem, cv::Size2i(resizeWidth, resizeHeight /*TODO Should this be 270?*/), 0.0, 0.0, cv::INTER_AREA);
+        cv::resize(rawimagem, framem, cv::Size2i(resizeWidth, resizeHeight), 0.0, 0.0, cv::INTER_AREA);
 
         if (verbose && (ct == 0)) {
             /* NOTE: Height and width are reversed in the dimensions array, e.g. the following yields
-             *       "Frame Shape: 262, 480" */
+             *       "Frame Shape: 262, 480," */
             std::cout << "Resized Frame Depth: " << (framem.flags & cv::Mat::DEPTH_MASK) << std::endl;
             std::cout << "Resized Frame Channels: " << 1 + ((framem.flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
             std::cout << "Resized Frame Shape: "; /* NOTE: This appears to specify the expected height and width */
@@ -146,17 +143,12 @@ int main(int argc, char* argv[]) {
         }
 
         cv::cvtColor(framem, grayframem, cv::COLOR_BGR2GRAY, 0);
-        /* TODO: Remove.  Just gives 0 for depth and 1 for channels 
-        std::cout << "Gray Depth: " << (grayframem.flags & cv::Mat::DEPTH_MASK) << std::endl;
-        std::cout << "Gray Channels: " << 1 + ((grayframem.flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
-        */
-
         cv::GaussianBlur(grayframem, grayblurm, cv::Size(21, 21), 0.0, 0.0);
-        /* TODO: Remove.  Just gives 0 for depth and 1 for channels 
-        std::cout << "Blur Depth: " << (grayblurm.flags & cv::Mat::DEPTH_MASK) << std::endl;
-        std::cout << "Blur Channels: " << 1 + ((grayblurm.flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
-        */
 
+        /* Compare current blurred frame to the last and updated the
+         * weighted cumulative difference frame.
+         * We initially store to a temporary frame and copy to the
+         * target frame below. */
         cv::absdiff(grayblurm, lastframem, framedeltam);
         cv::addWeighted(cumdiffframe, decayrate, framedeltam, (1.0 - decayrate), 0.0, tempcumdiff, cumdiffframe.depth());
 
@@ -167,12 +159,14 @@ int main(int argc, char* argv[]) {
         tempcumdiff.convertTo(cumdiffframe, cumdiffframe.depth(), 1.0, 0.0);
 
         /* NOTE: The tutorial uses threshold value 25 */
+        /* NOTE: We use threshValMode to follow the Haskell implementation.
+         *       This could be skipped. */
         enum cv::ThresholdTypes threshValMode = (enum cv::ThresholdTypes) 0;  /* NOTE: cv::THRESH_BINARY == 0 */
         double threshVal = 5.0;
         enum cv::ThresholdTypes threshType = cv::THRESH_BINARY;
         double threshMaxVal = 255.0;
         enum cv::ThresholdTypes finalThreshType = static_cast<enum cv::ThresholdTypes>(threshType | threshValMode);
-        /* Discard the output of the following the input threshVal is returned when
+        /* We ignore the output of the following method as the input threshVal is returned when
          * the threshold type is THRESH_BINARY (or so it appears). */
         cv::threshold(cumdiffframe, threshm, threshVal, threshMaxVal, finalThreshType);
 
@@ -212,12 +206,14 @@ int main(int argc, char* argv[]) {
                 for(size_t i = 0; i < cit->size(); i++) {
                     fpts[i] = cv::Point2f((*cit)[i]);
                 }
-                double area = cv::contourArea(fpts, false); // ContourAreaAbsoluteValue corresponds to not oriented
+                /* ContourAreaAbsoluteValue corresponds to not oriented */
+                double area = cv::contourArea(fpts, false);
                 std::cout << "    contour " << cit - contours.begin() << ": " << area << std::endl;
             }
             std::cout << "contour count: " << contours.size() << std::endl;
         }
 
+        /* We remove the contours with area less than 250.0 */
         std::vector<std::vector<cv::Point> > largecontours(contours);
         std::vector<std::vector<cv::Point> >::iterator rm_it = std::remove_if(
             largecontours.begin(), largecontours.end(), contourAreaLessThan250
@@ -227,13 +223,13 @@ int main(int argc, char* argv[]) {
             std::cout << "large contour count: " << largecontours.size() << std::endl;
         }
 
-        /* The following logic can probably be condensed */
+        /* NOTE: We don't need to persist the lists rectangles.
+         *       We could just write the rectangles to the target frame
+         *       directly in the following loop. */
         std::vector<cv::RotatedRect> rotrects(largecontours.size());
-        for (size_t i = 0; i < largecontours.size(); i++) {
-            rotrects[i] = cv::minAreaRect(largecontours[i]);
-        }
         std::vector<cv::Rect2i> bddrects(largecontours.size());
         for (size_t i = 0; i < largecontours.size(); i++) {
+            rotrects[i] = cv::minAreaRect(largecontours[i]);
             bddrects[i] = rotrects[i].boundingRect();
         }
               
@@ -248,14 +244,7 @@ int main(int argc, char* argv[]) {
         /* Increment */
         ct++;
         grayblurm.copyTo(lastframem);
-        /* if (ct >= 100) break; TODO */
     }
-    /*
-    delete lastframep;
-    delete framedelta;
-    */
-    /*delete cumdiffframe0;*/
-    /*delete cumdiffframeDouble; TODO*/
     vcptr->release();
     cv::destroyWindow(winname);
     
