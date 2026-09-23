@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     std::string file(argv[1]);
-    bool verbose(true);
+    bool verbose(false);
 
     if (verbose && !print_video_properties(file)) {
         std::cerr << "Error working with file " << file << std::endl;
