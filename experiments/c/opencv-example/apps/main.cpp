@@ -247,31 +247,3 @@ int main(int argc, char* argv[]) {
     delete vcptr;
     return 0;
 }
-
-/*
-Haskell Method Implementations (method name in HTML anchor):
-* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-Core-Types.html#rotatedRectBoundingRect
-* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-Core-Types-Mat.html#emptyMat
-* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-Core-Types-Mat.html#matConvertTo
-* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-ImgProc-ImgFiltering.html#dilate
-* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-ImgProc-MiscImgTransform.html#threshold
-* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-ImgProc-StructuralAnalysis.html#findContours
-
-OpenCV ThresholdTypes:
-https://docs.opencv.org/4.11.0/d7/d1b/group__imgproc__misc.html#gaa9e58d2860d4afa658ef70a9b1115576
-
-*/
-
-/*
-Depth values can be found in
-https://docs.opencv.org/4.11.0/d1/d1b/group__core__hal__interface.html#ga32b18d904ee2b1731a9416a8eef67d06
-
-#define 	CV_8U   0
-#define 	CV_8S   1
-#define 	CV_16U   2
-#define 	CV_16S   3
-#define 	CV_32S   4
-#define 	CV_32F   5
-#define 	CV_64F   6
-#define 	CV_16F   7
-*/
