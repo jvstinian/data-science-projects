@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     std::string file(argv[1]);
-    bool verbose(true);
+    bool verbose(false);
 
     if (verbose && !print_video_properties(file)) {
         std::cerr << "Error working with file " << file << std::endl;
@@ -61,10 +61,6 @@ int main(int argc, char* argv[]) {
      * then hashing so that an integer is obtained, and
      * then converting the integer to a string.
      * We instead just use "opencv_contour_example_0" for now.
-     *
-     * Also, in Haskell makeWindow specifies that
-     * mouseCallback and trackbars are empty.
-     * We omit the latter here.
      */
     int resizeWidth = 1920 / 4;
     int resizeHeight = 1080 / 4;
@@ -132,10 +128,10 @@ int main(int argc, char* argv[]) {
 
         if (verbose && (ct == 0)) {
             /* NOTE: Height and width are reversed in the dimensions array, e.g. the following yields
-             *       "Frame Shape: 262, 480," */
+             *       "Frame Shape: 270, 480," */
             std::cout << "Resized Frame Depth: " << (framem.flags & cv::Mat::DEPTH_MASK) << std::endl;
             std::cout << "Resized Frame Channels: " << 1 + ((framem.flags >> CV_CN_SHIFT) & (CV_CN_MAX - 1)) << std::endl;
-            std::cout << "Resized Frame Shape: "; /* NOTE: This appears to specify the expected height and width */
+            std::cout << "Resized Frame Shape: ";
             for (int i = 0; i < framem.size.dims(); i++) {
                 std::cout << framem.size[i] << ", ";
             }
@@ -251,144 +247,3 @@ int main(int argc, char* argv[]) {
     delete vcptr;
     return 0;
 }
-
-/*
-Haskell Method Implementations (method name in HTML anchor):
-* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-Core-Types.html#rotatedRectBoundingRect
-* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-Core-Types-Mat.html#emptyMat
-* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-Core-Types-Mat.html#matConvertTo
-* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-ImgProc-ImgFiltering.html#dilate
-* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-ImgProc-MiscImgTransform.html#threshold
-* https://hackage.haskell.org/package/opencv-0.0.2.1/docs/src/OpenCV-ImgProc-StructuralAnalysis.html#findContours
-
-OpenCV ThresholdTypes:
-https://docs.opencv.org/4.11.0/d7/d1b/group__imgproc__misc.html#gaa9e58d2860d4afa658ef70a9b1115576
-
-*/
-
-/*
-Depth values can be found in
-https://docs.opencv.org/4.11.0/d1/d1b/group__core__hal__interface.html#ga32b18d904ee2b1731a9416a8eef67d06
-
-#define 	CV_8U   0
-#define 	CV_8S   1
-#define 	CV_16U   2
-#define 	CV_16S   3
-#define 	CV_32S   4
-#define 	CV_32F   5
-#define 	CV_64F   6
-#define 	CV_16F   7
-*/
-
-/*
-import OpenCV.Core.Types (ToScalar(toScalar), FreezeThaw(thaw, freeze), rotatedRectBoundingRect)
-import OpenCV.Core.Types.Point (Point2i, IsPoint(toPoint, fromPoint), Point2f)
-import OpenCV.Core.Types.Mat (coerceMat, matInfo, Mat, cloneMat, matConvertTo)
-import OpenCV.Core.Types.Rect (Rect2i)
-import OpenCV.TypeLevel (DS(S))
-import OpenCV.VideoIO.Types ({-VideoCaptureAPI(..), -}VideoCaptureProperties(..), FourCC(..))
-import OpenCV.HighGui
-import Control.Concurrent (threadDelay)
-import OpenCV.Core.ArrayOps (matAbsDiff, matAdd, matScalarMult, matAddWeighted, minMaxLoc, matScalarMult)
-import OpenCV.ImgProc.Types (InterpolationMethod(InterArea), BorderMode(BorderConstant))
-import OpenCV.ImgProc.ImgFiltering (gaussianBlur, dilate)
-import OpenCV.ImgProc.MiscImgTransform (cvtColor, threshold, ThreshValue(ThreshVal_Abs), ThreshType(Thresh_Binary))
-import OpenCV.ImgProc.MiscImgTransform.ColorCodes (bgr, gray)
-import OpenCV.ImgProc.GeometricImgTransform (resize, ResizeAbsRel(ResizeAbs))
-import OpenCV.Core.Types.Size (IsSize(toSize))
-import OpenCV.ImgProc.Drawing (LineType(LineType_8), rectangle)
-import Linear.V2 () -- instances, mainly for fmap
-import Linear.V2 (V2(..))
-import Linear.V4 (V4(V4))
-import OpenCV.VideoIO.VideoCapture 
-  ( VideoCaptureSource(VideoFileSource)
-  , newVideoCapture
-  , videoCaptureOpen
-  , videoCaptureIsOpened
-  , videoCaptureGrab
-  , videoCaptureRetrieve
-  , videoCaptureGetD
-  , videoCaptureGetI
-  {-, videoCaptureSetD
-  , videoCaptureSetI -}
-  , videoCaptureRelease )
-import OpenCV.ImgProc.StructuralAnalysis 
-  ( ContourRetrievalMode(ContourRetrievalExternal)
-  , ContourApproximationMethod(ContourApproximationSimple)
-  , ContourAreaOriented(ContourAreaAbsoluteValue)
-  , Contour(contourPoints)
-  , findContours
-  , contourArea
-  , minAreaRect )
-import OpenCV.Exception (exceptErrorIO, exceptError)
-
-main :: IO ()
-main = do
-    let 
-        file = "./videos/1710073869-video.mp4"
-        source = VideoFileSource file Nothing
-    putStrLn $ "Working with file " ++ file
-    
-    window <- makeWindow "wookie"
-    resizeWindow window (1920 `div` 4) (1080 `div` 4) -- 1920 1080
-    _ <- bracket (newVideoCapture >>= (open_vc source))
-                 (exceptErrorIO . videoCaptureRelease)
-                 (write_to_window Nothing window)
-    threadDelay $ 1 * 1000000 -- 5 seconds
-    destroyWindow window
-    
-  where open_vc vsource vc = do
-          exceptErrorIO . (flip videoCaptureOpen vsource) $ vc
-          return vc
-        write_to_window firstframeM window vc = do
-          videoCaptureGrab vc >>= (putStrLn . ("Grab successful: "++) . show)
-          imageM <- videoCaptureRetrieve vc
-          case imageM of
-            Nothing    -> do
-              putStrLn "Unable to retrieve image"
-              return "Finished"
-            Just image -> do
-              putStrLn $ show $ matInfo image
-              let frame      = exceptError $ resize (ResizeAbs (toSize (V2 480 262))) InterArea image
-                  cframe     = (exceptError $ coerceMat frame) :: Mat ('S ['S 262, 'S 480]) ('S 3) ('S Word8)
-                  grayframe  = exceptError $ cvtColor bgr gray cframe
-                  grayblur   = exceptError $ gaussianBlur (toSize (V2 21 21)) 0.0 0.0 grayframe 
-                  zeromat    = matAbsDiff grayblur grayblur
-                  (ct, cumdiffframe0, baseframe) = fromMaybe (0 :: Int32, zeromat, grayblur) firstframeM
-                  framedelta = matAbsDiff grayblur baseframe
-                  
-                  decayrate = 0.2 
-                  cumdiffframeDouble = exceptError $ matAddWeighted (exceptError $ matConvertTo Nothing Nothing cumdiffframe0 :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Double))
-                                                                    decayrate 
-                                                                    (exceptError $ matConvertTo Nothing Nothing framedelta :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Double))
-                                                                    (1.0 - decayrate)
-                                                                    (0.0 :: Double) :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Double)
-                  (fdmin, fdmax, _, _) = exceptError $ minMaxLoc framedelta
-                  (cdmin, cdmax, _, _) = exceptError $ minMaxLoc cumdiffframeDouble
-                  cumdiffframe = exceptError $ matConvertTo Nothing Nothing cumdiffframeDouble :: Mat ('S ['S 262, 'S 480]) ('S 1) ('S Word8)
-                  
-                  (thresh, _ {-threshret-}) = exceptError $ threshold (ThreshVal_Abs 5) (Thresh_Binary 255) cumdiffframe
-                  thresh2 = exceptError $ dilate thresh Nothing (Just (toPoint (V2 (-1) (-1))):: Maybe Point2i) 30 (BorderConstant morphologyDefaultBorderValue)
-                  adjbaseframe = if (ct <= 0) then grayblur else grayblur
-              contours <- (thaw thresh2 >>= findContours ContourRetrievalExternal ContourApproximationSimple)
-              let largecontours = V.filter ((>= 250) . getContourArea) contours
-              let rotrects = fmap (minAreaRect . contourPoints) largecontours
-                  bddrects = fmap rotatedRectBoundingRect rotrects
-              output <- imageWithRects cframe bddrects
-              imshow window output 
-              _ <- waitKey (1000 `div` 30)
-              write_to_window (Just (ct+1, cumdiffframe, adjbaseframe)) window vc 
-        morphologyDefaultBorderValue = toScalar (V4 val val val val) 
-            where val = -(maxValue :: Double)
-        pointConversion :: Point2i -> Point2f
-        pointConversion ipoint = toPoint $ fmap fromIntegral (fromPoint ipoint :: V2 Int32) 
-        getContourArea contour = exceptError $ contourArea (fmap pointConversion (contourPoints contour)) ContourAreaAbsoluteValue
-
-        imageWithRects :: Mat ('S [height, width]) channels depth -> V.Vector Rect2i -> IO (Mat ('S [height, width]) channels depth)
-        imageWithRects img rects = do
-          let blue = V4 255.0 0.0 0.0 0.0 :: V4 Double
-              cimg = cloneMat img
-          mimg <- thaw $ cimg 
-          V.forM_ rects (\rect -> rectangle mimg rect blue 2 LineType_8 0)
-          freeze mimg
-*/

@@ -12,11 +12,6 @@ See commands `dilate` and `morphologyDefaultBorderValue` in
 See command `threshold` in 
 [Miscellaneous Image Transformations](https://docs.opencv.org/3.4.20/d7/d1b/group__imgproc__misc.html).
 
-# imutils code
-
-The methods referenced in the tutorial can be found in 
-[convenience.py](https://github.com/PyImageSearch/imutils/blob/master/imutils/convenience.py).
-
 # References
 
 * [Motion detection with simple script](https://raspberrypi.stackexchange.com/questions/81905/raspberry-pi-camera-motion-detection-via-simple-script)
