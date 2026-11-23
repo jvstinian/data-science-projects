@@ -6,7 +6,7 @@ AM_INIT_AUTOMAKE([foreign tar-ustar])
 # AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIRS([m4])
 LT_PREREQ([2.2])
-LT_INIT # ([dlopen])
+LT_INIT
 
 # Checks for programs.
 AC_PROG_CC
@@ -27,12 +27,12 @@ AC_CHECK_HEADERS([limits.h stdint.h stdlib.h string.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 # AC_CHECK_HEADER_STDBOOL
-# AC_TYPE_INT64_T
 AC_TYPE_SIZE_T
-# AC_TYPE_UINT8_T
-# AC_TYPE_UINT16_T
+AC_TYPE_UINT8_T
+AC_TYPE_UINT16_T
 # AC_TYPE_UINT32_T
 # AC_TYPE_UINT64_T
+# AC_TYPE_INT64_T
 # AC_CHECK_TYPES([ptrdiff_t])
 
 # Checks for library functions.
@@ -49,6 +49,7 @@ PKG_CHECK_MODULES([LAPACK], [lapack])
 
 AC_CONFIG_FILES([Makefile
     src/Makefile
+    finance/Makefile
     vendor/Makefile
     vendor/mtwister/Makefile ])
 AC_OUTPUT
