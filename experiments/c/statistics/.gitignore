@@ -23,6 +23,10 @@ missing
 
 # Executables
 src/statistics
+finance/equity-example
+
+# Dist
+*.tar.gz
 
 # Other
 orig.COPYING
