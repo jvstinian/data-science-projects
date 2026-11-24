@@ -4,6 +4,8 @@ AUTOMAKE_OPTIONS = subdir-objects
 # We're not using the LAPACK CFLAGS at this point
 AM_CFLAGS = -std=c99 -I$(top_srcdir)/vendor @LAPACK_CFLAGS@
 
+# pkginclude_HEADERS = statistics.h
+
 bin_PROGRAMS = statistics
 lib_LIBRARIES = libstatistics.a
 include_HEADERS = statistics.h
@@ -17,6 +19,10 @@ libstatistics_a_SOURCES = statistics.c pareto.c
 
 statistics_SOURCES = statistics.c
 # statistics_CFLAGS  = -std=c99
-statistics_LDFLAGS = $(top_srcdir)/vendor/mtwister/libmtwister.la
+# The following isn't working, going to try LDADD and using builddir instead of srcdir
+# statistics_LDFLAGS = $(top_srcdir)/vendor/mtwister/libmtwister.la
+statistics_LDADD = $(top_builddir)/vendor/mtwister/libmtwister.la
+# Place the helper library (libmtwister.la) in LDADD so Automake ensures the helper library compiles before the application links.
+# Use LDFLAGS for linker options (such as -no-undefined or -rpath) and external system library search paths (-L/some/external/path).
 
 # noinst_HEADERS = statistics.h
