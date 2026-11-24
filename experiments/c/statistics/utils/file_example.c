@@ -547,6 +547,8 @@ int dataframe_parse_line(struct DataFrame* dfp, DelimitedStringParser* sp, size_
     dfp->nrows++; /* Increment the number of rows */
 }
 
+struct DataFrame* dataframe_read_file(const char* filename, struct DataSchema* sp);
+
 int main(void) {
     FILE *file = fopen("example.txt", "r");
     if (file == NULL) {
@@ -608,7 +610,6 @@ int main(void) {
     printf("Printing dataframe: \n");
     dataframe_print(dfp);
     dataframe_destroy(dfp);
-    schema_destroy(schema);
 
     if (feof(file)) {
         fprintf(stdout, "main: reached end-of-file - %s\n", strerror(errno));
@@ -620,6 +621,95 @@ int main(void) {
 
     free(line); // Must free the dynamically allocated buffer
     fclose(file);
+
+    printf("\nAgain...\n");
+    fflush(stdout);
+    dfp = dataframe_read_file("example.txt", schema);
+    if (dfp == NULL) {
+        fprintf(stderr, "main: could not read file into dataframe");
+    } else {
+        printf("Printing dataframe: \n");
+        dataframe_print(dfp);
+        dataframe_destroy(dfp);
+    }
+    schema_destroy(schema);
     return 0;
+}
+
+struct DataFrame* dataframe_read_file(const char* filename, struct DataSchema* sp) {
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t nread;
+    size_t i = 0;
+    FILE *file;
+
+    struct DataFrame* dfp = dataframe_create(/*initial rows*/ 1u, sp);
+    if (dfp == NULL) {
+        fprintf(stderr, "dataframe_read_file: unable to create dataframe");
+        return NULL;
+    }
+
+    DelimitedStringParser* dsp = delimited_string_parser_empty(',', '\"', '\\', sp->length);
+    if (dfp == NULL) {
+        fprintf(stderr, "dataframe_read_file: unable to create string parser");
+        dataframe_destroy(dfp);
+        return NULL;
+    }
+
+    file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Failed to open file");
+        fprintf(stderr, "dataframe_read_file: %s\n", strerror(errno));
+        delimited_string_parser_destroy(dsp);
+        dataframe_destroy(dfp);
+        return NULL;
+    }
+
+    nread = getline(&line, &len, file);
+    if (nread != -1) {
+        if (nread > 0 && line[nread - 1] == '\n') {
+            line[nread - 1] = '\0';
+        }
+        dataframe_parse_header(dfp, dsp, line);
+    } else if (feof(file)) {
+        fprintf(stdout, "dataframe_read_file: reached end-of-file of %s while trying to read header: %s\n", filename, strerror(errno));
+        if (line != NULL) free(line);
+        delimited_string_parser_destroy(dsp);
+        dataframe_destroy(dfp);
+        return NULL;
+    } else if (ferror(file)) {
+        fprintf(stdout, "dataframe_read_file: encountered unknown error in file %s while trying to read header: %s\n", filename, strerror(errno));
+        if (line != NULL) free(line);
+        delimited_string_parser_destroy(dsp);
+        dataframe_destroy(dfp);
+        return NULL;
+    }
+
+    /* Process the body */
+    while ((nread = getline(&line, &len, file)) != -1) {
+        /* Remove trailing newline if present */
+        if (nread > 0 && line[nread - 1] == '\n') {
+            line[nread - 1] = '\0';
+        }
+        dataframe_parse_line(dfp, dsp, i, line);
+        i++;
+    }
+    if (line != NULL) free(line); /* Free line */
+    delimited_string_parser_destroy(dsp);
+
+    if (ferror(file)) {
+        fprintf(stderr, "dataframe_read_file: error reading line %lu of file %s: %s\n", i, filename, strerror(errno));
+        dataframe_destroy(dfp);
+        return NULL;
+    }
+
+    if (!feof(file)) {
+        fprintf(stdout, "dataframe_read_file: unexpected exit without reaching end of file %s, processed %lu lines\n", filename, i);
+        dataframe_destroy(dfp);
+        return NULL;
+    }
+        
+    fclose(file);
+    return dfp;
 }
 
