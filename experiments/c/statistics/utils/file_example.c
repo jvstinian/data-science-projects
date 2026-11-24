@@ -210,6 +210,7 @@ int dataframe_data_realloc(struct DataFrame* dfp){
     size_t new_data_capacity = new_row_capacity * dfp->total_record_size;
     size_t i, offset, field_size;
 
+    /* TODO: Remove when ready */
     printf("Diagnostic: calling realloc for dataframe data\n");
     dfp->data = realloc(dfp->data, new_data_capacity * sizeof(unsigned char));
     if (dfp->data == NULL) {
@@ -217,12 +218,10 @@ int dataframe_data_realloc(struct DataFrame* dfp){
     }
     dfp->rowcapacity = new_row_capacity;
 
-    /* TODO: The following use of the for loop is incorrect.
-     *       One must instead descend from dfp->ncols - 1 to 0.
-     *       Use 
-     *       i = dfp->ncols; while (i > 1) { i--; ... }
-     *       instead. */
-    for (i = 1; i < dfp->ncols; i++) {
+    i = dfp->ncols;
+    /* Note that column i = 0 is skipped as there's no need to move data */
+    while (i > 1) { 
+        i--; 
         offset = dfp->offsets[i];
         field_size = dfp->field_sizes[i];
         memcpy(dfp->data + new_row_capacity * offset, dfp->data + old_row_capacity * offset, old_row_capacity * field_size);
@@ -235,6 +234,7 @@ void dataframe_print(struct DataFrame* dfp){
     char** strs;
     float* flts;
     double* dbls;
+    enum DataType dtype;
 
     for (c = 0; c < dfp->ncols; c++) {
         /* To get here we must have 0 < dfp->ncols */
@@ -247,8 +247,7 @@ void dataframe_print(struct DataFrame* dfp){
     for (r = 0; r < dfp->nrows; r++) {
         for (c = 0; c < dfp->ncols; c++) {
             /* To get here we must have 0 < dfp->ncols */
-            /* TODO: Declare enum DataType before the loop */
-            enum DataType dtype = schema_get_type(dfp->schema, c);
+            dtype = schema_get_type(dfp->schema, c);
             char term = ',';
             if (c == (dfp->ncols - 1)) {
                 term = '\n';
@@ -304,7 +303,6 @@ void dataframe_destroy(struct DataFrame* dfp){
 /* NOTE (JS): Removing const from input (p) and output. */
 char* str_find_quote(char* p, char quote_char, char escape_char){
     char* ret = p;
-    printf("Char: %c", *ret);
     while ((ret != NULL) && (*ret != '\0')) {
         ret = strchr(ret, quote_char);
         if( ret != NULL ){
@@ -318,8 +316,7 @@ char* str_find_quote(char* p, char quote_char, char escape_char){
             }
         }
     }
-    /* TODO: Consider if ret == NULL */
-    if (*ret == '\0') {
+    if ((ret != NULL) && (*ret == '\0')) {
         ret = NULL;
     }
     return ret;
@@ -499,18 +496,16 @@ int dataframe_parse_header(struct DataFrame* dfp, DelimitedStringParser* sp, con
     return status;
 }
 
-int dataframe_parse_line(struct DataFrame* dfp, DelimitedStringParser* sp, const char* line) {
-    /* TODO: We might want to add the line number as an input
-     *       and use this in any error messages below. */
+int dataframe_parse_line(struct DataFrame* dfp, DelimitedStringParser* sp, size_t line_number, const char* line) {
     int status = 0;
     size_t i;
     const char* fldstr;
     if ((status = delimited_string_parser_set_line(sp, line)) != 0) {
-        fprintf(stderr, "dataframe_parse_line: failed to set line");
+        fprintf(stderr, "dataframe_parse_line: failed to set line for line number %lu", line_number);
         return status;
     }
     if ((status = delimited_string_parser_execute(sp)) != 0) {
-        fprintf(stderr, "dataframe_parse_line: parser execution failed");
+        fprintf(stderr, "dataframe_parse_line: parser execution failed for line number %lu", line_number);
         return status;
     }
 
@@ -520,8 +515,14 @@ int dataframe_parse_line(struct DataFrame* dfp, DelimitedStringParser* sp, const
             return status;
         }
     }
-    /* TODO: On parsing, we might need to make sure the number of parsed fields is
-     *       as expected.  This would likely be logic added to another method. */
+
+    /* NOTE (JS): If we allow for more flexible CSV parsing in which we support extracting fields
+     *            in an arbitrary order, then the following check will need to be updated */
+    if (sp->length < dfp->ncols) {
+        fprintf(stderr, "dataframe_parse_line: missing fields in line number %lu", line_number);
+        return 5;
+    }
+
     for (i = 0; i < dfp->ncols; i++) {
         fldstr = delimited_string_parser_get_field(sp, i);
         
@@ -597,7 +598,7 @@ int main(void) {
         printf("\tField 1: %s\n", dsp->fields[1]);
 
         if (i > 0) {
-            dataframe_parse_line(dfp, dsp, line);
+            dataframe_parse_line(dfp, dsp, i, line);
         } else {
             dataframe_parse_header(dfp, dsp, line);
         }
