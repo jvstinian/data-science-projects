@@ -247,6 +247,7 @@ void dataframe_print(struct DataFrame* dfp){
     for (r = 0; r < dfp->nrows; r++) {
         for (c = 0; c < dfp->ncols; c++) {
             /* To get here we must have 0 < dfp->ncols */
+            /* TODO: Declare enum DataType before the loop */
             enum DataType dtype = schema_get_type(dfp->schema, c);
             char term = ',';
             if (c == (dfp->ncols - 1)) {
@@ -262,7 +263,6 @@ void dataframe_print(struct DataFrame* dfp){
                     break;
                 case FLOAT:
                     flts = (float*) (dfp->data + dfp->rowcapacity * dfp->offsets[c]);
-                    /* TODO: Is %f used for both float and double? */
                     printf("%f%c", flts[r], term);
                     break;
                 case DOUBLE:
@@ -277,6 +277,22 @@ void dataframe_print(struct DataFrame* dfp){
 }
 
 void dataframe_destroy(struct DataFrame* dfp){
+    /* String values are duplicated, so we free these here. */
+    size_t r, c;
+    char** strs;
+    enum DataType dtype;
+
+    for (c = 0; c < dfp->ncols; c++) {
+        dtype = schema_get_type(dfp->schema, c);
+        if (dtype == STRING) {
+            strs = (char**) (dfp->data + dfp->rowcapacity * dfp->offsets[c]);
+            for (r = 0; r < dfp->nrows; r++) {
+                free(strs[r]);
+            }
+        }
+    }
+
+    /* Free the data structures */
     free(dfp->data);
     free(dfp->field_sizes);
     free(dfp->offsets);
@@ -285,7 +301,7 @@ void dataframe_destroy(struct DataFrame* dfp){
 }
 
 
-// NOTE (JS): Removing const from input (p) and output.
+/* NOTE (JS): Removing const from input (p) and output. */
 char* str_find_quote(char* p, char quote_char, char escape_char){
     char* ret = p;
     printf("Char: %c", *ret);
@@ -449,6 +465,40 @@ int delimited_string_parser_execute(DelimitedStringParser* string_parser) {
     return ret;
 }
 
+int dataframe_header_check(struct DataFrame* dfp, DelimitedStringParser* sp) {
+    int status = 0;
+    size_t c;
+    const char *headerstr, *fldstr;
+    // const char* fldstr;
+
+    for (c = 0; c < dfp->ncols; c++) {
+        headerstr = dfp->schema->fields[c].field_name;
+        fldstr = delimited_string_parser_get_field(sp, c);
+        if (strcmp(headerstr, fldstr)) {
+            fprintf(stderr, "dataframe_parse_line: expected field %s, found %s", headerstr, fldstr);
+            status = 4;
+            break;
+        }
+    }
+    return status;
+}
+
+int dataframe_parse_header(struct DataFrame* dfp, DelimitedStringParser* sp, const char* line) {
+    int status = 0;
+    size_t i;
+    if ((status = delimited_string_parser_set_line(sp, line)) != 0) {
+        fprintf(stderr, "dataframe_parse_line: failed to set line");
+        return status;
+    }
+    if ((status = delimited_string_parser_execute(sp)) != 0) {
+        fprintf(stderr, "dataframe_parse_line: parser execution failed");
+        return status;
+    }
+
+    status = dataframe_header_check(dfp, sp);
+    return status;
+}
+
 int dataframe_parse_line(struct DataFrame* dfp, DelimitedStringParser* sp, const char* line) {
     /* TODO: We might want to add the line number as an input
      *       and use this in any error messages below. */
@@ -507,6 +557,7 @@ int main(void) {
     char *line = NULL;
     size_t len = 0;
     ssize_t nread;
+    size_t i = 0;
 
     struct DataField fld1 = { "Date", STRING };
     struct DataField fld2 = { "Price", FLOAT };
@@ -545,9 +596,12 @@ int main(void) {
         printf("\tField 0: %s\n", dsp->fields[0]);
         printf("\tField 1: %s\n", dsp->fields[1]);
 
-        /* TODO: Need to process the first line for the header information
-         *       and only use the following call after the header has been processed  */
-        dataframe_parse_line(dfp, dsp, line);
+        if (i > 0) {
+            dataframe_parse_line(dfp, dsp, line);
+        } else {
+            dataframe_parse_header(dfp, dsp, line);
+        }
+        i++;
     }
     delimited_string_parser_destroy(dsp);
     printf("Printing dataframe: \n");
