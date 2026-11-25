@@ -23,5 +23,10 @@ stamp-h1
 *.lo
 *.la
 
+# Arch makepkg
+arch/pkg
+arch/src
+arch/*.zst
+
 # Dist
 *.tar.gz

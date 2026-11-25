@@ -1,0 +1,37 @@
+# Maintainer: Justin Smith <jvstinian@gmail.com>
+pkgname=jatk
+pkgver=0.0.1
+pkgrel=1
+pkgdesc="Analytics Toolkit in C"
+arch=('x86_64')
+url="https://jvstinian.com"
+license=('GPL-2.0-only')
+depends=('glibc')
+makedepends=('base-devel')
+source=("$pkgname-$pkgver.tar.gz::file:///home/justinian/Code/datascience-miscellaneous/experiments/c/jatk/$pkgname-$pkgver.tar.gz")
+sha256sums=('SKIP') # Replace with actual sha256sum
+
+prepare() {
+  cd "$pkgname-$pkgver"
+  # Optional: run autoreconf if configure script is missing or patched
+  # autoreconf -vfi
+}
+
+build() {
+  cd "$pkgname-$pkgver"
+  ./configure --prefix=/usr \
+              --sysconfdir=/etc \
+              --localstatedir=/var
+  make
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  make check
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  make DESTDIR="$pkgdir/" install
+}
+
