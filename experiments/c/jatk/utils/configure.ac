@@ -1,7 +1,7 @@
 AC_PREREQ([2.62])
 AC_INIT([jatk-utils], [0.0.1], [jvstinian@gmail.com])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign tar-ustar])
-AC_CONFIG_SRCDIR([file_example.c])
+AC_CONFIG_SRCDIR([utils.c])
 # AC_CONFIG_HEADERS([utils.h])
 AC_CONFIG_MACRO_DIRS([m4])
 
