@@ -1,12 +1,12 @@
 ACLOCAL_AMFLAGS = -I m4 
 
-# pkgincludedir=$(includedir)/jatk/finance
+pkgincludedir=$(includedir)/jatk/finance
 
 AM_CFLAGS = -std=c99 -Wall -Wextra
 
+pkginclude_HEADERS = equity.h
 bin_PROGRAMS = equity-example
 lib_LIBRARIES = libfinance.a
-include_HEADERS = equity.h
 
 libfinance_a_SOURCES = equity.c
 # libstatistics_a_CFLAGS = -std=c89

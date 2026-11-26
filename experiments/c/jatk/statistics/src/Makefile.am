@@ -1,15 +1,17 @@
 # ACLOCAL_AMFLAGS = -I m4 
 # AUTOMAKE_OPTIONS = subdir-objects
 
+pkgincludedir=$(includedir)/jatk/statistics
+
 # We're not using the LAPACK CFLAGS at this point
 AM_CFLAGS = -std=c99 -I$(JATK_TOP_SRCDIR)/vendor @LAPACK_CFLAGS@
 # AM_CFLAGS = -std=c99 -I$(abs_top_srcdir)/vendor @LAPACK_CFLAGS@
 
-# pkginclude_HEADERS = statistics.h
+pkginclude_HEADERS = statistics.h
 
 bin_PROGRAMS = statistics
 lib_LIBRARIES = libstatistics.a
-include_HEADERS = statistics.h
+# include_HEADERS = statistics.h
 # noinst_LTLIBRARIES = libhcdg.la
 # libhcdg_la_SOURCES = hcdg.c
 # libhcdg_la_CFLAGS = -std=c89
