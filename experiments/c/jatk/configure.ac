@@ -5,7 +5,7 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign tar-ustar])
 # LT_PREREQ([2.2])
 # LT_INIT
 
-AC_CONFIG_MACRO_DIR([m4])
+# AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SUBDIRS([vendor/mtwister utils statistics finance])
 
 # Export absolute paths to the umbrella source and build trees
