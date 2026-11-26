@@ -1,5 +1,14 @@
-AC_PREREQ([2.61])
+AC_PREREQ([2.62])
 AC_INIT([statistics], [0.1.0], [jvstinian@gmail.com])
+
+# Allow JATK_TOP_SRCDIR to be substituted into Makefiles (and survive config.status re-runs)
+AC_ARG_VAR([JATK_TOP_SRCDIR],   [Path to parent JATK source directory])
+AC_ARG_VAR([JATK_TOP_BUILDDIR], [Path to parent JATK build directory])
+
+# Optional fallback if statistics is ever configured standalone outside the JATK project
+: "${JATK_TOP_SRCDIR:=$(cd "$srcdir/.." && pwd)}"
+: "${JATK_TOP_BUILDDIR:=$(cd .. && pwd)}"
+
 # Supress warnings about code in subdirectories
 AC_CONFIG_SRCDIR([src/statistics.c])
 AM_INIT_AUTOMAKE([foreign tar-ustar])
@@ -48,10 +57,7 @@ PKG_CHECK_MODULES([LAPACK], [lapack])
 # PKG_CHECK_MODULES([MYSQL], [mysqlclient])
 
 AC_CONFIG_FILES([Makefile
-    src/Makefile
-    finance/Makefile
-    vendor/Makefile
-    vendor/mtwister/Makefile ])
+    src/Makefile])
 AC_OUTPUT
 
 echo \
@@ -64,6 +70,8 @@ echo \
  CFLAGS: '${CFLAGS}'
  LDFLAGS: '${LDFLAGS}'
  Libs: '${LIBS}'
+ JATK_TOP_SRCDIR: '${JATK_TOP_SRCDIR}'
+ JATK_TOP_BUILDDIR: '${JATK_TOP_BUILDDIR}'
 
  Now type 'make @<:@<target>@:>@'
    where the optional <target> is:

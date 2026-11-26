@@ -1,4 +1,4 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = utils finance vendor
+SUBDIRS = vendor utils statistics finance
 
 # AM_MAKEFLAGS = pkgincludedir='$(pkgincludedir)'
