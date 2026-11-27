@@ -1,5 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4 
-AUTOMAKE_OPTIONS = subdir-objects
+
+# pkgincludedir=$(includedir)/jatk/finance
 
 AM_CFLAGS = -std=c99 -Wall -Wextra
 
