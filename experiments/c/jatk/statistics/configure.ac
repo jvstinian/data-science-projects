@@ -57,7 +57,8 @@ PKG_CHECK_MODULES([LAPACK], [lapack])
 # PKG_CHECK_MODULES([MYSQL], [mysqlclient])
 
 AC_CONFIG_FILES([Makefile
-    src/Makefile])
+    src/Makefile
+    libjatkstatistics.pc ])
 AC_OUTPUT
 
 echo \

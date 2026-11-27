@@ -50,7 +50,7 @@ AC_FUNC_MALLOC
 # 
 # PKG_CHECK_MODULES([MYSQL], [mysqlclient])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile libjatkfinance.pc])
 AC_OUTPUT
 
 echo \

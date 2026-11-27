@@ -10,13 +10,13 @@ AM_CFLAGS = -std=c99 -I$(JATK_TOP_SRCDIR)/vendor @LAPACK_CFLAGS@
 pkginclude_HEADERS = statistics.h
 
 bin_PROGRAMS = statistics
-lib_LIBRARIES = libstatistics.a
+lib_LIBRARIES = libjatkstatistics.a
 # include_HEADERS = statistics.h
 # noinst_LTLIBRARIES = libhcdg.la
 # libhcdg_la_SOURCES = hcdg.c
 # libhcdg_la_CFLAGS = -std=c89
 
-libstatistics_a_SOURCES = statistics.c pareto.c
+libjatkstatistics_a_SOURCES = statistics.c pareto.c
 # libstatistics_a_CFLAGS = -std=c89
 # libstatistics_LDFLAGS = @LAPACK_LDFLAGS@
 
