@@ -1,5 +1,7 @@
 AC_PREREQ([2.62])
-AC_INIT([jatk-finance], [0.0.1], [jvstinian@gmail.com])
+# Include JATK_VERSION
+m4_include([../m4/jatk_version.m4])
+AC_INIT([jatk-finance], JATK_VERSION, [jvstinian@gmail.com])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign tar-ustar])
 AC_CONFIG_SRCDIR([equity.c])
 # AC_CONFIG_HEADERS([utils.h])

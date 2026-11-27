@@ -1,5 +1,7 @@
 AC_PREREQ([2.62])
-AC_INIT([statistics], [0.1.0], [jvstinian@gmail.com])
+# Include JATK_VERSION
+m4_include([../m4/jatk_version.m4])
+AC_INIT([statistics], JATK_VERSION, [jvstinian@gmail.com])
 
 # Allow JATK_TOP_SRCDIR to be substituted into Makefiles (and survive config.status re-runs)
 AC_ARG_VAR([JATK_TOP_SRCDIR],   [Path to parent JATK source directory])
