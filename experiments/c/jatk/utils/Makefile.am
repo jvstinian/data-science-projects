@@ -2,7 +2,7 @@ ACLOCAL_AMFLAGS = -I m4
 
 pkgincludedir=$(includedir)/jatk/utils
 
-AM_CFLAGS = -std=c99 
+AM_CFLAGS = -std=c99
 
 pkginclude_HEADERS = utils.h
 
